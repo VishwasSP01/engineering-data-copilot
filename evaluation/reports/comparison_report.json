@@ -1,0 +1,326 @@
+{
+  "report_type": "step_10_provider_comparison",
+  "timestamp": "2026-10-01T20:43:00.976014+00:00",
+  "evaluation_notice": "Notice: This comparison tests pipeline behavior across a 10-case synthetic dataset. All conclusions are strictly limited to these synthetic fixtures.",
+  "model": "gemini-3.5-flash-lite",
+  "summary": {
+    "total_cases": 10,
+    "deterministic_summary": {
+      "total_cases": 10,
+      "passed_cases": 10,
+      "failed_cases": 0,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "overall_pass_rate": "10/10 (100.0%)",
+      "overall_pass_rate_pct": 100.0,
+      "correction_pass_rate": "2/2 (100.0%)",
+      "correction_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "8/8 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 5,
+        "total_checked": 5,
+        "ratio": "5/5",
+        "percentage": 100.0
+      },
+      "performance": {
+        "median_investigation_duration_ms": 0.63,
+        "mean_investigation_duration_ms": 0.74
+      },
+      "model_metrics": {
+        "model_requests_attempted": "0/10",
+        "model_requests_succeeded": "0/0",
+        "cases_without_model_call": "10/10",
+        "token_usage": null,
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "gemini_summary": {
+      "total_cases": 10,
+      "passed_cases": 10,
+      "failed_cases": 0,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "overall_pass_rate": "10/10 (100.0%)",
+      "overall_pass_rate_pct": 100.0,
+      "correction_pass_rate": "2/2 (100.0%)",
+      "correction_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "8/8 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 5,
+        "total_checked": 5,
+        "ratio": "5/5",
+        "percentage": 100.0
+      },
+      "performance": {
+        "median_investigation_duration_ms": 381.38,
+        "mean_investigation_duration_ms": 418.16
+      },
+      "model_metrics": {
+        "model_requests_attempted": "5/10",
+        "model_requests_succeeded": "5/5",
+        "cases_without_model_call": "5/10",
+        "token_usage": {
+          "prompt_tokens": 967,
+          "candidates_tokens": 274,
+          "total_tokens": 1241
+        },
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "concordance": {
+      "matching_outcomes": 10,
+      "total": 10,
+      "concordance_rate": "10/10 (100.0%)"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "case-01-correction-cm-to-mm",
+      "category": "correction",
+      "expected_outcome": "correction_proposed",
+      "deterministic_outcome": "correction_proposed",
+      "gemini_outcome": "correction_proposed",
+      "deterministic_proposal": {
+        "value": 8.0,
+        "unit": "mm",
+        "conversion": {
+          "supplier_extracted_value": 0.8,
+          "supplier_extracted_unit": "cm",
+          "target_unit": "mm",
+          "multiplier": 10.0,
+          "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "gemini_proposal": {
+        "value": 8.0,
+        "unit": "mm",
+        "conversion": {
+          "supplier_extracted_value": 0.8,
+          "supplier_extracted_unit": "cm",
+          "target_unit": "mm",
+          "multiplier": 10.0,
+          "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 193,
+        "candidates_tokens": 54,
+        "total_tokens": 247
+      },
+      "deterministic_duration_ms": 1.53,
+      "gemini_duration_ms": 953.6,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-02-correction-mm-to-cm",
+      "category": "correction",
+      "expected_outcome": "correction_proposed",
+      "deterministic_outcome": "correction_proposed",
+      "gemini_outcome": "correction_proposed",
+      "deterministic_proposal": {
+        "value": 2.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 25.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "25.0 mm * 0.1 cm/mm = 2.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "gemini_proposal": {
+        "value": 2.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 25.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "25.0 mm * 0.1 cm/mm = 2.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 194,
+        "candidates_tokens": 56,
+        "total_tokens": 250
+      },
+      "deterministic_duration_ms": 1.22,
+      "gemini_duration_ms": 791.92,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-03-agreement-mm",
+      "category": "abstention",
+      "expected_outcome": "no_change",
+      "deterministic_outcome": "no_change",
+      "gemini_outcome": "no_change",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 193,
+        "candidates_tokens": 54,
+        "total_tokens": 247
+      },
+      "deterministic_duration_ms": 0.55,
+      "gemini_duration_ms": 762.31,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-04-agreement-cm",
+      "category": "abstention",
+      "expected_outcome": "no_change",
+      "deterministic_outcome": "no_change",
+      "gemini_outcome": "no_change",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 194,
+        "candidates_tokens": 56,
+        "total_tokens": 250
+      },
+      "deterministic_duration_ms": 0.84,
+      "gemini_duration_ms": 763.61,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-05-unknown-component",
+      "category": "abstention",
+      "expected_outcome": "insufficient_evidence",
+      "deterministic_outcome": "insufficient_evidence",
+      "gemini_outcome": "insufficient_evidence",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": false,
+      "gemini_no_call_reason": "Retrieval yielded insufficient_evidence; extractor not invoked.",
+      "gemini_token_usage": null,
+      "deterministic_duration_ms": 0.68,
+      "gemini_duration_ms": 0.45,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-06-incorrect-revision",
+      "category": "abstention",
+      "expected_outcome": "insufficient_evidence",
+      "deterministic_outcome": "insufficient_evidence",
+      "gemini_outcome": "insufficient_evidence",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": false,
+      "gemini_no_call_reason": "Retrieval yielded insufficient_evidence; extractor not invoked.",
+      "gemini_token_usage": null,
+      "deterministic_duration_ms": 0.65,
+      "gemini_duration_ms": 0.29,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-07-missing-measurement",
+      "category": "abstention",
+      "expected_outcome": "insufficient_evidence",
+      "deterministic_outcome": "insufficient_evidence",
+      "gemini_outcome": "insufficient_evidence",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": false,
+      "gemini_no_call_reason": "Retrieval yielded insufficient_evidence; extractor not invoked.",
+      "gemini_token_usage": null,
+      "deterministic_duration_ms": 0.52,
+      "gemini_duration_ms": 0.32,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-08-conflicting-evidence",
+      "category": "abstention",
+      "expected_outcome": "ambiguous_evidence",
+      "deterministic_outcome": "ambiguous_evidence",
+      "gemini_outcome": "ambiguous_evidence",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": false,
+      "gemini_no_call_reason": "Retrieval yielded ambiguous_evidence; extractor not invoked.",
+      "gemini_token_usage": null,
+      "deterministic_duration_ms": 0.57,
+      "gemini_duration_ms": 0.35,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-09-unsupported-unit",
+      "category": "abstention",
+      "expected_outcome": "needs_review",
+      "deterministic_outcome": "needs_review",
+      "gemini_outcome": "needs_review",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 193,
+        "candidates_tokens": 54,
+        "total_tokens": 247
+      },
+      "deterministic_duration_ms": 0.61,
+      "gemini_duration_ms": 908.54,
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "case-10-malformed-measurement",
+      "category": "abstention",
+      "expected_outcome": "needs_review",
+      "deterministic_outcome": "needs_review",
+      "gemini_outcome": "needs_review",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "agreement": true,
+      "gemini_model_called": false,
+      "gemini_no_call_reason": "Record value is not numeric; extractor not invoked.",
+      "gemini_token_usage": null,
+      "deterministic_duration_ms": 0.25,
+      "gemini_duration_ms": 0.18,
+      "gemini_status": "passed"
+    }
+  ]
+}

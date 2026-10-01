@@ -100,4 +100,27 @@
     - Baseline Alignment: 100% agreement with deterministic baseline provider across extracted value, cited passage, and proposed correction.
     - Execution Metrics: Single generation request, 965.75 ms call latency, 247 total tokens (193 prompt, 54 candidate), cost left null.
     - Scope Clarification: Documented as a single successful live sample investigation, not an accuracy or generalization benchmark.
+- [x] **Step 10: Comparative Evaluation (Live Gemini vs. Deterministic Baseline)** — Completed.
+  - **Artifacts Created & Updated**:
+    - Evaluator Extension: `scripts/evaluate.py` (Added `--extractor {deterministic,gemini,both}` and `--model` CLI flags; integrated early retrieval abstention tracking, automatic retry disabling, API failure abort handling, side-by-side concordance analysis, and explicit rate denominators).
+    - Comparison Reports: `evaluation/reports/comparison_report.json` and `evaluation/reports/comparison_report.md` (Side-by-side per-case results, latency comparisons, token consumption breakdown, and failure/abstention analysis).
+    - Project Documentation: `README.md` and `docs/PROGRESS.md`.
+  - **Evaluation & Comparative Results (10 Synthetic Cases)**:
+    - Deterministic Overall Pass Rate: 10 / 10 (100.0%)
+    - Live Gemini Overall Pass Rate: 10 / 10 (100.0%)
+    - Provider Concordance Rate: 10 / 10 (100.0% exact match across all outcomes and proposals)
+    - Correction-Case Pass Rate: 2 / 2 (100.0%) on both providers (cm→mm and mm→cm)
+    - Abstention-Case Pass Rate: 8 / 8 (100.0%) on both providers
+    - Citation Validity: 5 / 5 (100.0%) verified verbatim against isolated source PDF text
+    - Model Requests Attempted: 5 / 10 (exactly 5 cases had extractable evidence passages)
+    - Model Requests Succeeded: 5 / 5 (100.0% model extraction success)
+    - Cases With No Model Call: 5 / 10 (50.0% of cases safely abstained during retrieval/validation before model invocation)
+    - Resource & Performance Profile:
+      * Deterministic Median Latency: 0.63 ms
+      * Gemini Median Latency: 381.38 ms (762–954 ms on cases invoking the API; ~0.3 ms on cases abstaining early)
+      * Token Usage: 1,241 total tokens (967 prompt, 274 candidates) across all 5 model requests
+      * Estimated Cost: null (unestimated; pricing rates external to API metadata)
+    - Comparative Finding: Live `gemini-3.5-flash-lite` **matched** the deterministic baseline across all 10 synthetic test cases without improving or degrading decision quality. Downstream Decimal arithmetic and early retrieval boundary checks operated identically for both providers.
+    - Limitations: Conclusions are strictly limited to the synthetic benchmark suite and do not claim to demonstrate production accuracy across complex real-world technical documents.
+
 

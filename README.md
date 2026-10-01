@@ -176,19 +176,44 @@ To run Step 8 extractor tests directly:
 python3 scripts/verify_step8_extractor.py
 ```
 
-## Evaluation
+## Evaluation & Benchmark Suite
 
-To run the synthetic evaluation suite across 10 benchmark cases (testing corrections in both directions, agreements, unknown components, incorrect revisions, missing measurements, conflicting evidence, unsupported units, and malformed inputs):
+The repository contains an isolated 10-case synthetic benchmark suite testing length unit mismatches (`cm` ↔ `mm`), agreements, unknown components, incorrect revisions, missing measurements, conflicting evidence, unsupported units, and malformed inputs.
 
+### Running the Evaluator
 ```bash
-python3 scripts/evaluate.py
+# Run deterministic baseline evaluation (default)
+python3 scripts/evaluate.py --extractor deterministic
+
+# Run live Gemini evaluation
+python3 scripts/evaluate.py --extractor gemini
+
+# Run comparative evaluation between both providers
+python3 scripts/evaluate.py --extractor both
 ```
 
-Generated reports:
-- [evaluation/reports/evaluation_report.md](evaluation/reports/evaluation_report.md): Human-readable Markdown summary with per-case results, latency metrics, and citation checks.
-- [evaluation/reports/evaluation_report.json](evaluation/reports/evaluation_report.json): Machine-readable JSON evaluation report.
+### Step 10 Comparative Results (10 Synthetic Cases)
 
-> **Notice**: This benchmark tests deterministic pipeline behavior across a small synthetic dataset. It does not claim to demonstrate production accuracy.
+| Metric | Deterministic Baseline | Live Gemini (`gemini-3.5-flash-lite`) |
+|---|---|---|
+| **Overall Pass Rate** | 10 / 10 (100.0%) | 10 / 10 (100.0%) |
+| **Correction Cases** | 2 / 2 (100.0%) | 2 / 2 (100.0%) |
+| **Abstention Cases** | 8 / 8 (100.0%) | 8 / 8 (100.0%) |
+| **Citation Validity** | 5 / 5 (100.0%) | 5 / 5 (100.0%) |
+| **Model Requests** | 0 | 5 attempted / 5 succeeded |
+| **Early Abstention (No Call)** | 10 / 10 (100.0%) | 5 / 10 (50.0%) |
+| **Median Latency** | 0.63 ms | 381.38 ms |
+| **Token Usage** | 0 tokens | 1,241 total tokens |
+| **Estimated Cost** | $0.00 | null (unestimated) |
+| **Concordance** | — | **10 / 10 (100.0% match)** |
+
+> **Limitations & Scope Notice**: Live `gemini-3.5-flash-lite` **matched** the deterministic baseline across all 10 synthetic test cases without improving or degrading decision quality. In 5 cases, retrieval or input checks safely abstained prior to model invocation. **All findings are strictly limited to these synthetic fixtures and do not claim to demonstrate generalization or accuracy on complex real-world engineering drawings or tables.**
+
+### Evaluation Reports
+- [evaluation/reports/comparison_report.md](evaluation/reports/comparison_report.md): Markdown comparison report with side-by-side per-case results.
+- [evaluation/reports/comparison_report.json](evaluation/reports/comparison_report.json): Machine-readable comparative benchmark JSON.
+- [evaluation/reports/live_investigation_report.md](evaluation/reports/live_investigation_report.md): Step 9 single live investigation report and attempt history.
+- [evaluation/reports/evaluation_report.md](evaluation/reports/evaluation_report.md): Deterministic baseline evaluation report.
 
 ## Documentation
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.
