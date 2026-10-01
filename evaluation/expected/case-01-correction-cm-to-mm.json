@@ -1,0 +1,18 @@
+{
+  "case_id": "case-01-correction-cm-to-mm",
+  "category": "correction",
+  "description": "Recorded thickness = 0.8 mm vs datasheet thickness = 0.8 cm -> propose 8.0 mm.",
+  "component_id": "COMP-001",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "correction_proposed",
+  "expected_correction": {
+    "value": 8.0,
+    "unit": "mm"
+  },
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-001.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component thickness: 0.8 cm."
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "case_id": "case-10-malformed-measurement",
+  "record_id": "REC-10",
+  "component_id": "COMP-010",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": "INVALID_NUM",
+  "recorded_unit": "mm",
+  "document_reference": {
+    "filename": "supplier-COMP-010.pdf"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "case_id": "case-10-malformed-measurement",
+  "category": "abstention",
+  "description": "Record value 'INVALID_NUM' is not numeric -> needs_review.",
+  "component_id": "COMP-010",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "needs_review",
+  "expected_correction": null,
+  "expected_evidence": null
+}

@@ -1,0 +1,18 @@
+{
+  "case_id": "case-02-correction-mm-to-cm",
+  "category": "correction",
+  "description": "Recorded width = 25.0 cm vs datasheet width = 25.0 mm -> propose 2.5 cm.",
+  "component_id": "COMP-002",
+  "revision": "A",
+  "attribute_name": "width",
+  "expected_outcome": "correction_proposed",
+  "expected_correction": {
+    "value": 2.5,
+    "unit": "cm"
+  },
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-002.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component width: 25.0 mm."
+  }
+}

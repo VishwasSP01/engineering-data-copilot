@@ -1,0 +1,11 @@
+{
+  "case_id": "case-05-unknown-component",
+  "category": "abstention",
+  "description": "Record references COMP-999 not present in document corpus -> insufficient_evidence.",
+  "component_id": "COMP-999",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "insufficient_evidence",
+  "expected_correction": null,
+  "expected_evidence": null
+}

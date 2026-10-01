@@ -389,7 +389,20 @@ def main():
         assert inv_malformed["proposed_correction"] is None
         print("✓ Malformed record measurement -> needs_review.")
 
-    print("\nALL STEP 3, STEP 4, STEP 5 & STEP 6 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
+    # 9. Step 7 Verification: Evaluation suite runner and report checks
+    from evaluate import run_evaluation
+    eval_report = run_evaluation(repo_root)
+    assert eval_report["summary"]["total_cases"] == 10
+    assert eval_report["summary"]["passed_cases"] == 10
+    assert eval_report["summary"]["overall_pass_rate_pct"] == 100.0
+    assert eval_report["summary"]["correction_pass_rate_pct"] == 100.0
+    assert eval_report["summary"]["abstention_pass_rate_pct"] == 100.0
+    assert eval_report["summary"]["citation_validity"]["valid"] == 5
+    assert (repo_root / "evaluation" / "reports" / "evaluation_report.json").exists()
+    assert (repo_root / "evaluation" / "reports" / "evaluation_report.md").exists()
+    print("✓ Step 7 evaluation suite verified: 10/10 cases passed, reports generated.")
+
+    print("\nALL STEP 3, STEP 4, STEP 5, STEP 6 & STEP 7 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
 
 
 if __name__ == "__main__":

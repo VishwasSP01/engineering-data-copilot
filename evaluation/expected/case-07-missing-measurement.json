@@ -1,0 +1,11 @@
+{
+  "case_id": "case-07-missing-measurement",
+  "category": "abstention",
+  "description": "Record investigates 'weight', which is missing from document -> insufficient_evidence.",
+  "component_id": "COMP-007",
+  "revision": "A",
+  "attribute_name": "weight",
+  "expected_outcome": "insufficient_evidence",
+  "expected_correction": null,
+  "expected_evidence": null
+}

@@ -1,0 +1,12 @@
+{
+  "case_id": "case-06-incorrect-revision",
+  "record_id": "REC-06",
+  "component_id": "COMP-006",
+  "revision": "B",
+  "attribute_name": "thickness",
+  "recorded_value": 0.8,
+  "recorded_unit": "mm",
+  "document_reference": {
+    "filename": "supplier-COMP-006.pdf"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "case_id": "case-04-agreement-cm",
+  "category": "abstention",
+  "description": "Recorded width = 2.5 cm vs datasheet width = 25.0 mm -> values agree, no_change.",
+  "component_id": "COMP-004",
+  "revision": "A",
+  "attribute_name": "width",
+  "expected_outcome": "no_change",
+  "expected_correction": null,
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-004.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component width: 25.0 mm."
+  }
+}

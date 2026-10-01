@@ -1,0 +1,11 @@
+{
+  "case_id": "case-06-incorrect-revision",
+  "category": "abstention",
+  "description": "Record asks for Rev B, but document is Rev A -> insufficient_evidence.",
+  "component_id": "COMP-006",
+  "revision": "B",
+  "attribute_name": "thickness",
+  "expected_outcome": "insufficient_evidence",
+  "expected_correction": null,
+  "expected_evidence": null
+}

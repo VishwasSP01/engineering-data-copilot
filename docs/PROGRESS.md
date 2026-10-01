@@ -47,4 +47,19 @@
     - Abstention Handling: Missing evidence returned `insufficient_evidence`; conflicting evidence returned `ambiguous_evidence`. Both contain no proposed correction.
     - Review Handling: Unsupported units (`in`) and non-numeric record values returned `needs_review` with no proposed correction.
     - Provenance & Integrity: Every valid decision preserved the exact citation; source records and supplier documents remained unmodified.
-- [ ] **Step 7: Evaluation Suite & Benchmark Runner** — Pending.
+- [x] **Step 7: Evaluation Suite & Benchmark Runner** — Completed.
+  - **Artifacts Created**:
+    - Case Generator: `scripts/generate_evaluation_suite.py` (Generates 10 isolated synthetic benchmark test cases with separate document and extraction directories, plus explicit expected answer JSON files under `evaluation/expected/`).
+    - Evaluation Runner: `scripts/evaluate.py` (Runs investigation across all 10 isolated cases, compares outcomes, proposals, citations, and verifies quoted passages directly against source PDF text; outputs JSON and Markdown reports).
+    - Case Fixtures: `evaluation/cases/case-01` through `case-10` (Each with isolated `record.json`, `documents/`, and `extracted/`).
+    - Ground Truth: `evaluation/expected/case-01` through `case-10` JSON files.
+    - Evaluation Reports: `evaluation/reports/evaluation_report.json` and `evaluation/reports/evaluation_report.md`.
+  - **Evaluation & Verification Results**:
+    - Total Cases: 10 / 10 passed (100.0% pass rate).
+    - Supported Corrections: 2 / 2 passed (both `cm` → `mm` and `mm` → `cm` proposed exact values).
+    - Agreements: 2 / 2 passed (`no_change` with no proposed correction).
+    - Negative Cases: 6 / 6 passed (unknown component, incorrect revision, missing measurement, conflicting evidence, unsupported unit, and malformed measurement).
+    - Citation Validity: 5 / 5 (100.0%) verified verbatim against isolated source PDF text.
+    - Investigation Latency: Median 0.39 ms, Mean 0.52 ms (measured separately from fixture generation).
+    - Model Usage: 0 calls (deterministic rule-based baseline), Model Cost: N/A.
+- [ ] **Step 8: Model-Assisted Extraction & LLM Evaluation** — Pending.

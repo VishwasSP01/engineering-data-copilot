@@ -1,0 +1,11 @@
+{
+  "case_id": "case-08-conflicting-evidence",
+  "category": "abstention",
+  "description": "Document contains conflicting measurements (0.8 cm vs 1.2 cm) -> ambiguous_evidence.",
+  "component_id": "COMP-008",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "ambiguous_evidence",
+  "expected_correction": null,
+  "expected_evidence": null
+}

@@ -126,6 +126,20 @@ To run the verification suite and confirm that all artifacts are valid, identifi
 python3 scripts/verify_sample.py
 ```
 
+## Evaluation
+
+To run the synthetic evaluation suite across 10 benchmark cases (testing corrections in both directions, agreements, unknown components, incorrect revisions, missing measurements, conflicting evidence, unsupported units, and malformed inputs):
+
+```bash
+python3 scripts/evaluate.py
+```
+
+Generated reports:
+- [evaluation/reports/evaluation_report.md](evaluation/reports/evaluation_report.md): Human-readable Markdown summary with per-case results, latency metrics, and citation checks.
+- [evaluation/reports/evaluation_report.json](evaluation/reports/evaluation_report.json): Machine-readable JSON evaluation report.
+
+> **Notice**: This benchmark tests deterministic pipeline behavior across a small synthetic dataset. It does not claim to demonstrate production accuracy.
+
 ## Documentation
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.
 - [docs/PROGRESS.md](docs/PROGRESS.md): Step-by-step progress tracking and verification log.

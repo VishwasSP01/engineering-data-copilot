@@ -1,0 +1,12 @@
+{
+  "case_id": "case-09-unsupported-unit",
+  "record_id": "REC-09",
+  "component_id": "COMP-009",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 0.8,
+  "recorded_unit": "mm",
+  "document_reference": {
+    "filename": "supplier-COMP-009.pdf"
+  }
+}

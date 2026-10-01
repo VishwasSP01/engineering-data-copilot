@@ -1,0 +1,12 @@
+{
+  "case_id": "case-03-agreement-mm",
+  "record_id": "REC-03",
+  "component_id": "COMP-003",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 8.0,
+  "recorded_unit": "mm",
+  "document_reference": {
+    "filename": "supplier-COMP-003.pdf"
+  }
+}

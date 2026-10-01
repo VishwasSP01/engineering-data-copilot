@@ -1,0 +1,12 @@
+{
+  "case_id": "case-02-correction-mm-to-cm",
+  "record_id": "REC-02",
+  "component_id": "COMP-002",
+  "revision": "A",
+  "attribute_name": "width",
+  "recorded_value": 25.0,
+  "recorded_unit": "cm",
+  "document_reference": {
+    "filename": "supplier-COMP-002.pdf"
+  }
+}

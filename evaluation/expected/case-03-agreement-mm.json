@@ -1,0 +1,15 @@
+{
+  "case_id": "case-03-agreement-mm",
+  "category": "abstention",
+  "description": "Recorded thickness = 8.0 mm vs datasheet thickness = 0.8 cm -> values agree, no_change.",
+  "component_id": "COMP-003",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "no_change",
+  "expected_correction": null,
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-003.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component thickness: 0.8 cm."
+  }
+}

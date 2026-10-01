@@ -1,0 +1,9 @@
+{
+  "source_file": "supplier-COMP-008.pdf",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "SYNTHETIC DEMONSTRATION DATA — FOR TESTING AND EVALUATION ONLY\nApex Microelectronics Corp. — Supplier Datasheet\nTechnical Product Specification & Interface Guidelines\nComponent ID: COMP-008\nRevision: A\nDocument ID: DOC-SUP-COMP-008\nEffective Date: 2026-10-01\nPart Description: Precision Engineering Component\nStatus: Authoritative Supplier Release\n1. Product Overview\nThis document serves as the authoritative supplier technical specification for revision A of component COMP-008. All\nphysical dimensions herein supersede preliminary notes.\n2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-008 under standard test conditions (25°C, 50% RH):\nComponent thickness: 0.8 cm.\nVariant Component thickness: 1.2 cm.\nParameter\nNominal Value\nTolerance\nNotes\nThickness (Standard)\n0.8 cm\n±0.02 cm\nStandard package\nThickness (Variant)\n1.2 cm\n±0.02 cm\nHeavy-duty package\n3. Synthetic Demonstration Notice\nThis datasheet is entirely synthetic demonstration data created for testing and verifying the Engineering Data\nInvestigation Copilot benchmark suite.\n Page 1 of 1 | Document ID: DOC-SUP-COMP-008 | Revision: A | Synthetic Test Dataset\n"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "case_id": "case-04-agreement-cm",
+  "record_id": "REC-04",
+  "component_id": "COMP-004",
+  "revision": "A",
+  "attribute_name": "width",
+  "recorded_value": 2.5,
+  "recorded_unit": "cm",
+  "document_reference": {
+    "filename": "supplier-COMP-004.pdf"
+  }
+}

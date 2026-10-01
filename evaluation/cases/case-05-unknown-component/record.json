@@ -1,0 +1,12 @@
+{
+  "case_id": "case-05-unknown-component",
+  "record_id": "REC-05",
+  "component_id": "COMP-999",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 0.8,
+  "recorded_unit": "mm",
+  "document_reference": {
+    "filename": "supplier-COMP-005.pdf"
+  }
+}

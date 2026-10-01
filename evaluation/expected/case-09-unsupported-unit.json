@@ -1,0 +1,15 @@
+{
+  "case_id": "case-09-unsupported-unit",
+  "category": "abstention",
+  "description": "Document specifies thickness in unsupported unit 'in' (0.8 in) -> needs_review.",
+  "component_id": "COMP-009",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "needs_review",
+  "expected_correction": null,
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-009.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component thickness: 0.8 in."
+  }
+}
