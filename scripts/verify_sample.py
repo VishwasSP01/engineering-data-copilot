@@ -400,9 +400,13 @@ def main():
     assert eval_report["summary"]["citation_validity"]["valid"] == 5
     assert (repo_root / "evaluation" / "reports" / "evaluation_report.json").exists()
     assert (repo_root / "evaluation" / "reports" / "evaluation_report.md").exists()
-    print("✓ Step 7 evaluation suite verified: 10/10 cases passed, reports generated.")
+    print("✓ Step 7 evaluation suite verified: 10/10 cases passed, reports generated.\n")
 
-    print("\nALL STEP 3, STEP 4, STEP 5, STEP 6 & STEP 7 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
+    # 10. Step 8 Verification: Gemini measurement extractor & guardrails
+    from verify_step8_extractor import run_all_step8_checks
+    run_all_step8_checks()
+
+    print("ALL STEP 3, STEP 4, STEP 5, STEP 6, STEP 7 & STEP 8 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
 
 
 if __name__ == "__main__":

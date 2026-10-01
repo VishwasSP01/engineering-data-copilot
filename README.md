@@ -114,16 +114,65 @@ Example output:
     "page_number": 1,
     "supporting_passage": "Component thickness: 0.8 cm."
   },
+  "extractor": {
+    "provider": "deterministic",
+    "model": null,
+    "mode": "deterministic",
+    "is_fallback": false,
+    "call_duration_ms": 0.12,
+    "token_usage": null,
+    "token_usage_reason": "Token usage not applicable for deterministic extractor."
+  },
   "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm."
 }
 ```
 
+## Measurement Extractors (Deterministic vs Gemini)
+
+The investigation workflow supports pluggable measurement extractors via the `--extractor` CLI flag:
+
+- `--extractor deterministic` (default): Fast, deterministic regex extraction.
+- `--extractor gemini`: Structured model extraction via the official `google-genai` SDK (`gemini-2.5-flash`).
+
+```bash
+# Run with Gemini extractor (requires GEMINI_API_KEY environment variable)
+python3 scripts/investigate_record.py data/records/unit-mismatch-001.json --extractor gemini
+```
+
+### Post-Extraction Verification Guardrails
+Regardless of extractor used, all extractions must pass strict deterministic verification before being fed into conversion logic:
+1. **Pydantic Schema Validation**: The response must conform to `MeasurementExtractionResponse` (`status`, `measurement_name`, `value` as decimal string, `unit`, `quote`).
+2. **Quote Grounding**: The supporting `quote` must exist verbatim in the retrieved evidence passage. Ungrounded or hallucinated quotes trigger `needs_review`.
+3. **Attribute Alignment**: The extracted measurement attribute must match the requested engineering record attribute.
+4. **Value & Unit Grounding**: The extracted numeric value and unit must be present within the cited supporting quote.
+5. **Supported Units**: Only length units `mm` and `cm` are supported.
+6. **Deterministic Math**: Conversion arithmetic is strictly performed using Python `Decimal` arithmetic. The model is never asked to calculate conversions or propose corrections.
+
+### Live Gemini Prerequisites & Status
+To use the Gemini extractor in live environments:
+1. Set the API key environment variable:
+   ```bash
+   export GEMINI_API_KEY="your-api-key"
+   ```
+2. (Optional) Set the target Gemini model:
+   ```bash
+   export GEMINI_MODEL="gemini-2.5-flash"
+   ```
+
+> **Notice on Live Gemini Verification**: Automated tests and verification suites operate entirely offline using injected mock clients with simulated responses. **Live Gemini behavior against the production API has not yet been verified.** Do not rely on live model calls without verifying connectivity, latency, and quotas in your deployment environment.
+
 ## Verification
 
-To run the verification suite and confirm that all artifacts are valid, identifiers and revisions match, PDF content and selectable text are present, and deterministic arithmetic is correct:
+To run the complete verification suite across all steps (sample validity, text extraction, deterministic retrieval, correction logic, benchmark evaluation, and Step 8 mock extractor guardrails):
 
 ```bash
 python3 scripts/verify_sample.py
+```
+
+To run Step 8 extractor tests directly:
+
+```bash
+python3 scripts/verify_step8_extractor.py
 ```
 
 ## Evaluation

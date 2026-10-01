@@ -62,4 +62,26 @@
     - Citation Validity: 5 / 5 (100.0%) verified verbatim against isolated source PDF text.
     - Investigation Latency: Median 0.39 ms, Mean 0.52 ms (measured separately from fixture generation).
     - Model Usage: 0 calls (deterministic rule-based baseline), Model Cost: N/A.
-- [ ] **Step 8: Model-Assisted Extraction & LLM Evaluation** — Pending.
+- [x] **Step 8: Model-Assisted Extraction & LLM Evaluation** — Completed.
+  - **Artifacts Created & Updated**:
+    - Extractor Framework: `scripts/extractors.py` (Structured Pydantic schema `MeasurementExtractionResponse`, `BaseMeasurementExtractor` interface, `DeterministicMeasurementExtractor` baseline, `GeminiMeasurementExtractor` adapter via official `google-genai` SDK, and prompt builder).
+    - Investigation Workflow: `scripts/investigate_record.py` (Added `--extractor` CLI flag, integrated 5-point post-extraction verification guardrail, and attached `extractor` execution metadata with provider, model, latency, and token usage to all return paths).
+    - Step 8 Verification Suite: `scripts/verify_step8_extractor.py` (Automated suite validating Pydantic schemas, prompt boundaries, deterministic baseline, and 7 mock Gemini scenarios with zero live network calls).
+    - Unified Verification Suite: `scripts/verify_sample.py` (Integrated Step 8 test execution into end-to-end verification).
+    - Dependency Manifest: `requirements.txt` (Added `pydantic>=2.0.0` and `google-genai>=1.0.0`).
+    - Project Documentation: `README.md` (Documented `--extractor` switch, prerequisites, post-extraction guardrails, and live usage notice).
+  - **Verification Results**:
+    - Pydantic Schema Validation: Valid payloads parsed correctly; missing fields or invalid decimals in `found` status raised validation errors; `insufficient` and `ambiguous` statuses parsed without measurement fields.
+    - Prompt Boundary Enforcement: Verified prompt supplies only requested measurement and cited passage without leaking target values or expected answers.
+    - Deterministic Baseline: Maintained as default; verified structured extraction and execution metadata.
+    - Mock Gemini Adapter Scenarios (Zero external network calls):
+      * Valid extraction: Verified conversion of `0.8 cm` -> `8.0 mm` with execution metadata (`google-genai`, `gemini-2.5-flash`, `total_tokens: 70`).
+      * Invented quote: Caught by grounding guardrail (`quote not in passage`) -> returned `needs_review` with no proposed correction.
+      * Unsupported unit: Caught by unit guardrail (`in`) -> returned `needs_review` with no proposed correction.
+      * Malformed output: Non-JSON and schema violations caught -> returned `needs_review` with no proposed correction.
+      * Model abstentions: `insufficient` -> `insufficient_evidence`, `ambiguous` -> `ambiguous_evidence`.
+      * Timeout and API failure: Caught cleanly without crashing -> returned `needs_review`.
+      * Missing credentials: Handled gracefully -> returned `needs_review` with clear configuration guidance.
+    - Regression Safety: All Step 3–7 checks continue to pass with 100% success rate.
+    - Live Environment Status: Automated tests operated offline via injected mock clients; live Gemini API behavior is documented as not yet verified with production credentials.
+

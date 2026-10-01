@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
+import warnings
+warnings.filterwarnings("ignore")
+
 """
 Investigate engineering records against supplier evidence to propose unit-mismatch corrections.
 
-Step 6 implementation:
-- Connects record input -> evidence retrieval -> unit conversion -> comparison -> correction proposal.
-- Reuses Step 5 retrieval logic as a direct Python function import (no shell invocation).
-- Extracts unambiguous measurement values and units (mm and cm) from retrieved evidence passage.
-- Converts units using deterministic Decimal arithmetic (1 cm = 10 mm).
+Step 8 implementation:
+- Connects record input -> evidence retrieval -> measurement extraction -> unit conversion -> comparison -> correction proposal.
+- Supports pluggable measurement extractors:
+  * DeterministicMeasurementExtractor (default baseline using regex)
+  * GeminiMeasurementExtractor (optional adapter using google-genai SDK)
+- Validates model extractions using strict post-extraction guardrails:
+  * Verbatim quote grounding against cited evidence passage
+  * Measurement attribute alignment
+  * Value and unit presence inside cited quote
+  * Unit support verification (only mm and cm)
+- Enforces deterministic Decimal arithmetic for all unit conversions; model is never asked for math.
+- Collects execution metadata: provider, model, latency, and token usage.
 - Returns structured JSON distinguishing:
   * correction_proposed: supported values differ
   * no_change: values already agree after conversion
-  * insufficient_evidence / ambiguous_evidence: retrieval cannot support a decision
-  * needs_review: unsupported units or unparseable measurements
+  * insufficient_evidence / ambiguous_evidence: retrieval or extraction cannot support a decision
+  * needs_review: unsupported units, unparseable measurements, or ungrounded model extractions
 - Abstention outcomes contain no proposed correction.
 - Preserves original record and supplier documents without modification.
 - Never reads evaluation/expected/ or project documentation from runtime code.
@@ -19,55 +29,41 @@ Step 6 implementation:
 
 import argparse
 import json
+import os
 import re
 import sys
+import time
+import warnings
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
-# Import Step 5 retrieval function directly
+# Suppress known environment deprecation warnings from google-auth and urllib3
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
+# Import Step 5 retrieval function and Step 8 extractors
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from retrieve_evidence import retrieve_evidence
-
-
-SUPPORTED_UNITS = {"mm", "cm"}
+from extractors import (
+    BaseMeasurementExtractor,
+    DeterministicMeasurementExtractor,
+    GeminiMeasurementExtractor,
+    get_extractor,
+    SUPPORTED_UNITS
+)
 
 
 def parse_numeric_measurement(text: str, attribute_name: str) -> Tuple[Optional[Decimal], Optional[str], Optional[str]]:
-    """Extract nominal numeric value and unit for the attribute from text.
+    """Legacy helper function preserving backwards-compatibility.
     
-    Returns:
-        (value_decimal, unit_str, error_message)
+    Delegates to DeterministicMeasurementExtractor.
     """
-    if not text:
-        return None, None, "Empty text provided."
-
-    # Pattern 1: attribute followed by number and unit
-    pattern_fwd = rf'\b{re.escape(attribute_name)}\b[^\n.!?]*?(?:[:=]|\bis\b)?\s*(\d+(?:\.\d+)?)\s*([a-zA-Zµ°Ω%]+)'
-    m = re.search(pattern_fwd, text, re.IGNORECASE)
-
-    # Pattern 2: number and unit followed by attribute
-    if not m:
-        pattern_rev = rf'(\d+(?:\.\d+)?)\s*([a-zA-Zµ°Ω%]+)\s+(?:[A-Za-z0-9_-]+\s+)*{re.escape(attribute_name)}'
-        m = re.search(pattern_rev, text, re.IGNORECASE)
-
-    # Pattern 3: direct measurement on a standalone line
-    if not m:
-        pattern_line = r'^\s*(?:[A-Za-z0-9_-]+\s+)*(\d+(?:\.\d+)?)\s*([a-zA-Zµ°Ω%]+)'
-        m = re.search(pattern_line, text, re.IGNORECASE)
-
-    if not m:
-        return None, None, f"Could not find a numeric measurement for '{attribute_name}' in evidence passage."
-
-    raw_val = m.group(1)
-    raw_unit = m.group(2).lower()
-
-    try:
-        val_dec = Decimal(raw_val)
-    except InvalidOperation:
-        return None, None, f"Could not parse numeric value '{raw_val}' as Decimal."
-
-    return val_dec, raw_unit, None
+    extractor = DeterministicMeasurementExtractor()
+    res = extractor.extract_measurement(text, attribute_name)
+    if res.status == "found":
+        return res.value, res.unit, None
+    return None, None, res.error_message or "Could not extract measurement."
 
 
 def convert_measurement(
@@ -107,8 +103,22 @@ def convert_measurement(
     raise ValueError(f"Unhandled unit conversion from '{from_unit}' to '{to_unit}'.")
 
 
-def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) -> Dict[str, Any]:
-    """Investigate an engineering record for measurement-unit mismatches against supplier evidence."""
+def investigate_record(
+    record_path: Path,
+    extracted_dir: Optional[Path] = None,
+    extractor: Union[str, BaseMeasurementExtractor] = "deterministic",
+    gemini_api_key: Optional[str] = None,
+    gemini_model: Optional[str] = None
+) -> Dict[str, Any]:
+    """Investigate an engineering record for measurement-unit mismatches against supplier evidence.
+    
+    Args:
+        record_path: Path to the engineering record JSON file.
+        extracted_dir: Path to directory of extracted document JSONs (default: data/extracted).
+        extractor: Extractor type ('deterministic' or 'gemini') or a BaseMeasurementExtractor instance.
+        gemini_api_key: Optional Gemini API key override (otherwise uses GEMINI_API_KEY env var).
+        gemini_model: Optional Gemini model name override (otherwise uses GEMINI_MODEL env var).
+    """
     repo_root = Path(__file__).resolve().parent.parent
     if extracted_dir is None:
         extracted_dir = repo_root / "data" / "extracted"
@@ -143,6 +153,47 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
         "source_record_modified": False
     }
 
+    # Resolve extractor instance
+    if isinstance(extractor, str):
+        if extractor.lower() in ("gemini", "google-genai"):
+            extractor_inst = get_extractor(
+                "gemini",
+                api_key=gemini_api_key,
+                model=gemini_model
+            )
+        else:
+            extractor_inst = get_extractor("deterministic")
+    else:
+        extractor_inst = extractor
+
+    is_gemini = isinstance(extractor_inst, GeminiMeasurementExtractor)
+    default_provider = "google-genai" if is_gemini else "deterministic"
+    default_model = getattr(extractor_inst, "model", None) if is_gemini else None
+
+    def make_extractor_meta(
+        res=None,
+        not_invoked_reason: Optional[str] = None
+    ) -> Dict[str, Any]:
+        if res is not None:
+            return {
+                "provider": res.provider,
+                "model": res.model,
+                "mode": "deterministic" if res.provider == "deterministic" else "model",
+                "is_fallback": res.is_fallback,
+                "call_duration_ms": res.call_duration_ms,
+                "token_usage": res.token_usage,
+                "token_usage_reason": res.token_usage_reason
+            }
+        return {
+            "provider": default_provider,
+            "model": default_model,
+            "mode": "model" if is_gemini else "deterministic",
+            "is_fallback": False,
+            "call_duration_ms": 0.0,
+            "token_usage": None,
+            "token_usage_reason": not_invoked_reason or "Extractor was not invoked."
+        }
+
     # Validate record's recorded value
     if raw_rec_val is None:
         return {
@@ -152,6 +203,7 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
+            "extractor": make_extractor_meta(not_invoked_reason="Record value is missing; extractor not invoked."),
             "explanation": "Engineering record is missing 'recorded_value'."
         }
 
@@ -165,6 +217,7 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
+            "extractor": make_extractor_meta(not_invoked_reason="Record value is not numeric; extractor not invoked."),
             "explanation": f"Engineering record contains invalid numeric value: {raw_rec_val}."
         }
 
@@ -178,6 +231,7 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
+            "extractor": make_extractor_meta(not_invoked_reason="Record unit is unsupported; extractor not invoked."),
             "explanation": f"Record unit '{raw_rec_unit}' is unsupported. Only {sorted(SUPPORTED_UNITS)} are supported."
         }
 
@@ -194,6 +248,7 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
+            "extractor": make_extractor_meta(not_invoked_reason=f"Retrieval yielded {retrieval_status}; extractor not invoked."),
             "explanation": retrieval_res.get("reason", f"Retrieval yielded {retrieval_status}.")
         }
 
@@ -208,12 +263,16 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
+            "extractor": make_extractor_meta(not_invoked_reason="No evidence passage returned by retrieval."),
             "explanation": "No evidence passage was returned by retrieval."
         }
 
-    # Extract measurement from cited passage
-    ev_val_dec, ev_unit_clean, err = parse_numeric_measurement(passage, attribute_name)
-    if err or ev_val_dec is None or ev_unit_clean is None:
+    # Extract measurement using selected extractor
+    extractor_res = extractor_inst.extract_measurement(passage, attribute_name)
+    extractor_meta = make_extractor_meta(extractor_res)
+
+    # Handle extractor failures and errors
+    if extractor_res.status == "error":
         return {
             **base_response,
             "status": "needs_review",
@@ -221,15 +280,113 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": evidence_dict,
-            "explanation": f"Unable to parse measurement from cited passage: {err}"
+            "extractor": extractor_meta,
+            "explanation": f"Extraction error: {extractor_res.error_message}"
         }
 
+    # Handle extractor abstentions
+    if extractor_res.status == "insufficient":
+        return {
+            **base_response,
+            "status": "insufficient_evidence",
+            "outcome": "insufficient_evidence",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": evidence_dict,
+            "extractor": extractor_meta,
+            "explanation": extractor_res.error_message or f"Extractor found insufficient evidence for '{attribute_name}' in cited passage."
+        }
+
+    if extractor_res.status == "ambiguous":
+        return {
+            **base_response,
+            "status": "ambiguous_evidence",
+            "outcome": "ambiguous_evidence",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": evidence_dict,
+            "extractor": extractor_meta,
+            "explanation": extractor_res.error_message or f"Extractor identified conflicting or ambiguous measurements for '{attribute_name}' in cited passage."
+        }
+
+    # Extractor returned status="found" -> Apply strict post-extraction verification guardrails
+    quote = extractor_res.quote or ""
+
+    # Guardrail 1: Quote grounding check (quote must exist verbatim in evidence passage)
+    if not quote or quote not in passage:
+        return {
+            **base_response,
+            "status": "needs_review",
+            "outcome": "needs_review",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": evidence_dict,
+            "extractor": extractor_meta,
+            "explanation": f"Ungrounded extraction: supporting quote '{quote}' was not found verbatim in cited evidence passage."
+        }
+
+    # Guardrail 2: Attribute name alignment check
+    extracted_attr = extractor_res.measurement_name
+    if extracted_attr and extracted_attr.strip().lower() != attribute_name.strip().lower():
+        return {
+            **base_response,
+            "status": "needs_review",
+            "outcome": "needs_review",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": evidence_dict,
+            "extractor": extractor_meta,
+            "explanation": f"Mismatched measurement: expected attribute '{attribute_name}', but extractor returned '{extracted_attr}'."
+        }
+
+    # Guardrail 3: Numeric value validation
+    ev_val_dec = extractor_res.value
+    if ev_val_dec is None:
+        return {
+            **base_response,
+            "status": "needs_review",
+            "outcome": "needs_review",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": evidence_dict,
+            "extractor": extractor_meta,
+            "explanation": "Extractor did not return a valid numeric value."
+        }
+
+    # Guardrail 4: Value and unit grounding within supporting quote
+    val_str = str(ev_val_dec)
+    unit_str = (extractor_res.unit or "").strip()
+    if val_str not in quote:
+        return {
+            **base_response,
+            "status": "needs_review",
+            "outcome": "needs_review",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": evidence_dict,
+            "extractor": extractor_meta,
+            "explanation": f"Ungrounded extraction: extracted value '{val_str}' does not appear in supporting quote '{quote}'."
+        }
+
+    if unit_str.lower() not in quote.lower():
+        return {
+            **base_response,
+            "status": "needs_review",
+            "outcome": "needs_review",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": evidence_dict,
+            "extractor": extractor_meta,
+            "explanation": f"Ungrounded extraction: extracted unit '{unit_str}' does not appear in supporting quote '{quote}'."
+        }
+
+    ev_unit_clean = unit_str.lower()
     evidence_measurement = {
         "value": float(ev_val_dec),
         "unit": ev_unit_clean
     }
 
-    # Validate evidence unit is supported
+    # Guardrail 5: Supported unit check
     if ev_unit_clean not in SUPPORTED_UNITS:
         return {
             **base_response,
@@ -238,10 +395,11 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": evidence_measurement,
             "proposed_correction": None,
             "evidence": evidence_dict,
+            "extractor": extractor_meta,
             "explanation": f"Evidence unit '{ev_unit_clean}' is unsupported. Only {sorted(SUPPORTED_UNITS)} are supported."
         }
 
-    # Convert evidence measurement into record's unit using Decimal arithmetic
+    # Convert evidence measurement into record's unit using deterministic Decimal arithmetic
     try:
         converted_val_dec, multiplier_dec, calc_str = convert_measurement(
             ev_val_dec,
@@ -256,6 +414,7 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": evidence_measurement,
             "proposed_correction": None,
             "evidence": evidence_dict,
+            "extractor": extractor_meta,
             "explanation": f"Conversion error: {exc}"
         }
 
@@ -268,6 +427,7 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
             "evidence_measurement": evidence_measurement,
             "proposed_correction": None,
             "evidence": evidence_dict,
+            "extractor": extractor_meta,
             "explanation": (
                 f"Evidence states {ev_val_dec} {ev_unit_clean} ({calc_str}), which agrees with "
                 f"the recorded value {raw_rec_val} {raw_rec_unit}. No change required."
@@ -276,7 +436,6 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
 
     # Values differ -> propose correction
     proposed_val_float = float(converted_val_dec)
-    # If the converted decimal is an integer, format cleanly
     if converted_val_dec == converted_val_dec.to_integral():
         proposed_val_float = float(converted_val_dec)
 
@@ -300,6 +459,7 @@ def investigate_record(record_path: Path, extracted_dir: Optional[Path] = None) 
         "evidence_measurement": evidence_measurement,
         "proposed_correction": proposed_correction,
         "evidence": evidence_dict,
+        "extractor": extractor_meta,
         "explanation": (
             f"Supplier document specifies {ev_val_dec} {ev_unit_clean}, which converts via deterministic arithmetic "
             f"to {converted_val_dec} {record_unit_clean} ({calc_str}). Recorded value is {raw_rec_val} {raw_rec_unit}. "
@@ -318,6 +478,18 @@ def main():
         help="Path to directory containing extracted documents (default: data/extracted)"
     )
     parser.add_argument(
+        "--extractor",
+        choices=["deterministic", "gemini"],
+        default="deterministic",
+        help="Measurement extractor to use: 'deterministic' (default) or 'gemini'"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Gemini model name (default: GEMINI_MODEL env var or gemini-2.5-flash)"
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=None,
@@ -326,7 +498,12 @@ def main():
     args = parser.parse_args()
 
     try:
-        result = investigate_record(args.record_path, extracted_dir=args.extracted_dir)
+        result = investigate_record(
+            args.record_path,
+            extracted_dir=args.extracted_dir,
+            extractor=args.extractor,
+            gemini_model=args.model
+        )
         output_str = json.dumps(result, indent=2, ensure_ascii=False)
         print(output_str)
 
