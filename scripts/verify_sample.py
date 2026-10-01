@@ -211,7 +211,185 @@ def main():
         assert res_conflict["status"] == "ambiguous_evidence", f"Expected ambiguous_evidence, got {res_conflict['status']}"
         print("✓ Conflicting evidence returned 'ambiguous_evidence'.")
 
-    print("\nALL STEP 3, STEP 4 & STEP 5 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
+    # 8. Step 6 Verification: Unit mismatch investigation and correction workflow
+    from investigate_record import investigate_record
+
+    # 8a. Sample case: record 0.8 mm, evidence 0.8 cm -> propose 8.0 mm
+    inv_sample = investigate_record(record_path)
+    assert inv_sample["outcome"] == "correction_proposed", f"Expected correction_proposed, got {inv_sample['outcome']}"
+    assert inv_sample["status"] == "correction_proposed"
+    assert inv_sample["proposed_correction"] is not None
+    assert inv_sample["proposed_correction"]["value"] == 8.0
+    assert inv_sample["proposed_correction"]["unit"] == "mm"
+    assert inv_sample["proposed_correction"]["conversion"]["multiplier"] == 10.0
+    assert inv_sample["evidence"]["document_filename"] == "supplier-COMP-001.pdf"
+    assert inv_sample["evidence"]["page_number"] == 1
+    assert inv_sample["evidence"]["supporting_passage"] == exact_passage
+    assert inv_sample["source_record_modified"] is False
+    print("✓ Step 6 sample verified: record 0.8 mm vs evidence 0.8 cm -> proposed 8.0 mm with citation.")
+
+    # 8b. Temporary fixtures for comprehensive Step 6 validation
+    with tempfile.TemporaryDirectory() as tmpdir_step6:
+        t6_path = Path(tmpdir_step6)
+
+        # Record 8.0 mm, evidence 0.8 cm -> no_change
+        rec_match = t6_path / "rec_match.json"
+        with open(rec_match, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-match",
+                "component_id": "COMP-001",
+                "revision": "A",
+                "attribute_name": "thickness",
+                "recorded_value": 8.0,
+                "recorded_unit": "mm",
+                "document_reference": {"filename": "supplier-COMP-001.pdf"}
+            }, f)
+        inv_match = investigate_record(rec_match)
+        assert inv_match["outcome"] == "no_change", f"Expected no_change, got {inv_match['outcome']}"
+        assert inv_match["proposed_correction"] is None, "Abstention outcome must have no proposed correction"
+        assert inv_match["evidence"]["document_filename"] == "supplier-COMP-001.pdf"
+        assert inv_match["evidence"]["supporting_passage"] == exact_passage
+        print("✓ Verified no_change: record 8.0 mm vs evidence 0.8 cm -> no_change (with valid citation).")
+
+        # Reverse conversion: mm to cm
+        # Create temp extracted doc specifying length = 20.0 mm
+        t6_ext = t6_path / "extracted"
+        t6_ext.mkdir()
+        t6_doc = {
+            "source_file": "supplier-REV.pdf",
+            "pages": [
+                {
+                    "page_number": 1,
+                    "text": (
+                        "Component ID: COMP-002\n"
+                        "Revision: A\n"
+                        "Component width: 20.0 mm.\n"
+                    )
+                }
+            ]
+        }
+        with open(t6_ext / "supplier-REV.json", "w", encoding="utf-8") as f:
+            json.dump(t6_doc, f)
+
+        # Reverse mismatch: record has 20.0 cm, evidence has 20.0 mm -> propose 2.0 cm
+        rec_rev_mismatch = t6_path / "rec_rev_mismatch.json"
+        with open(rec_rev_mismatch, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-rev-mismatch",
+                "component_id": "COMP-002",
+                "revision": "A",
+                "attribute_name": "width",
+                "recorded_value": 20.0,
+                "recorded_unit": "cm",
+                "document_reference": {"filename": "supplier-REV.pdf"}
+            }, f)
+        inv_rev_mismatch = investigate_record(rec_rev_mismatch, extracted_dir=t6_ext)
+        assert inv_rev_mismatch["outcome"] == "correction_proposed"
+        assert inv_rev_mismatch["proposed_correction"]["value"] == 2.0
+        assert inv_rev_mismatch["proposed_correction"]["unit"] == "cm"
+        print("✓ Verified reverse conversion (mm to cm): evidence 20.0 mm -> proposed 2.0 cm.")
+
+        # Reverse match: record has 2.0 cm, evidence has 20.0 mm -> no_change
+        rec_rev_match = t6_path / "rec_rev_match.json"
+        with open(rec_rev_match, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-rev-match",
+                "component_id": "COMP-002",
+                "revision": "A",
+                "attribute_name": "width",
+                "recorded_value": 2.0,
+                "recorded_unit": "cm",
+                "document_reference": {"filename": "supplier-REV.pdf"}
+            }, f)
+        inv_rev_match = investigate_record(rec_rev_match, extracted_dir=t6_ext)
+        assert inv_rev_match["outcome"] == "no_change"
+        assert inv_rev_match["proposed_correction"] is None
+        print("✓ Verified reverse agreement: record 2.0 cm vs evidence 20.0 mm -> no_change.")
+
+        # Missing evidence -> insufficient_evidence
+        rec_missing = t6_path / "rec_missing.json"
+        with open(rec_missing, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-missing",
+                "component_id": "COMP-UNKNOWN",
+                "revision": "A",
+                "attribute_name": "thickness",
+                "recorded_value": 0.8,
+                "recorded_unit": "mm"
+            }, f)
+        inv_missing = investigate_record(rec_missing)
+        assert inv_missing["outcome"] == "insufficient_evidence"
+        assert inv_missing["proposed_correction"] is None
+        print("✓ Missing evidence -> insufficient_evidence.")
+
+        # Conflicting evidence -> ambiguous_evidence
+        conflict_doc6 = {
+            "source_file": "supplier-CONFLICT.pdf",
+            "pages": [
+                {
+                    "page_number": 1,
+                    "text": (
+                        "Component ID: COMP-001\n"
+                        "Revision: A\n"
+                        "Component thickness: 0.8 cm.\n"
+                        "Variant Component thickness: 1.2 cm.\n"
+                    )
+                }
+            ]
+        }
+        with open(t6_ext / "supplier-CONFLICT.json", "w", encoding="utf-8") as f:
+            json.dump(conflict_doc6, f)
+
+        rec_conflict6 = t6_path / "conflict_record6.json"
+        with open(rec_conflict6, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-conflict6",
+                "component_id": "COMP-001",
+                "revision": "A",
+                "attribute_name": "thickness",
+                "recorded_value": 0.8,
+                "recorded_unit": "mm",
+                "document_reference": {"filename": "supplier-CONFLICT.pdf"}
+            }, f)
+
+        inv_conflict = investigate_record(rec_conflict6, extracted_dir=t6_ext)
+        assert inv_conflict["outcome"] == "ambiguous_evidence"
+        assert inv_conflict["proposed_correction"] is None
+        print("✓ Conflicting evidence -> ambiguous_evidence.")
+
+        # Unsupported units in record -> needs_review
+        rec_unsupported_unit = t6_path / "rec_unsupported.json"
+        with open(rec_unsupported_unit, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-unsupported",
+                "component_id": "COMP-001",
+                "revision": "A",
+                "attribute_name": "thickness",
+                "recorded_value": 0.8,
+                "recorded_unit": "in"
+            }, f)
+        inv_unsupported = investigate_record(rec_unsupported_unit)
+        assert inv_unsupported["outcome"] == "needs_review"
+        assert inv_unsupported["proposed_correction"] is None
+        print("✓ Unsupported unit in record ('in') -> needs_review.")
+
+        # Malformed / unparseable measurement value in record -> needs_review
+        rec_malformed = t6_path / "rec_malformed.json"
+        with open(rec_malformed, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-malformed",
+                "component_id": "COMP-001",
+                "revision": "A",
+                "attribute_name": "thickness",
+                "recorded_value": "N/A_NOT_A_NUMBER",
+                "recorded_unit": "mm"
+            }, f)
+        inv_malformed = investigate_record(rec_malformed)
+        assert inv_malformed["outcome"] == "needs_review"
+        assert inv_malformed["proposed_correction"] is None
+        print("✓ Malformed record measurement -> needs_review.")
+
+    print("\nALL STEP 3, STEP 4, STEP 5 & STEP 6 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
 
 
 if __name__ == "__main__":

@@ -69,6 +69,55 @@ Example output:
 }
 ```
 
+## Record Investigation & Correction Proposal
+
+To run an end-to-end investigation for an engineering record (record input → evidence retrieval → unit conversion → exact comparison → proposal):
+
+```bash
+python3 scripts/investigate_record.py data/records/unit-mismatch-001.json
+```
+
+Example output:
+
+```json
+{
+  "case_id": "unit-mismatch-001",
+  "record_id": "unit-mismatch-001",
+  "component_id": "COMP-001",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "current_record": {
+    "value": 0.8,
+    "unit": "mm"
+  },
+  "source_record_modified": false,
+  "status": "correction_proposed",
+  "outcome": "correction_proposed",
+  "evidence_measurement": {
+    "value": 0.8,
+    "unit": "cm"
+  },
+  "proposed_correction": {
+    "value": 8.0,
+    "unit": "mm",
+    "conversion": {
+      "supplier_extracted_value": 0.8,
+      "supplier_extracted_unit": "cm",
+      "target_unit": "mm",
+      "multiplier": 10.0,
+      "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+      "method": "deterministic_arithmetic"
+    }
+  },
+  "evidence": {
+    "document_filename": "supplier-COMP-001.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component thickness: 0.8 cm."
+  },
+  "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm."
+}
+```
+
 ## Verification
 
 To run the verification suite and confirm that all artifacts are valid, identifiers and revisions match, PDF content and selectable text are present, and deterministic arithmetic is correct:

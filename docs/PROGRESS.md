@@ -36,4 +36,15 @@
     - Missing measurement: Returned `status: "insufficient_evidence"`.
     - Conflicting evidence: Returned `status: "ambiguous_evidence"`.
     - Exact passage grounding: Verified that returned passage exists verbatim on cited extracted page.
-- [ ] **Step 6: Unit Mismatch Analysis & Deterministic Correction** — Pending.
+- [x] **Step 6: Unit Mismatch Analysis & Deterministic Correction** — Completed.
+  - **Artifacts Created**:
+    - Investigation Script: `scripts/investigate_record.py` (CLI and module connecting record input → evidence retrieval → measurement parsing → Decimal unit conversion → comparison → structured correction proposal).
+    - Verification Suite Update: `scripts/verify_sample.py` (Extended to verify sample proposal, agreement no_change, bidirectional conversion [cm to mm and mm to cm], abstentions, needs_review for unsupported units/malformed values, and citation preservation).
+  - **Verification Results**:
+    - Sample Mismatch: Record `0.8 mm` vs evidence `0.8 cm` yielded `correction_proposed` with proposed value `8.0 mm` and explicit conversion calculation `0.8 cm * 10 mm/cm = 8.0 mm`.
+    - Value Agreement: Record `8.0 mm` vs evidence `0.8 cm` yielded `no_change` with `proposed_correction: null`.
+    - Bidirectional Conversion: Verified reverse conversion (evidence `20.0 mm` with record `20.0 cm` → proposed `2.0 cm`; record `2.0 cm` → `no_change`).
+    - Abstention Handling: Missing evidence returned `insufficient_evidence`; conflicting evidence returned `ambiguous_evidence`. Both contain no proposed correction.
+    - Review Handling: Unsupported units (`in`) and non-numeric record values returned `needs_review` with no proposed correction.
+    - Provenance & Integrity: Every valid decision preserved the exact citation; source records and supplier documents remained unmodified.
+- [ ] **Step 7: Evaluation Suite & Benchmark Runner** — Pending.
