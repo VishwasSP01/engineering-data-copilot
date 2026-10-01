@@ -1,0 +1,28 @@
+# Environments and local secrets
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.*
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Regenerable extracted data output
+data/extracted/

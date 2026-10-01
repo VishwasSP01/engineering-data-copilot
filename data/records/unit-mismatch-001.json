@@ -1,0 +1,15 @@
+{
+  "case_id": "unit-mismatch-001",
+  "record_id": "unit-mismatch-001",
+  "component_id": "COMP-001",
+  "part_number": "COMP-001",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 0.8,
+  "recorded_unit": "mm",
+  "document_reference": {
+    "document_id": "DOC-SUP-COMP-001",
+    "filename": "supplier-COMP-001.pdf",
+    "filepath": "data/documents/supplier-COMP-001.pdf"
+  }
+}

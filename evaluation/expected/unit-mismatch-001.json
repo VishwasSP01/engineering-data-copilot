@@ -1,0 +1,30 @@
+{
+  "case_id": "unit-mismatch-001",
+  "record_id": "unit-mismatch-001",
+  "component_id": "COMP-001",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "status": "correction_proposed",
+  "current_record": {
+    "value": 0.8,
+    "unit": "mm"
+  },
+  "expected_correction": {
+    "value": 8.0,
+    "unit": "mm",
+    "conversion": {
+      "supplier_extracted_value": 0.8,
+      "supplier_extracted_unit": "cm",
+      "target_unit": "mm",
+      "multiplier": 10.0,
+      "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+      "method": "deterministic_arithmetic"
+    }
+  },
+  "evidence": {
+    "document_filename": "supplier-COMP-001.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component thickness: 0.8 cm."
+  },
+  "source_record_modified": false
+}
