@@ -39,6 +39,36 @@ python3 scripts/extract_documents.py
 This generates:
 - `data/extracted/<document_name>.json`: Page-by-page extracted text preserving `source_file` and 1-indexed `page_number`. Unreadable files or pages without extractable text are explicitly caught and reported.
 
+## Evidence Retrieval
+
+To retrieve evidence passages for an engineering record from extracted documents using deterministic baseline matching:
+
+```bash
+python3 scripts/retrieve_evidence.py data/records/unit-mismatch-001.json
+```
+
+Example output:
+
+```json
+{
+  "record_id": "unit-mismatch-001",
+  "component_id": "COMP-001",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "status": "evidence_found",
+  "retrieval_status": "evidence_found",
+  "document_filename": "supplier-COMP-001.pdf",
+  "page_number": 1,
+  "evidence_passage": "Component thickness: 0.8 cm.",
+  "evidence": {
+    "document_filename": "supplier-COMP-001.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component thickness: 0.8 cm."
+  },
+  "reason": "Found unambiguous measurement passage on page 1 of supplier-COMP-001.pdf."
+}
+```
+
 ## Verification
 
 To run the verification suite and confirm that all artifacts are valid, identifiers and revisions match, PDF content and selectable text are present, and deterministic arithmetic is correct:

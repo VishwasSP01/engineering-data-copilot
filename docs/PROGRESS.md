@@ -25,4 +25,15 @@
     - Citation Integrity: Verified `source_file` is `supplier-COMP-001.pdf` and `page_number` is 1.
     - Content Preservation: Verbatim text extraction confirmed matching raw PDF text without rewriting, summarization, or supplementation.
     - Identifier & Measurement Preservation: Component ID (`COMP-001`), measurement (`0.8 cm`), and the exact passage (`"Component thickness: 0.8 cm."`) successfully extracted intact.
-- [ ] **Step 5: Investigation Engine & CLI** — Pending.
+- [x] **Step 5: Deterministic Evidence Retrieval Baseline** — Completed.
+  - **Artifacts Created**:
+    - Retrieval Script: `scripts/retrieve_evidence.py` (CLI and module accepting a record JSON path, reading `data/extracted/` only, matching component ID and revision explicitly in document text, finding measurement passages, detecting conflicts, returning exact verbatim evidence).
+    - Verification Suite Update: `scripts/verify_sample.py` (Extended to verify sample retrieval, unknown component, incorrect revision, missing measurement, and conflicting evidence).
+  - **Verification Results**:
+    - Existing sample: Correctly retrieved `"Component thickness: 0.8 cm."` citing `supplier-COMP-001.pdf`, page 1.
+    - Unknown component: Returned `status: "insufficient_evidence"`.
+    - Incorrect revision: Returned `status: "insufficient_evidence"`.
+    - Missing measurement: Returned `status: "insufficient_evidence"`.
+    - Conflicting evidence: Returned `status: "ambiguous_evidence"`.
+    - Exact passage grounding: Verified that returned passage exists verbatim on cited extracted page.
+- [ ] **Step 6: Unit Mismatch Analysis & Deterministic Correction** — Pending.

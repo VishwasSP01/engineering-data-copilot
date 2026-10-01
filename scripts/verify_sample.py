@@ -120,7 +120,98 @@ def main():
     assert exact_passage in extracted_page_1["text"], f"Exact passage '{exact_passage}' missing from extracted text"
     print("✓ Component ID ('COMP-001'), measurement ('0.8 cm'), and exact passage survived extraction intact.")
 
-    print("\nALL STEP 3 & STEP 4 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
+    # 7. Step 5 Verification: Deterministic evidence retrieval
+    sys.path.insert(0, str(repo_root / "scripts"))
+    import tempfile
+    from retrieve_evidence import retrieve_evidence
+
+    # 7a. Existing sample retrieval
+    res_sample = retrieve_evidence(record_path)
+    assert res_sample["status"] == "evidence_found", f"Expected evidence_found, got {res_sample['status']}"
+    assert res_sample["document_filename"] == "supplier-COMP-001.pdf", f"Unexpected document: {res_sample['document_filename']}"
+    assert res_sample["page_number"] == 1, f"Unexpected page: {res_sample['page_number']}"
+    assert res_sample["evidence_passage"] == exact_passage, f"Expected '{exact_passage}', got '{res_sample['evidence_passage']}'"
+    assert res_sample["evidence"]["supporting_passage"] == exact_passage
+    assert res_sample["evidence_passage"] in extracted_page_1["text"], "Evidence passage does not exist in extracted page text"
+    print(f"✓ Step 5 baseline retrieved '{exact_passage}' from {res_sample['document_filename']} page {res_sample['page_number']}.")
+
+    # 7b. Negative and edge cases using isolated temporary fixtures
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+
+        # Unknown component -> insufficient_evidence
+        rec_unknown = tmp_path / "unknown_comp.json"
+        with open(rec_unknown, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-unknown",
+                "component_id": "COMP-999",
+                "revision": "A",
+                "attribute_name": "thickness"
+            }, f)
+        res_unknown = retrieve_evidence(rec_unknown)
+        assert res_unknown["status"] == "insufficient_evidence", f"Expected insufficient_evidence, got {res_unknown['status']}"
+        print("✓ Unknown component returned 'insufficient_evidence'.")
+
+        # Incorrect revision -> insufficient_evidence
+        rec_bad_rev = tmp_path / "bad_rev.json"
+        with open(rec_bad_rev, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-bad-rev",
+                "component_id": "COMP-001",
+                "revision": "B",
+                "attribute_name": "thickness"
+            }, f)
+        res_bad_rev = retrieve_evidence(rec_bad_rev)
+        assert res_bad_rev["status"] == "insufficient_evidence", f"Expected insufficient_evidence, got {res_bad_rev['status']}"
+        print("✓ Incorrect revision returned 'insufficient_evidence'.")
+
+        # Missing measurement -> insufficient_evidence
+        rec_missing_meas = tmp_path / "missing_meas.json"
+        with open(rec_missing_meas, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-missing-meas",
+                "component_id": "COMP-001",
+                "revision": "A",
+                "attribute_name": "weight"
+            }, f)
+        res_missing_meas = retrieve_evidence(rec_missing_meas)
+        assert res_missing_meas["status"] == "insufficient_evidence", f"Expected insufficient_evidence, got {res_missing_meas['status']}"
+        print("✓ Missing measurement returned 'insufficient_evidence'.")
+
+        # Conflicting evidence -> ambiguous_evidence
+        tmp_extracted = tmp_path / "extracted"
+        tmp_extracted.mkdir()
+        conflict_doc = {
+            "source_file": "supplier-CONFLICT.pdf",
+            "pages": [
+                {
+                    "page_number": 1,
+                    "text": (
+                        "Component ID: COMP-001\n"
+                        "Revision: A\n"
+                        "Component thickness: 0.8 cm.\n"
+                        "Variant Component thickness: 1.2 cm.\n"
+                    )
+                }
+            ]
+        }
+        with open(tmp_extracted / "supplier-CONFLICT.json", "w", encoding="utf-8") as f:
+            json.dump(conflict_doc, f)
+
+        rec_conflict = tmp_path / "conflict_record.json"
+        with open(rec_conflict, "w", encoding="utf-8") as f:
+            json.dump({
+                "record_id": "test-conflict",
+                "component_id": "COMP-001",
+                "revision": "A",
+                "attribute_name": "thickness",
+                "document_reference": {"filename": "supplier-CONFLICT.pdf"}
+            }, f)
+        res_conflict = retrieve_evidence(rec_conflict, extracted_dir=tmp_extracted)
+        assert res_conflict["status"] == "ambiguous_evidence", f"Expected ambiguous_evidence, got {res_conflict['status']}"
+        print("✓ Conflicting evidence returned 'ambiguous_evidence'.")
+
+    print("\nALL STEP 3, STEP 4 & STEP 5 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
 
 
 if __name__ == "__main__":
