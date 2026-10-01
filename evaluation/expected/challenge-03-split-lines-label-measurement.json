@@ -1,0 +1,20 @@
+{
+  "case_id": "challenge-03-split-lines-label-measurement",
+  "category": "challenge_split_lines",
+  "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+  "component_id": "COMP-C03",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "correction_proposed",
+  "expected_correction": {
+    "value": 0.24,
+    "unit": "cm"
+  },
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-C03.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component Thickness:\n2.4 mm"
+  },
+  "failure_stage": "retrieval",
+  "limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction."
+}

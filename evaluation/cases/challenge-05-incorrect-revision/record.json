@@ -1,0 +1,12 @@
+{
+  "case_id": "challenge-05-incorrect-revision",
+  "record_id": "REC-CHALLENGE-005",
+  "component_id": "COMP-C05",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 0.8,
+  "recorded_unit": "mm",
+  "document_reference": {
+    "filename": "supplier-COMP-C05-B.pdf"
+  }
+}

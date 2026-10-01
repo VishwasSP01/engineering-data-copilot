@@ -15,7 +15,9 @@
       "overall_pass_rate_pct": 100.0,
       "correction_pass_rate": "2/2 (100.0%)",
       "correction_pass_rate_pct": 100.0,
-      "abstention_pass_rate": "8/8 (100.0%)",
+      "agreement_pass_rate": "2/2 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "6/6 (100.0%)",
       "abstention_pass_rate_pct": 100.0,
       "citation_validity": {
         "valid": 5,
@@ -24,6 +26,12 @@
         "percentage": 100.0
       },
       "performance": {
+        "all_cases_median_duration_ms": 0.63,
+        "all_cases_mean_duration_ms": 0.74,
+        "model_called_cases_median_duration_ms": 0.84,
+        "model_called_cases_mean_duration_ms": 0.95,
+        "non_model_cases_median_duration_ms": 0.57,
+        "non_model_cases_mean_duration_ms": 0.53,
         "median_investigation_duration_ms": 0.63,
         "mean_investigation_duration_ms": 0.74
       },
@@ -46,7 +54,9 @@
       "overall_pass_rate_pct": 100.0,
       "correction_pass_rate": "2/2 (100.0%)",
       "correction_pass_rate_pct": 100.0,
-      "abstention_pass_rate": "8/8 (100.0%)",
+      "agreement_pass_rate": "2/2 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "6/6 (100.0%)",
       "abstention_pass_rate_pct": 100.0,
       "citation_validity": {
         "valid": 5,
@@ -55,6 +65,12 @@
         "percentage": 100.0
       },
       "performance": {
+        "all_cases_median_duration_ms": 381.38,
+        "all_cases_mean_duration_ms": 418.16,
+        "model_called_cases_median_duration_ms": 791.92,
+        "model_called_cases_mean_duration_ms": 836.0,
+        "non_model_cases_median_duration_ms": 0.32,
+        "non_model_cases_mean_duration_ms": 0.32,
         "median_investigation_duration_ms": 381.38,
         "mean_investigation_duration_ms": 418.16
       },
@@ -168,7 +184,7 @@
     },
     {
       "case_id": "case-03-agreement-mm",
-      "category": "abstention",
+      "category": "agreement",
       "expected_outcome": "no_change",
       "deterministic_outcome": "no_change",
       "gemini_outcome": "no_change",
@@ -190,7 +206,7 @@
     },
     {
       "case_id": "case-04-agreement-cm",
-      "category": "abstention",
+      "category": "agreement",
       "expected_outcome": "no_change",
       "deterministic_outcome": "no_change",
       "gemini_outcome": "no_change",

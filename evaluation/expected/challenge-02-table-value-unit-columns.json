@@ -1,0 +1,20 @@
+{
+  "case_id": "challenge-02-table-value-unit-columns",
+  "category": "challenge_table",
+  "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+  "component_id": "COMP-C02",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "correction_proposed",
+  "expected_correction": {
+    "value": 1.5,
+    "unit": "cm"
+  },
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-C02.pdf",
+    "page_number": 1,
+    "supporting_passage": "Thickness\n15.0\nmm"
+  },
+  "failure_stage": "retrieval",
+  "limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines."
+}

@@ -1,0 +1,9 @@
+{
+  "source_file": "supplier-COMP-C06.pdf",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "SYNTHETIC DEMONSTRATION DATA — FOR TESTING AND EVALUATION ONLY\nApex Microelectronics Corp. — Supplier Datasheet\nTechnical Product Specification & Interface Guidelines\nComponent ID: COMP-C06\nRevision: A\nDocument ID: DOC-SUP-COMP-C06\nEffective Date: 2026-10-01\nPart Description: Precision Engineering Component\nStatus: Authoritative Supplier Release\n1. Product Overview\nThis document serves as the authoritative supplier technical specification for revision A of component COMP-C06. All\nphysical dimensions herein supersede preliminary notes.\n2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C06 (25°C, 50% RH):\nComponent thickness: 0.8 cm.\nAlternative packaging thickness: 1.2 cm.\nParameter\nNominal Value\nTolerance\nNotes\nClock Frequency\n100 MHz\n±1 MHz\nInternal PLL\n3. Synthetic Demonstration Notice\nThis datasheet is entirely synthetic demonstration data created for testing and verifying the Engineering Data\nInvestigation Copilot benchmark suite.\n Page 1 of 1 | Document ID: DOC-SUP-COMP-C06 | Revision: A | Synthetic Test Dataset\n"
+    }
+  ]
+}

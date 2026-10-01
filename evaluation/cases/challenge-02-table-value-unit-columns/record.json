@@ -1,0 +1,12 @@
+{
+  "case_id": "challenge-02-table-value-unit-columns",
+  "record_id": "REC-CHALLENGE-002",
+  "component_id": "COMP-C02",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 15.0,
+  "recorded_unit": "cm",
+  "document_reference": {
+    "filename": "supplier-COMP-C02.pdf"
+  }
+}

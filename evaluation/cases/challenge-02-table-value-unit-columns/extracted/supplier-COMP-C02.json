@@ -1,0 +1,9 @@
+{
+  "source_file": "supplier-COMP-C02.pdf",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "SYNTHETIC DEMONSTRATION DATA — FOR TESTING AND EVALUATION ONLY\nApex Microelectronics Corp. — Supplier Datasheet\nTechnical Product Specification & Interface Guidelines\nComponent ID: COMP-C02\nRevision: A\nDocument ID: DOC-SUP-COMP-C02\nEffective Date: 2026-10-01\nPart Description: Precision Engineering Component\nStatus: Authoritative Supplier Release\n1. Product Overview\nThis document serves as the authoritative supplier technical specification for revision A of component COMP-C02. All\nphysical dimensions herein supersede preliminary notes.\n2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C02 (25°C, 50% RH):\nAuthoritative dimensional values are detailed in the parameter table below:\nParameter\nNominal Value\nUnit\nTolerance\nThickness\n15.0\nmm\n±0.1 mm\nWidth\n25.0\nmm\n±0.2 mm\nLength\n50.0\nmm\n±0.2 mm\n3. Synthetic Demonstration Notice\nThis datasheet is entirely synthetic demonstration data created for testing and verifying the Engineering Data\nInvestigation Copilot benchmark suite.\n Page 1 of 1 | Document ID: DOC-SUP-COMP-C02 | Revision: A | Synthetic Test Dataset\n"
+    }
+  ]
+}

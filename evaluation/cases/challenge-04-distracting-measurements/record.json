@@ -1,0 +1,12 @@
+{
+  "case_id": "challenge-04-distracting-measurements",
+  "record_id": "REC-CHALLENGE-004",
+  "component_id": "COMP-C04",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 0.6,
+  "recorded_unit": "cm",
+  "document_reference": {
+    "filename": "supplier-COMP-C04.pdf"
+  }
+}

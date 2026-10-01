@@ -406,7 +406,17 @@ def main():
     from verify_step8_extractor import run_all_step8_checks
     run_all_step8_checks()
 
-    print("ALL STEP 3, STEP 4, STEP 5, STEP 6, STEP 7 & STEP 8 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
+    # 11. Step 11 Verification: Challenge evaluation suite and baseline reports
+    challenge_report = run_evaluation(repo_root, extractor="deterministic", suite="challenge")
+    assert challenge_report["summary"]["total_cases"] == 6
+    assert challenge_report["summary"]["passed_cases"] == 2
+    assert challenge_report["summary"]["failed_cases"] == 4
+    assert challenge_report["summary"]["abstention_pass_rate"] == "2/2 (100.0%)"
+    assert (repo_root / "evaluation" / "reports" / "challenge_report.json").exists()
+    assert (repo_root / "evaluation" / "reports" / "challenge_report.md").exists()
+    print("✓ Step 11 challenge suite verified: 6 cases evaluated (2 passed, 4 failed baseline limitations), reports generated.\n")
+
+    print("ALL STEP 3, STEP 4, STEP 5, STEP 6, STEP 7, STEP 8 & STEP 11 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,20 @@
+{
+  "case_id": "challenge-01-complete-sentence",
+  "category": "challenge_sentence",
+  "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+  "component_id": "COMP-C01",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "correction_proposed",
+  "expected_correction": {
+    "value": 12.0,
+    "unit": "mm"
+  },
+  "expected_evidence": {
+    "document_filename": "supplier-COMP-C01.pdf",
+    "page_number": 1,
+    "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+  },
+  "failure_stage": "retrieval",
+  "limitation_note": "Line-based candidate passage regex expects an immediate delimiter (':', '=', or 'is') followed directly by the number; descriptive sentences containing interstitial phrases (e.g. 'is manufactured to 1.2 cm') fail candidate extraction."
+}

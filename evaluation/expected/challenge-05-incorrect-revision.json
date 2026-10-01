@@ -1,0 +1,13 @@
+{
+  "case_id": "challenge-05-incorrect-revision",
+  "category": "challenge_revision",
+  "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+  "component_id": "COMP-C05",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "insufficient_evidence",
+  "expected_correction": null,
+  "expected_evidence": null,
+  "failure_stage": null,
+  "limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence."
+}

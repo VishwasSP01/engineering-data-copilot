@@ -8,7 +8,9 @@
   "overall_pass_rate_pct": 100.0,
   "correction_pass_rate": "2/2 (100.0%)",
   "correction_pass_rate_pct": 100.0,
-  "abstention_pass_rate": "8/8 (100.0%)",
+  "agreement_pass_rate": "2/2 (100.0%)",
+  "agreement_pass_rate_pct": 100.0,
+  "abstention_pass_rate": "6/6 (100.0%)",
   "abstention_pass_rate_pct": 100.0,
   "citation_validity": {
     "valid": 5,
@@ -17,6 +19,8 @@
     "percentage": 100.0
   },
   "performance": {
+    "all_cases_median_duration_ms": 0.63,
+    "all_cases_mean_duration_ms": 0.74,
     "median_investigation_duration_ms": 0.63,
     "mean_investigation_duration_ms": 0.74
   },

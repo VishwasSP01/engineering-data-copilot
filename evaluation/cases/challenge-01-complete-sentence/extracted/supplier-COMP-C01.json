@@ -1,0 +1,9 @@
+{
+  "source_file": "supplier-COMP-C01.pdf",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "SYNTHETIC DEMONSTRATION DATA — FOR TESTING AND EVALUATION ONLY\nApex Microelectronics Corp. — Supplier Datasheet\nTechnical Product Specification & Interface Guidelines\nComponent ID: COMP-C01\nRevision: A\nDocument ID: DOC-SUP-COMP-C01\nEffective Date: 2026-10-01\nPart Description: Precision Engineering Component\nStatus: Authoritative Supplier Release\n1. Product Overview\nThis document serves as the authoritative supplier technical specification for revision A of component COMP-C01. All\nphysical dimensions herein supersede preliminary notes.\n2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\nUnder standard ambient conditions, the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots.\nParameter\nNominal Value\nTolerance\nNotes\nOperating Temp\n-40°C to +85°C\n±2°C\nStandard commercial range\nMounting Style\nSurface Mount\nN/A\nSolder reflow compliant\n3. Synthetic Demonstration Notice\nThis datasheet is entirely synthetic demonstration data created for testing and verifying the Engineering Data\nInvestigation Copilot benchmark suite.\n Page 1 of 1 | Document ID: DOC-SUP-COMP-C01 | Revision: A | Synthetic Test Dataset\n"
+    }
+  ]
+}

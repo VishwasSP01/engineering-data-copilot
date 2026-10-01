@@ -1,0 +1,12 @@
+{
+  "case_id": "challenge-03-split-lines-label-measurement",
+  "record_id": "REC-CHALLENGE-003",
+  "component_id": "COMP-C03",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "recorded_value": 2.4,
+  "recorded_unit": "cm",
+  "document_reference": {
+    "filename": "supplier-COMP-C03.pdf"
+  }
+}

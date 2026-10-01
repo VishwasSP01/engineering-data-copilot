@@ -1,0 +1,13 @@
+{
+  "case_id": "challenge-06-conflicting-statements",
+  "category": "challenge_conflict",
+  "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+  "component_id": "COMP-C06",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "expected_outcome": "ambiguous_evidence",
+  "expected_correction": null,
+  "expected_evidence": null,
+  "failure_stage": null,
+  "limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence."
+}

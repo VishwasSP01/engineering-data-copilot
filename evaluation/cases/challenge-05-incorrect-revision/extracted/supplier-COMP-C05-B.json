@@ -1,0 +1,9 @@
+{
+  "source_file": "supplier-COMP-C05-B.pdf",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "SYNTHETIC DEMONSTRATION DATA — FOR TESTING AND EVALUATION ONLY\nApex Microelectronics Corp. — Supplier Datasheet\nTechnical Product Specification & Interface Guidelines\nComponent ID: COMP-C05\nRevision: B\nDocument ID: DOC-SUP-COMP-C05-B\nEffective Date: 2026-10-01\nPart Description: Precision Engineering Component\nStatus: Authoritative Supplier Release\n1. Product Overview\nThis document serves as the authoritative supplier technical specification for revision B of component COMP-C05. All\nphysical dimensions herein supersede preliminary notes.\n2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C05 (25°C, 50% RH):\nComponent thickness: 0.8 cm.\nParameter\nNominal Value\nTolerance\nNotes\nSupply Voltage\n3.3 V\n±0.1 V\nStandard logic rail\n3. Synthetic Demonstration Notice\nThis datasheet is entirely synthetic demonstration data created for testing and verifying the Engineering Data\nInvestigation Copilot benchmark suite.\n Page 1 of 1 | Document ID: DOC-SUP-COMP-C05-B | Revision: B | Synthetic Test Dataset\n"
+    }
+  ]
+}

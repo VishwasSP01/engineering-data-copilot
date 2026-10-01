@@ -1,0 +1,9 @@
+{
+  "source_file": "supplier-COMP-C04.pdf",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "SYNTHETIC DEMONSTRATION DATA — FOR TESTING AND EVALUATION ONLY\nApex Microelectronics Corp. — Supplier Datasheet\nTechnical Product Specification & Interface Guidelines\nComponent ID: COMP-C04\nRevision: A\nDocument ID: DOC-SUP-COMP-C04\nEffective Date: 2026-10-01\nPart Description: Precision Engineering Component\nStatus: Authoritative Supplier Release\n1. Product Overview\nThis document serves as the authoritative supplier technical specification for revision A of component COMP-C04. All\nphysical dimensions herein supersede preliminary notes.\n2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C04 (25°C, 50% RH):\nPackage dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nMass\n1.8 g\n±0.05 g\nDry component mass\nThermal Resistance\n12.5 °C/W\n±1 °C/W\nJunction to ambient\n3. Synthetic Demonstration Notice\nThis datasheet is entirely synthetic demonstration data created for testing and verifying the Engineering Data\nInvestigation Copilot benchmark suite.\n Page 1 of 1 | Document ID: DOC-SUP-COMP-C04 | Revision: A | Synthetic Test Dataset\n"
+    }
+  ]
+}

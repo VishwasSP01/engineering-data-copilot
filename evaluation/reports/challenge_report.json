@@ -1,0 +1,291 @@
+{
+  "evaluation_scope": "Synthetic Evaluation Suite (Step 11: Challenge Suite)",
+  "evaluation_notice": "Notice: This benchmark tests pipeline behavior across a synthetic dataset. It does not demonstrate production accuracy.",
+  "suite": "challenge",
+  "timestamp": "2026-10-01T20:58:24.588645+00:00",
+  "extractor": "deterministic",
+  "model": null,
+  "summary": {
+    "total_cases": 6,
+    "passed_cases": 2,
+    "failed_cases": 4,
+    "api_error_cases": 0,
+    "unrun_cases": 0,
+    "overall_pass_rate": "2/6 (33.3%)",
+    "overall_pass_rate_pct": 33.3,
+    "correction_pass_rate": "0/3 (0.0%)",
+    "correction_pass_rate_pct": 0.0,
+    "agreement_pass_rate": "0/1 (0.0%)",
+    "agreement_pass_rate_pct": 0.0,
+    "abstention_pass_rate": "2/2 (100.0%)",
+    "abstention_pass_rate_pct": 100.0,
+    "citation_validity": {
+      "valid": 1,
+      "total_checked": 4,
+      "ratio": "1/4",
+      "percentage": 25.0
+    },
+    "performance": {
+      "all_cases_median_duration_ms": 0.38,
+      "all_cases_mean_duration_ms": 0.53,
+      "model_called_cases_median_duration_ms": null,
+      "model_called_cases_mean_duration_ms": null,
+      "non_model_cases_median_duration_ms": 0.39,
+      "non_model_cases_mean_duration_ms": 0.53,
+      "median_investigation_duration_ms": 0.38,
+      "mean_investigation_duration_ms": 0.53
+    },
+    "model_metrics": {
+      "model_requests_attempted": "0/6",
+      "model_requests_succeeded": "0/0",
+      "cases_without_model_call": "6/6",
+      "token_usage": null,
+      "estimated_cost_usd": null,
+      "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+    }
+  },
+  "cases": [
+    {
+      "case_id": "challenge-01-complete-sentence",
+      "category": "challenge_sentence",
+      "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+      "duration_ms": 1.05,
+      "passed": false,
+      "status": "failed",
+      "outcome": "needs_review",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "outcome_match": false,
+      "proposal_match": false,
+      "citation_checked": true,
+      "citation_valid": false,
+      "quote_in_pdf": true,
+      "failure_stage": "retrieval",
+      "limitation_note": "Line-based candidate passage regex expects an immediate delimiter (':', '=', or 'is') followed directly by the number; descriptive sentences containing interstitial phrases (e.g. 'is manufactured to 1.2 cm') fail candidate extraction.",
+      "explanation": "Evidence unit 'is' is unsupported. Only ['cm', 'mm'] are supported.",
+      "expected": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 12.0,
+          "unit": "mm"
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-C01.pdf",
+          "page_number": 1,
+          "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+        }
+      },
+      "actual": {
+        "outcome": "needs_review",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-C01.pdf",
+          "page_number": 1,
+          "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is"
+        }
+      }
+    },
+    {
+      "case_id": "challenge-02-table-value-unit-columns",
+      "category": "challenge_table",
+      "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+      "duration_ms": 0.63,
+      "passed": false,
+      "status": "failed",
+      "outcome": "insufficient_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "outcome_match": false,
+      "proposal_match": false,
+      "citation_checked": true,
+      "citation_valid": false,
+      "quote_in_pdf": false,
+      "failure_stage": "retrieval",
+      "limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines.",
+      "explanation": "No measurement passages found for attribute 'thickness' in matching document(s).",
+      "expected": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 1.5,
+          "unit": "cm"
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-C02.pdf",
+          "page_number": 1,
+          "supporting_passage": "Thickness\n15.0\nmm"
+        }
+      },
+      "actual": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    },
+    {
+      "case_id": "challenge-03-split-lines-label-measurement",
+      "category": "challenge_split_lines",
+      "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+      "duration_ms": 0.38,
+      "passed": false,
+      "status": "failed",
+      "outcome": "insufficient_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "outcome_match": false,
+      "proposal_match": false,
+      "citation_checked": true,
+      "citation_valid": false,
+      "quote_in_pdf": false,
+      "failure_stage": "retrieval",
+      "limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction.",
+      "explanation": "No measurement passages found for attribute 'thickness' in matching document(s).",
+      "expected": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 0.24,
+          "unit": "cm"
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-C03.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component Thickness:\n2.4 mm"
+        }
+      },
+      "actual": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    },
+    {
+      "case_id": "challenge-04-distracting-measurements",
+      "category": "challenge_distracting",
+      "description": "Thickness listed alongside length and width: thickness is 6.0 mm vs recorded 0.6 cm -> values agree, no_change.",
+      "duration_ms": 0.39,
+      "passed": false,
+      "status": "failed",
+      "outcome": "correction_proposed",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "outcome_match": false,
+      "proposal_match": false,
+      "citation_checked": true,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": "retrieval",
+      "limitation_note": "Candidate passage regex matches the nearest numeric token following 'thickness' (which matches the adjacent length '60.0 mm' after the closing parenthesis). As a result, the pipeline extracts the wrong dimension (60.0 mm instead of 6.0 mm) and proposes an incorrect correction (6.0 cm) instead of no_change.",
+      "explanation": "Supplier document specifies 60.0 mm, which converts via deterministic arithmetic to 6.00 cm (60.0 mm * 0.1 cm/mm = 6.00 cm). Recorded value is 0.6 cm. Proposing correction to 6.0 cm.",
+      "expected": {
+        "outcome": "no_change",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-C04.pdf",
+          "page_number": 1,
+          "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+        }
+      },
+      "actual": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 6.0,
+          "unit": "cm",
+          "conversion": {
+            "supplier_extracted_value": 60.0,
+            "supplier_extracted_unit": "mm",
+            "target_unit": "cm",
+            "multiplier": 0.1,
+            "calculation": "60.0 mm * 0.1 cm/mm = 6.00 cm",
+            "method": "deterministic_arithmetic"
+          }
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-C04.pdf",
+          "page_number": 1,
+          "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+        }
+      }
+    },
+    {
+      "case_id": "challenge-05-incorrect-revision",
+      "category": "challenge_revision",
+      "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+      "duration_ms": 0.37,
+      "passed": true,
+      "status": "passed",
+      "outcome": "insufficient_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": false,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence.",
+      "explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+      "expected": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      },
+      "actual": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    },
+    {
+      "case_id": "challenge-06-conflicting-statements",
+      "category": "challenge_conflict",
+      "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+      "duration_ms": 0.36,
+      "passed": true,
+      "status": "passed",
+      "outcome": "ambiguous_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": false,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence.",
+      "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+      "expected": {
+        "outcome": "ambiguous_evidence",
+        "correction": null,
+        "evidence": null
+      },
+      "actual": {
+        "outcome": "ambiguous_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    }
+  ]
+}

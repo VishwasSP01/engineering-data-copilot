@@ -192,28 +192,54 @@ python3 scripts/evaluate.py --extractor gemini
 python3 scripts/evaluate.py --extractor both
 ```
 
-### Step 10 Comparative Results (10 Synthetic Cases)
+### Step 10 Comparative Results (10 Baseline Synthetic Cases)
 
 | Metric | Deterministic Baseline | Live Gemini (`gemini-3.5-flash-lite`) |
 |---|---|---|
 | **Overall Pass Rate** | 10 / 10 (100.0%) | 10 / 10 (100.0%) |
 | **Correction Cases** | 2 / 2 (100.0%) | 2 / 2 (100.0%) |
-| **Abstention Cases** | 8 / 8 (100.0%) | 8 / 8 (100.0%) |
+| **Agreement Cases (`no_change`)** | 2 / 2 (100.0%) | 2 / 2 (100.0%) |
+| **Abstention Cases** | 6 / 6 (100.0%) | 6 / 6 (100.0%) |
 | **Citation Validity** | 5 / 5 (100.0%) | 5 / 5 (100.0%) |
 | **Model Requests** | 0 | 5 attempted / 5 succeeded |
 | **Early Abstention (No Call)** | 10 / 10 (100.0%) | 5 / 10 (50.0%) |
-| **Median Latency** | 0.63 ms | 381.38 ms |
+| **Median Latency (All 10 Cases)** | 0.63 ms | 381.38 ms |
+| **Median Latency (Model-Called, 5 Cases)** | 0.84 ms | 791.92 ms |
+| **Median Latency (Non-Model, 5 Cases)** | 0.57 ms | 0.32 ms |
 | **Token Usage** | 0 tokens | 1,241 total tokens |
 | **Estimated Cost** | $0.00 | null (unestimated) |
 | **Concordance** | — | **10 / 10 (100.0% match)** |
 
 > **Limitations & Scope Notice**: Live `gemini-3.5-flash-lite` **matched** the deterministic baseline across all 10 synthetic test cases without improving or degrading decision quality. In 5 cases, retrieval or input checks safely abstained prior to model invocation. **All findings are strictly limited to these synthetic fixtures and do not claim to demonstrate generalization or accuracy on complex real-world engineering drawings or tables.**
 
+### Step 11 Challenge Suite (6 Varied Layout & Phrasing Cases)
+
+Step 11 introduces a 6-case challenge suite designed to expose limitations of the deterministic baseline when datasheet phrasing and formatting vary:
+
+```bash
+# Run deterministic workflow against the 6 challenge cases
+python3 scripts/evaluate.py --suite challenge
+```
+
+| Challenge Case ID | Description / Layout Variation | Expected Outcome | Actual Outcome | Result | Failure Stage |
+|---|---|---|---|---|---|
+| `challenge-01-complete-sentence` | Thickness stated in complete sentence | `correction_proposed` | `needs_review` | **FAIL** | Retrieval (false date/unit token pairing) |
+| `challenge-02-table-value-unit-columns` | Separate parameter, value, and unit table columns | `correction_proposed` | `insufficient_evidence` | **FAIL** | Retrieval (multi-line table cell splitting) |
+| `challenge-03-split-lines-label-measurement` | Label and measurement wrapped across line break | `correction_proposed` | `insufficient_evidence` | **FAIL** | Retrieval (line-by-line scanning gap) |
+| `challenge-04-distracting-measurements` | Thickness alongside concatenated length and width | `no_change` | `correction_proposed` | **FAIL** | Retrieval (adjacent dimension misattribution) |
+| `challenge-05-incorrect-revision` | Correct component ID but incorrect Revision B | `insufficient_evidence` | `insufficient_evidence` | **PASS** | — (Revision guardrail confirmed) |
+| `challenge-06-conflicting-statements` | Two conflicting thickness values in document | `ambiguous_evidence` | `ambiguous_evidence` | **PASS** | — (Ambiguity guardrail confirmed) |
+
+- **Deterministic Challenge Pass Rate**: **2 / 6 (33.3%)**
+- **Root Cause**: All 4 failures occurred at the **retrieval** stage because the deterministic regex scanner assumes attribute labels and numeric measurements appear contiguously on a single line without interstitial prose or multi-cell table structures.
+
 ### Evaluation Reports
-- [evaluation/reports/comparison_report.md](evaluation/reports/comparison_report.md): Markdown comparison report with side-by-side per-case results.
-- [evaluation/reports/comparison_report.json](evaluation/reports/comparison_report.json): Machine-readable comparative benchmark JSON.
+- [evaluation/reports/challenge_report.md](evaluation/reports/challenge_report.md): Detailed Step 11 challenge suite report and limitation analysis.
+- [evaluation/reports/challenge_report.json](evaluation/reports/challenge_report.json): Machine-readable challenge evaluation JSON.
+- [evaluation/reports/comparison_report.md](evaluation/reports/comparison_report.md): Markdown comparison report with side-by-side per-case results (Step 10).
+- [evaluation/reports/comparison_report.json](evaluation/reports/comparison_report.json): Machine-readable comparative benchmark JSON (Step 10).
 - [evaluation/reports/live_investigation_report.md](evaluation/reports/live_investigation_report.md): Step 9 single live investigation report and attempt history.
-- [evaluation/reports/evaluation_report.md](evaluation/reports/evaluation_report.md): Deterministic baseline evaluation report.
+- [evaluation/reports/evaluation_report.md](evaluation/reports/evaluation_report.md): Deterministic baseline evaluation report (10 cases).
 
 ## Documentation
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.
