@@ -1,0 +1,190 @@
+{
+  "report_type": "live_gemini_investigation",
+  "step": 9,
+  "timestamp": "2026-10-01T22:35:49+02:00",
+  "sample_case_id": "unit-mismatch-001",
+  "component_id": "COMP-001",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "model_details": {
+    "provider": "google-genai",
+    "model": "gemini-3.5-flash-lite",
+    "automatic_retries": false,
+    "max_attempts": 1
+  },
+  "verification": {
+    "extracted_measurement": {
+      "value": 0.8,
+      "unit": "cm",
+      "verified": true
+    },
+    "supporting_quote": {
+      "quote": "Component thickness: 0.8 cm.",
+      "exact_match_on_page": true,
+      "source_filename": "supplier-COMP-001.pdf",
+      "page_number": 1
+    },
+    "deterministic_conversion": {
+      "converted_value": 8.0,
+      "target_unit": "mm",
+      "formula": "0.8 cm * 10 mm/cm = 8.0 mm",
+      "method": "deterministic_arithmetic",
+      "verified": true
+    },
+    "outcome": {
+      "status": "correction_proposed",
+      "verified": true
+    },
+    "record_immutability": {
+      "source_record_modified": false,
+      "verified": true
+    },
+    "baseline_agreement": {
+      "agrees_with_deterministic_baseline": true
+    }
+  },
+  "execution_metrics": {
+    "deterministic_call_duration_ms": 0.0,
+    "gemini_call_duration_ms": 965.75,
+    "token_usage": {
+      "prompt_tokens": 193,
+      "candidates_tokens": 54,
+      "total_tokens": 247
+    },
+    "estimated_cost_usd": null,
+    "cost_note": "Cost is left null because pricing rates are external to API usage metadata; costs are not estimated."
+  },
+  "deterministic_baseline_result": {
+    "case_id": "unit-mismatch-001",
+    "record_id": "unit-mismatch-001",
+    "component_id": "COMP-001",
+    "revision": "A",
+    "attribute_name": "thickness",
+    "current_record": {
+      "value": 0.8,
+      "unit": "mm"
+    },
+    "source_record_modified": false,
+    "status": "correction_proposed",
+    "outcome": "correction_proposed",
+    "evidence_measurement": {
+      "value": 0.8,
+      "unit": "cm"
+    },
+    "proposed_correction": {
+      "value": 8.0,
+      "unit": "mm",
+      "conversion": {
+        "supplier_extracted_value": 0.8,
+        "supplier_extracted_unit": "cm",
+        "target_unit": "mm",
+        "multiplier": 10.0,
+        "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+        "method": "deterministic_arithmetic"
+      }
+    },
+    "evidence": {
+      "document_filename": "supplier-COMP-001.pdf",
+      "page_number": 1,
+      "supporting_passage": "Component thickness: 0.8 cm."
+    },
+    "extractor": {
+      "provider": "deterministic",
+      "model": null,
+      "mode": "deterministic",
+      "is_fallback": false,
+      "call_duration_ms": 0.0,
+      "token_usage": null,
+      "token_usage_reason": "Token usage not applicable for deterministic extractor."
+    },
+    "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm."
+  },
+  "gemini_result": {
+    "case_id": "unit-mismatch-001",
+    "record_id": "unit-mismatch-001",
+    "component_id": "COMP-001",
+    "revision": "A",
+    "attribute_name": "thickness",
+    "current_record": {
+      "value": 0.8,
+      "unit": "mm"
+    },
+    "source_record_modified": false,
+    "status": "correction_proposed",
+    "outcome": "correction_proposed",
+    "evidence_measurement": {
+      "value": 0.8,
+      "unit": "cm"
+    },
+    "proposed_correction": {
+      "value": 8.0,
+      "unit": "mm",
+      "conversion": {
+        "supplier_extracted_value": 0.8,
+        "supplier_extracted_unit": "cm",
+        "target_unit": "mm",
+        "multiplier": 10.0,
+        "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+        "method": "deterministic_arithmetic"
+      }
+    },
+    "evidence": {
+      "document_filename": "supplier-COMP-001.pdf",
+      "page_number": 1,
+      "supporting_passage": "Component thickness: 0.8 cm."
+    },
+    "extractor": {
+      "provider": "google-genai",
+      "model": "gemini-3.5-flash-lite",
+      "mode": "model",
+      "is_fallback": false,
+      "call_duration_ms": 965.75,
+      "token_usage": {
+        "prompt_tokens": 193,
+        "candidates_tokens": 54,
+        "total_tokens": 247
+      },
+      "token_usage_reason": null
+    },
+    "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm."
+  },
+  "attempt_history": [
+    {
+      "attempt": 1,
+      "model": "gemini-2.5-flash",
+      "status": "failed",
+      "http_status": 404,
+      "error": "404 NOT_FOUND. Model models/gemini-2.5-flash is no longer available to new users.",
+      "duration_ms": 259.87
+    },
+    {
+      "attempt": 2,
+      "model": "gemini-3.8-flash",
+      "status": "failed",
+      "http_status": 503,
+      "error": "503 UNAVAILABLE. Model currently experiencing high demand.",
+      "duration_ms": 1290.51
+    },
+    {
+      "attempt": 3,
+      "model": "gemini-3.8-flash",
+      "status": "failed",
+      "http_status": 503,
+      "error": "503 UNAVAILABLE. Model currently experiencing high demand.",
+      "duration_ms": 1128.41
+    },
+    {
+      "attempt": 4,
+      "model": "gemini-3.5-flash-lite",
+      "status": "success",
+      "http_status": 200,
+      "duration_ms": 965.75,
+      "outcome": "correction_proposed",
+      "token_usage": {
+        "prompt_tokens": 193,
+        "candidates_tokens": 54,
+        "total_tokens": 247
+      }
+    }
+  ]
+}

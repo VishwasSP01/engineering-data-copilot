@@ -23,7 +23,8 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, Literal, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 # Suppress known environment deprecation warnings from google-auth and urllib3
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -231,6 +232,47 @@ def build_extraction_prompt(evidence_passage: str, attribute_name: str) -> str:
     )
 
 
+def load_dotenv(dotenv_path: Optional[Union[str, Path]] = None) -> None:
+    """Load key-value pairs from repository-root .env file into os.environ.
+    
+    Preserves existing shell environment variables (does not overwrite).
+    """
+    if dotenv_path is None:
+        dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+    else:
+        dotenv_path = Path(dotenv_path)
+
+    if not dotenv_path.is_file():
+        return
+
+    try:
+        with open(dotenv_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip()
+                if len(val) >= 2 and (
+                    (val.startswith('"') and val.endswith('"')) or
+                    (val.startswith("'") and val.endswith("'"))
+                ):
+                    val = val[1:-1]
+                # Preserve existing environment variables
+                if key and key not in os.environ:
+                    os.environ[key] = val
+    except Exception:
+        pass
+
+
+# Automatically load .env if present upon module import
+load_dotenv()
+
+
+PLACEHOLDER_KEYS = {"REPLACE_ME", "your-api-key-here", "YOUR_API_KEY"}
+
+
 class GeminiMeasurementExtractor(BaseMeasurementExtractor):
     """Gemini measurement extractor using official google-genai SDK."""
 
@@ -241,16 +283,18 @@ class GeminiMeasurementExtractor(BaseMeasurementExtractor):
         client: Optional[Any] = None,
         timeout: float = 10.0,
     ):
+        load_dotenv()
         self.model = model or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         self.timeout = timeout
         self.client = client
 
         if self.client is None and GENAI_AVAILABLE:
             resolved_key = api_key or os.environ.get("GEMINI_API_KEY")
-            if resolved_key:
+            if resolved_key and resolved_key.strip() not in PLACEHOLDER_KEYS:
                 timeout_ms = int(self.timeout * 1000)
-                http_options = types.HttpOptions(timeout=timeout_ms)
-                self.client = genai.Client(api_key=resolved_key, http_options=http_options)
+                retry_options = types.HttpRetryOptions(attempts=1)
+                http_options = types.HttpOptions(timeout=timeout_ms, retry_options=retry_options)
+                self.client = genai.Client(api_key=resolved_key.strip(), http_options=http_options)
 
     def extract_measurement(
         self,
@@ -273,14 +317,19 @@ class GeminiMeasurementExtractor(BaseMeasurementExtractor):
 
         if self.client is None:
             duration_ms = round((time.perf_counter() - t0) * 1000, 2)
+            resolved_key = os.environ.get("GEMINI_API_KEY", "")
+            if resolved_key.strip() in PLACEHOLDER_KEYS:
+                err_msg = "GEMINI_API_KEY is not configured (contains placeholder 'REPLACE_ME'). Please update .env or set GEMINI_API_KEY in your shell."
+            else:
+                err_msg = "GEMINI_API_KEY environment variable is not set and no client was provided."
             return ExtractorResult(
                 status="error",
-                error_message="GEMINI_API_KEY environment variable is not set and no client was provided.",
+                error_message=err_msg,
                 provider="google-genai",
                 model=self.model,
                 call_duration_ms=duration_ms,
                 token_usage=None,
-                token_usage_reason="Credentials missing; API was not invoked."
+                token_usage_reason="Credentials missing or placeholder; API was not invoked."
             )
 
         prompt = build_extraction_prompt(evidence_passage, attribute_name)

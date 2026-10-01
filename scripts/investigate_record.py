@@ -50,6 +50,7 @@ from extractors import (
     DeterministicMeasurementExtractor,
     GeminiMeasurementExtractor,
     get_extractor,
+    load_dotenv,
     SUPPORTED_UNITS
 )
 

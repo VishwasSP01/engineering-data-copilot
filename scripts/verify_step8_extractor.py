@@ -266,14 +266,20 @@ def test_mock_gemini_scenarios():
     print("  [✓] Scenario 6: Timeout and API failure -> caught cleanly without unhandled exceptions.")
 
     # Scenario 7: Missing credentials
-    # Ensure GEMINI_API_KEY is not in env for this subtest
+    # Ensure GEMINI_API_KEY is not in env or loaded from .env for this subtest
     orig_key = os.environ.pop("GEMINI_API_KEY", None)
+    env_file = repo_root / ".env"
+    env_backup = repo_root / ".env.bak_test"
+    if env_file.exists():
+        env_file.rename(env_backup)
     try:
         ext7 = GeminiMeasurementExtractor()  # no client, no key
         res7 = investigate_record(sample_record, extractor=ext7)
         assert res7["outcome"] == "needs_review"
         assert "gemini_api_key" in res7["explanation"].lower()
     finally:
+        if env_backup.exists():
+            env_backup.rename(env_file)
         if orig_key is not None:
             os.environ["GEMINI_API_KEY"] = orig_key
     print("  [✓] Scenario 7: Missing credentials -> returns needs_review with clear guidance.")

@@ -84,4 +84,20 @@
       * Missing credentials: Handled gracefully -> returned `needs_review` with clear configuration guidance.
     - Regression Safety: All Step 3–7 checks continue to pass with 100% success rate.
     - Live Environment Status: Automated tests operated offline via injected mock clients; live Gemini API behavior is documented as not yet verified with production credentials.
+- [x] **Step 9: Live Gemini Sample Investigation & Verification** — Completed.
+  - **Artifacts Created & Updated**:
+    - Environment Loading: `scripts/extractors.py` and `scripts/investigate_record.py` (Added minimal repository-root `.env` loading preserving shell environment variables; disabled automatic retries via `types.HttpRetryOptions(attempts=1)`).
+    - Evaluation Reports: `evaluation/reports/live_investigation_report.json` and `evaluation/reports/live_investigation_report.md` (Documenting comparison against deterministic baseline, execution metrics, token counts, and full attempt history).
+    - Project Documentation: `README.md` and `docs/PROGRESS.md`.
+  - **Live Verification Results**:
+    - Target: Synthetic sample `unit-mismatch-001` (Component `COMP-001`, Rev `A`, thickness `0.8 mm`).
+    - Active Model: `gemini-3.5-flash-lite` via official `google-genai` SDK.
+    - Model Extraction: Extracted nominal measurement `0.8 cm` for requested attribute `thickness`.
+    - Citation Grounding: Exact quote `"Component thickness: 0.8 cm."` verified verbatim in `supplier-COMP-001.pdf` page 1.
+    - Deterministic Arithmetic: Python Decimal logic converted `0.8 cm` to `8.0 mm` (`0.8 cm * 10 mm/cm = 8.0 mm`).
+    - Investigation Outcome: `correction_proposed` with proposed value `8.0 mm`.
+    - Data Integrity: Original engineering database record remained unmodified (`source_record_modified: false`).
+    - Baseline Alignment: 100% agreement with deterministic baseline provider across extracted value, cited passage, and proposed correction.
+    - Execution Metrics: Single generation request, 965.75 ms call latency, 247 total tokens (193 prompt, 54 candidate), cost left null.
+    - Scope Clarification: Documented as a single successful live sample investigation, not an accuracy or generalization benchmark.
 

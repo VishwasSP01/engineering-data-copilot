@@ -148,18 +148,19 @@ Regardless of extractor used, all extractions must pass strict deterministic ver
 5. **Supported Units**: Only length units `mm` and `cm` are supported.
 6. **Deterministic Math**: Conversion arithmetic is strictly performed using Python `Decimal` arithmetic. The model is never asked to calculate conversions or propose corrections.
 
-### Live Gemini Prerequisites & Status
+### Live Gemini Configuration & Status
 To use the Gemini extractor in live environments:
-1. Set the API key environment variable:
+1. Provide your API key via `.env` file in the repository root or via shell environment:
    ```bash
-   export GEMINI_API_KEY="your-api-key"
+   GEMINI_API_KEY="your-api-key"
+   GEMINI_MODEL="gemini-3.5-flash-lite"
    ```
-2. (Optional) Set the target Gemini model:
+2. Run investigation with `--extractor gemini`:
    ```bash
-   export GEMINI_MODEL="gemini-2.5-flash"
+   python3 scripts/investigate_record.py data/records/unit-mismatch-001.json --extractor gemini
    ```
 
-> **Notice on Live Gemini Verification**: Automated tests and verification suites operate entirely offline using injected mock clients with simulated responses. **Live Gemini behavior against the production API has not yet been verified.** Do not rely on live model calls without verifying connectivity, latency, and quotas in your deployment environment.
+> **Notice on Live Gemini Verification**: Live Gemini model extraction has been verified on a single reproducible synthetic sample (`unit-mismatch-001`) using `gemini-3.5-flash-lite` (see [evaluation/reports/live_investigation_report.md](evaluation/reports/live_investigation_report.md)). **This single-sample run demonstrates technical feasibility and pipeline integration; it does not constitute a statistical accuracy or performance benchmark across varied real-world engineering documents.** Automated evaluation suites and regression tests run entirely offline via injected mock clients to ensure deterministic, zero-cost verification.
 
 ## Verification
 
