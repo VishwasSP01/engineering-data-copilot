@@ -369,3 +369,38 @@
     * Updated Mermaid architecture diagram in `README.md` and `docs/DEMO.md` to explicitly show the document corpus as input to retrieval, accurately label record inputs and evidence passages, illustrate early safety abstention branching directly from retrieval, and connect expected answers solely to the evaluator.
   - **Generated Review Artifact**:
     * Produced comprehensive review document [`docs/CLI_MVP_REVIEW.md`](docs/CLI_MVP_REVIEW.md).
+- [x] **Step 19: Add Minimal FastAPI Investigation Service** — Completed.
+  - **Goal & Scope**: Expose the verified engineering investigation workflow through an HTTP service while preserving existing CLI behavior and offline evaluation guarantees.
+  - **Dependencies & Environment**:
+    * Added `fastapi>=0.115.0` and `uvicorn>=0.30.0` to `requirements.txt`.
+    * Generated reproducible pins in `requirements-lock.txt` (`fastapi==0.128.8`, `uvicorn==0.39.0`, `starlette==0.49.3`, `click==8.1.8`, `annotated-doc==0.0.5`).
+    * Verified compatibility with Python 3.13 in CI and Python 3.9.6 locally.
+  - **FastAPI Endpoints (`api/main.py` & `api/schemas.py`)**:
+    * `GET /health`: Returns service health status (`{"status": "healthy", "service": "engineering-data-copilot", "version": "1.0.0"}`) without requiring credentials or external services.
+    * `POST /investigations`: Accepts an engineering record matching the existing schema; accepts extractor selection (`deterministic` [default] or `gemini`) via query param or request body; returns structured result through explicit Pydantic response schema (`InvestigationResponse`).
+  - **Direct Workflow Reuse & Async Execution**:
+    * Refactored `retrieve_evidence` and `investigate_record` to accept in-memory dictionary records alongside file paths.
+    * Avoided CLI subprocesses and temporary request files.
+    * Executed investigation off the async event loop via `asyncio.to_thread` to maintain high concurrency.
+  - **Server-Configured Document Corpus & Sanitization**:
+    * API clients cannot supply filesystem paths, credentials, or expected answers.
+    * Document references strip internal filepaths; retrieval operates strictly against the server-configured `data/extracted/` directory.
+    * Error messages and responses sanitize internal paths, prompts, and environment values.
+  - **Structured HTTP Status Mapping**:
+    * HTTP 200: All business outcomes, including corrections proposed, agreements (`no_change`), and safe data abstentions (`insufficient_evidence`, `ambiguous_evidence`, `needs_review`).
+    * HTTP 422: Malformed request payloads (missing required fields, non-numeric values, or invalid extractors).
+    * HTTP 503: Provider configuration failure (`PROVIDER_NOT_CONFIGURED`, e.g. missing API key or dependencies).
+    * HTTP 502: Upstream AI provider request failure (`PROVIDER_REQUEST_FAILED`).
+    * Distinguished service failures using structured metadata (`ExtractorResult.error_type`) rather than fragile substring matching.
+  - **Offline API Integration Tests (`tests/test_api.py`)**:
+    * Health check returns 200 without external dependencies.
+    * End-to-end investigation with deterministic extractor reproduces the 0.8 mm -> 8.0 mm correction.
+    * API output matches CLI output for identical input (concordance verified).
+    * Malformed requests rejected with HTTP 422 (`error_code: VALIDATION_ERROR` or `INVALID_EXTRACTOR`).
+    * Business abstentions return HTTP 200 with appropriate outcome and no correction.
+    * Provider configuration failure returns HTTP 503 (`PROVIDER_NOT_CONFIGURED`).
+    * Upstream provider request failure returns HTTP 502 (`PROVIDER_REQUEST_FAILED`).
+    * Verified immutability of input records and stored documents via SHA-256 digests.
+    * Zero live Gemini API calls during tests.
+  - **Automated CI Integration**:
+    * Added `Run FastAPI offline integration tests` step to `.github/workflows/ci.yml`.

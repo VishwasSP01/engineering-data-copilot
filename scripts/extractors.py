@@ -104,6 +104,7 @@ class ExtractorResult:
     unit: Optional[str] = None
     quote: Optional[str] = None
     error_message: Optional[str] = None
+    error_type: Optional[str] = None  # "CONFIGURATION_ERROR", "PROVIDER_ERROR"
 
     # Model & Execution Metadata
     provider: str = "deterministic"
@@ -439,6 +440,7 @@ class GeminiMeasurementExtractor(BaseMeasurementExtractor):
             return ExtractorResult(
                 status="error",
                 error_message="google-genai SDK is not installed or available in this environment.",
+                error_type="CONFIGURATION_ERROR",
                 provider="google-genai",
                 model=self.model,
                 call_duration_ms=duration_ms,
@@ -456,6 +458,7 @@ class GeminiMeasurementExtractor(BaseMeasurementExtractor):
             return ExtractorResult(
                 status="error",
                 error_message=err_msg,
+                error_type="CONFIGURATION_ERROR",
                 provider="google-genai",
                 model=self.model,
                 call_duration_ms=duration_ms,
@@ -482,6 +485,7 @@ class GeminiMeasurementExtractor(BaseMeasurementExtractor):
             return ExtractorResult(
                 status="error",
                 error_message=f"Gemini API call failed: {exc}",
+                error_type="PROVIDER_ERROR",
                 provider="google-genai",
                 model=self.model,
                 call_duration_ms=duration_ms,
@@ -526,6 +530,7 @@ class GeminiMeasurementExtractor(BaseMeasurementExtractor):
                 return ExtractorResult(
                     status="error",
                     error_message=f"Malformed model output could not be validated against schema: {exc}",
+                    error_type="PROVIDER_ERROR",
                     provider="google-genai",
                     model=self.model,
                     call_duration_ms=duration_ms,
@@ -553,6 +558,7 @@ class GeminiMeasurementExtractor(BaseMeasurementExtractor):
             return ExtractorResult(
                 status="error",
                 error_message=f"Extracted value '{parsed_obj.value}' could not be converted to Decimal.",
+                error_type="PROVIDER_ERROR",
                 provider="google-genai",
                 model=self.model,
                 call_duration_ms=duration_ms,

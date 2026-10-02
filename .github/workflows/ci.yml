@@ -41,6 +41,10 @@ jobs:
         run: |
           python scripts/verify_sample.py
 
+      - name: Run FastAPI offline integration tests
+        run: |
+          python -m unittest discover -s tests -p "test_*.py"
+
       - name: Run deterministic evaluation on baseline suite (10 cases)
         run: |
           python scripts/evaluate.py --extractor deterministic --suite baseline

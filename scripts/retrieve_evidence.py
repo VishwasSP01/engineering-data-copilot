@@ -24,7 +24,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 def match_component_id(text: str, component_id: str) -> bool:
@@ -128,17 +128,20 @@ def extract_section_or_page(page_text: str, attribute_name: str) -> Tuple[str, s
     return verbatim_page, "page"
 
 
-def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -> Dict[str, Any]:
+def retrieve_evidence(record_input: Union[Path, str, Dict[str, Any]], extracted_dir: Optional[Path] = None) -> Dict[str, Any]:
     """Retrieve evidence for an engineering record from extracted documents."""
     repo_root = Path(__file__).resolve().parent.parent
     if extracted_dir is None:
         extracted_dir = repo_root / "data" / "extracted"
 
-    if not record_path.exists():
-        raise FileNotFoundError(f"Record file not found: {record_path}")
-
-    with open(record_path, "r", encoding="utf-8") as f:
-        record = json.load(f)
+    if isinstance(record_input, dict):
+        record = record_input
+    else:
+        record_path = Path(record_input)
+        if not record_path.exists():
+            raise FileNotFoundError(f"Record file not found: {record_path}")
+        with open(record_path, "r", encoding="utf-8") as f:
+            record = json.load(f)
 
     record_id = record.get("record_id") or record.get("case_id") or "UNKNOWN-RECORD"
     component_id = record.get("component_id") or record.get("part_number")

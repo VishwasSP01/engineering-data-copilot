@@ -165,7 +165,7 @@ def align_quote_to_passage(quote: str, passage: str) -> Tuple[Optional[str], str
 
 
 def investigate_record(
-    record_path: Path,
+    record_path: Union[Path, str, Dict[str, Any]],
     extracted_dir: Optional[Path] = None,
     extractor: Union[str, BaseMeasurementExtractor] = "deterministic",
     gemini_api_key: Optional[str] = None,
@@ -174,7 +174,7 @@ def investigate_record(
     """Investigate an engineering record for measurement-unit mismatches against supplier evidence.
     
     Args:
-        record_path: Path to the engineering record JSON file.
+        record_path: Path to the engineering record JSON file or an in-memory record dict.
         extracted_dir: Path to directory of extracted document JSONs (default: data/extracted).
         extractor: Extractor type ('deterministic' or 'gemini') or a BaseMeasurementExtractor instance.
         gemini_api_key: Optional Gemini API key override (otherwise uses GEMINI_API_KEY env var).
@@ -184,11 +184,14 @@ def investigate_record(
     if extracted_dir is None:
         extracted_dir = repo_root / "data" / "extracted"
 
-    if not record_path.exists():
-        raise FileNotFoundError(f"Record file not found: {record_path}")
-
-    with open(record_path, "r", encoding="utf-8") as f:
-        record = json.load(f)
+    if isinstance(record_path, dict):
+        record = record_path
+    else:
+        rec_path_obj = Path(record_path)
+        if not rec_path_obj.exists():
+            raise FileNotFoundError(f"Record file not found: {record_path}")
+        with open(rec_path_obj, "r", encoding="utf-8") as f:
+            record = json.load(f)
 
     case_id = record.get("case_id") or record.get("record_id") or "UNKNOWN-CASE"
     record_id = record.get("record_id") or record.get("case_id") or "UNKNOWN-RECORD"
@@ -243,7 +246,9 @@ def investigate_record(
                 "is_fallback": res.is_fallback,
                 "call_duration_ms": res.call_duration_ms,
                 "token_usage": res.token_usage,
-                "token_usage_reason": res.token_usage_reason
+                "token_usage_reason": res.token_usage_reason,
+                "status": getattr(res, "status", None),
+                "error_type": getattr(res, "error_type", None)
             }
         return {
             "provider": default_provider,
@@ -252,7 +257,9 @@ def investigate_record(
             "is_fallback": False,
             "call_duration_ms": 0.0,
             "token_usage": None,
-            "token_usage_reason": not_invoked_reason or "Extractor was not invoked."
+            "token_usage_reason": not_invoked_reason or "Extractor was not invoked.",
+            "status": "not_invoked",
+            "error_type": None
         }
 
     # Validate record's recorded value
@@ -297,7 +304,7 @@ def investigate_record(
         }
 
     # Run Step 5 evidence retrieval directly as a Python function
-    retrieval_res = retrieve_evidence(record_path, extracted_dir=extracted_dir)
+    retrieval_res = retrieve_evidence(record, extracted_dir=extracted_dir)
     retrieval_status = retrieval_res.get("status") or retrieval_res.get("retrieval_status")
     context_type = retrieval_res.get("context_type")
 

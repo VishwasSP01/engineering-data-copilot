@@ -74,6 +74,7 @@ flowchart TD
 - **PDF Extraction**: [`pypdf>=6.19.0`](https://pypi.org/project/pypdf/) — Page-by-page selectable text extraction preserving source filenames and 1-based page numbers.
 - **Document Generation**: [`reportlab>=5.0.1`](https://pypi.org/project/reportlab/) — Programmatic generation of reproducible synthetic PDF datasheets with vector typography.
 - **Data Validation & Schemas**: [`pydantic>=2.13.5`](https://pypi.org/project/pydantic/) — Strict type validation and JSON schema enforcement for model extraction contracts.
+- **Investigation Service API**: [`fastapi>=0.115.0`](https://pypi.org/project/fastapi/) & [`uvicorn>=0.30.0`](https://pypi.org/project/uvicorn/) — Minimal asynchronous HTTP service exposing health and investigation endpoints.
 - **Deterministic Arithmetic**: Python standard library `decimal.Decimal` — Precise floating-point-free unit conversions (`cm` ↔ `mm`).
 - **Foundation Model SDK**: [`google-genai>=1.47.0`](https://pypi.org/project/google-genai/) — Official Google GenAI SDK using structured JSON schema extraction (`gemini-3.5-flash-lite`).
 - **Reproducible Dependencies**: Fully pinned dependency lock via [`requirements-lock.txt`](requirements-lock.txt).
@@ -200,11 +201,109 @@ To run investigations with live Gemini model extraction:
 
 ---
 
-## 8. Offline vs. Live Workflows
+## 8. FastAPI Investigation Service
+
+The investigation workflow can also be run as an asynchronous HTTP service powered by FastAPI and Uvicorn.
+
+### Start the Service
+```bash
+uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Interactive API Documentation
+- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **OpenAPI Schema**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+
+### Service Endpoints
+
+#### 1. `GET /health`
+A lightweight health check requiring no credentials or external calls:
+```bash
+curl -s http://localhost:8000/health
+```
+```json
+{
+  "status": "healthy",
+  "service": "engineering-data-copilot",
+  "version": "1.0.0"
+}
+```
+
+#### 2. `POST /investigations`
+Investigate an engineering record against the server-configured supplier document corpus.
+- Accepts an engineering record object using the standard record schema.
+- Extractor selection: `?extractor=deterministic` (default) or `?extractor=gemini`.
+- Example request:
+```bash
+curl -s -X POST "http://localhost:8000/investigations?extractor=deterministic" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "component_id": "COMP-001",
+    "revision": "A",
+    "attribute_name": "thickness",
+    "recorded_value": 0.8,
+    "recorded_unit": "mm"
+  }'
+```
+- Example response:
+```json
+{
+  "component_id": "COMP-001",
+  "revision": "A",
+  "attribute_name": "thickness",
+  "current_record": {
+    "value": 0.8,
+    "unit": "mm"
+  },
+  "source_record_modified": false,
+  "retrieval_status": "evidence_found",
+  "context_type": "passage",
+  "status": "correction_proposed",
+  "outcome": "correction_proposed",
+  "evidence_measurement": {
+    "value": 0.8,
+    "unit": "cm"
+  },
+  "proposed_correction": {
+    "value": 8.0,
+    "unit": "mm",
+    "conversion": {
+      "supplier_extracted_value": 0.8,
+      "supplier_extracted_unit": "cm",
+      "target_unit": "mm",
+      "multiplier": 10.0,
+      "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+      "method": "deterministic_arithmetic"
+    }
+  },
+  "evidence": {
+    "document_filename": "supplier-COMP-001.pdf",
+    "page_number": 1,
+    "supporting_passage": "Component thickness: 0.8 cm."
+  },
+  "extractor": {
+    "provider": "deterministic",
+    "mode": "deterministic",
+    "is_fallback": false,
+    "call_duration_ms": 0.2
+  },
+  "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm."
+}
+```
+
+### HTTP Status Code Mapping
+- **HTTP 200**: All business outcomes, including corrections proposed (`correction_proposed`), agreements (`no_change`), and safe data abstentions (`insufficient_evidence`, `ambiguous_evidence`, `needs_review`).
+- **HTTP 422**: Malformed request payload (missing required fields, non-numeric values, or unknown extractor).
+- **HTTP 503**: Requested provider not configured (`PROVIDER_NOT_CONFIGURED`, e.g. missing API credentials or dependencies).
+- **HTTP 502**: Upstream AI provider request failure (`PROVIDER_REQUEST_FAILED`).
+
+---
+
+## 9. Offline vs. Live Workflows
 
 The repository strictly separates offline verification from live model evaluations:
 
-- **No Gemini API calls during offline verification**: All offline verification suites, mock extractor checks, and deterministic evaluations run locally with no Gemini API calls.
+- **No Gemini API calls during offline verification**: All offline verification suites, mock extractor checks, deterministic evaluations, and FastAPI integration tests run locally with no Gemini API calls.
 - **Network Usage Clarification**: While initial environment setup (cloning and `pip install -r requirements-lock.txt`) and GitHub Actions runner setup naturally use network transit to download dependencies from PyPI, the offline verification suite itself makes zero external API requests.
 - **Live Gemini Workflows**: Require `GEMINI_API_KEY` and perform live network generation requests to the Gemini API.
 
@@ -212,6 +311,7 @@ The repository strictly separates offline verification from live model evaluatio
 |---|---|:---:|:---:|:---:|
 | **Comprehensive Offline Verification** | `python3 scripts/verify_sample.py` | None | None | Yes |
 | **Mock Extractor & Guardrail Checks** | `python3 scripts/verify_step8_extractor.py` | None | None | Yes |
+| **FastAPI Offline Integration Tests** | `python3 -m unittest discover -s tests -p "test_*.py"` | None | None | Yes |
 | **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None | Yes |
 | **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None | Yes |
 | **Deterministic Single Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor deterministic` | None | None | Yes |
@@ -221,7 +321,7 @@ The repository strictly separates offline verification from live model evaluatio
 
 ---
 
-## 9. Evaluation Results & Benchmark Suite
+## 10. Evaluation Results & Benchmark Suite
 
 The repository contains two evaluation suites testing length unit mismatches (`cm` ↔ `mm`), agreements, unknown components, incorrect revisions, missing measurements, conflicting evidence, unsupported units, and complex layouts.
 
@@ -265,7 +365,7 @@ The repository contains two evaluation suites testing length unit mismatches (`c
 
 ---
 
-## 10. Continuous Integration (CI)
+## 11. Continuous Integration (CI)
 
 An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on all pushes and pull requests targeting the `main` branch.
 
@@ -274,15 +374,16 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 2. **Data & Text Extraction**: Generates synthetic investigation records and extracts document text page-by-page into `data/extracted/`.
 3. **Mock & Schema Validation**: Runs [`scripts/verify_step8_extractor.py`](scripts/verify_step8_extractor.py) verifying Pydantic schema validation, prompt boundaries, and 7 mock scenarios.
 4. **Comprehensive Regression Suite**: Runs [`scripts/verify_sample.py`](scripts/verify_sample.py) verifying sample validity, text extraction, retrieval, conversion arithmetic, whitespace quote alignment, labelled tuple binding, immutability, and offline replay.
-5. **Deterministic Benchmark Evaluations**:
+5. **FastAPI Offline Integration Tests**: Runs `python -m unittest discover -s tests -p "test_*.py"` verifying `/health`, sample correction reproduction, CLI/API concordance, malformed input rejection (HTTP 422), business abstentions (HTTP 200), provider error translation (HTTP 502/503), and record/document immutability.
+6. **Deterministic Benchmark Evaluations**:
    - Baseline Suite: Asserts 10/10 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite baseline`).
    - Challenge Suite: Verifies 5/6 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite challenge`), preserving the known `challenge-01` sentence regex limitation while failing if any unexpected regression occurs.
-6. **Artifact Archival**: Uploads all generated reports in `evaluation/reports/` as workflow run artifacts.
-7. **Zero Credentials**: Runs strictly offline without requiring or accepting `GEMINI_API_KEY`.
+7. **Artifact Archival**: Uploads all generated reports in `evaluation/reports/` as workflow run artifacts.
+8. **Zero Credentials**: Runs strictly offline without requiring or accepting `GEMINI_API_KEY`.
 
 ---
 
-## 11. Limitations & Deferred Features
+## 12. Limitations & Deferred Features
 
 To maintain reliability, security, and auditability, the project's scope is strictly bounded:
 
@@ -291,11 +392,11 @@ To maintain reliability, security, and auditability, the project's scope is stri
 - **No OCR for Raster Scans**: Documents must contain selectable digital text (`pypdf` extraction); scanned raster PDFs or image-only drawings are not supported.
 - **No Multi-Turn Chat or Autonomous Agents**: The investigation workflow is a deterministic, single-turn audit pipeline, not an interactive conversational agent.
 - **No Direct Database Mutation**: The tool generates proposed correction payloads; it does not write directly to production ERP or PLM systems.
-- **No Web UI or REST API Server**: Execution is via CLI scripts and reproducible benchmark runners.
+- **No Web Frontend UI**: The project exposes a CLI and a minimal FastAPI investigation service (`api/main.py`), but does not provide an interactive frontend web UI.
 
 ---
 
-## 12. Project Documentation
+## 13. Project Documentation
 
 - [docs/DEMO.md](docs/DEMO.md): Interactive CLI walkthrough and interview demonstration guide.
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.
