@@ -15,7 +15,7 @@
 - **Abstention-Case Pass Rate**: 2/2 (100.0%)
 - **Citation Validity**: 4/4 (100.0%)
 - **Median Investigation Latency**: 0.52 ms
-- **Mean Investigation Latency**: 0.61 ms
+- **Mean Investigation Latency**: 0.7 ms
 
 ## Detailed Per-Case Results
 

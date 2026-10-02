@@ -318,27 +318,37 @@ class PgVectorRetriever(BaseRetriever):
 
                     # Fetch ALL eligible chunks for this (corpus_id, component_id, revision)
                     # before ranking, to preserve conflict detection across the full source context.
+                    # Explicitly use a MATERIALIZED CTE to guarantee exact filtered search over the
+                    # metadata-filtered subset (via B-Tree index) and prevent the query planner from
+                    # attempting an approximate HNSW index scan when ordering by cosine distance.
                     cur.execute(
                         """
+                        WITH filtered_chunks AS MATERIALIZED (
+                            SELECT chunk_id, document_filename, page_number,
+                                   start_char, end_char, token_count, content_sha256,
+                                   component_id, revision, document_id, text,
+                                   embedding
+                            FROM document_chunks
+                            WHERE corpus_id = %s
+                              AND component_id = %s
+                              AND revision = %s
+                              AND model_name = %s
+                              AND model_revision = %s
+                        )
                         SELECT chunk_id, document_filename, page_number,
                                start_char, end_char, token_count, content_sha256,
                                component_id, revision, document_id, text,
                                (embedding <=> %s) AS cosine_distance
-                        FROM document_chunks
-                        WHERE corpus_id = %s
-                          AND component_id = %s
-                          AND revision = %s
-                          AND model_name = %s
-                          AND model_revision = %s
+                        FROM filtered_chunks
                         ORDER BY (embedding <=> %s) ASC, page_number ASC, start_char ASC, chunk_id ASC;
                         """,
                         (
-                            query_vector,
                             active_corpus,
                             component_id,
                             revision,
                             self.model_name,
                             self.model_revision,
+                            query_vector,
                             query_vector,
                         ),
                     )

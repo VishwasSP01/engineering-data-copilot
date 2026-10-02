@@ -49,6 +49,7 @@ def run_evaluation(
     model: Optional[str] = None,
     suite: str = "baseline",
     retriever: str = "baseline",
+    orchestration: str = "direct",
 ) -> Dict[str, Any]:
     """Run evaluation suite using the specified extractor and suite ('baseline', 'challenge', or 'all')."""
     cases_dir = repo_root / "evaluation" / "cases"
@@ -152,6 +153,7 @@ def run_evaluation(
             gemini_model=resolved_model,
             retriever=retriever,
             corpus_id=f"eval-{cid}" if retriever == "pgvector" else None,
+            orchestration=orchestration,
         )
         duration_ms = (time.perf_counter() - t0) * 1000.0
         durations_ms.append(duration_ms)
@@ -1437,6 +1439,12 @@ def main():
         help="Retriever provider: 'baseline' (default), 'pgvector', or 'both' (comparison)"
     )
     parser.add_argument(
+        "--orchestration",
+        choices=["direct", "langchain"],
+        default="direct",
+        help="Workflow orchestration execution path: 'direct' (default) or 'langchain'",
+    )
+    parser.add_argument(
         "--model",
         type=str,
         default=None,
@@ -1542,7 +1550,14 @@ def main():
         if g_sum["failed_cases"] > 0 or g_sum["api_error_cases"] > 0:
             print("\nNotice: Gemini run encountered failures or errors.")
     else:
-        report = run_evaluation(repo_root, extractor=args.extractor, model=args.model, suite=args.suite, retriever=args.retriever)
+        report = run_evaluation(
+            repo_root,
+            extractor=args.extractor,
+            model=args.model,
+            suite=args.suite,
+            retriever=args.retriever,
+            orchestration=args.orchestration,
+        )
 
         # Save JSON report
         if args.suite == "challenge":

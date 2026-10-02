@@ -164,42 +164,8 @@ def align_quote_to_passage(quote: str, passage: str) -> Tuple[Optional[str], str
     return verbatim_span, "whitespace_aligned", None
 
 
-def investigate_record(
-    record_path: Union[Path, str, Dict[str, Any]],
-    extracted_dir: Optional[Path] = None,
-    extractor: Union[str, BaseMeasurementExtractor] = "deterministic",
-    retriever: Union[str, Any] = "baseline",
-    corpus_id: Optional[str] = None,
-    gemini_api_key: Optional[str] = None,
-    gemini_model: Optional[str] = None,
-    retriever_kwargs: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    """Investigate an engineering record for measurement-unit mismatches against supplier evidence.
-    
-    Args:
-        record_path: Path to the engineering record JSON file or an in-memory record dict.
-        extracted_dir: Path to directory of extracted document JSONs (default: data/extracted).
-        extractor: Extractor type ('deterministic' or 'gemini') or a BaseMeasurementExtractor instance.
-        retriever: Retriever type ('baseline' or 'pgvector') or a BaseRetriever instance.
-        corpus_id: Optional corpus identifier for vector retrieval (default: supplier-corpus).
-        gemini_api_key: Optional Gemini API key override (otherwise uses GEMINI_API_KEY env var).
-        gemini_model: Optional Gemini model name override (otherwise uses GEMINI_MODEL env var).
-        retriever_kwargs: Optional kwargs forwarded to retriever instance.
-    """
-
-    repo_root = Path(__file__).resolve().parent.parent
-    if extracted_dir is None:
-        extracted_dir = repo_root / "data" / "extracted"
-
-    if isinstance(record_path, dict):
-        record = record_path
-    else:
-        rec_path_obj = Path(record_path)
-        if not rec_path_obj.exists():
-            raise FileNotFoundError(f"Record file not found: {record_path}")
-        with open(rec_path_obj, "r", encoding="utf-8") as f:
-            record = json.load(f)
-
+def init_base_response(record: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Initialize structured base response and current record dictionary."""
     case_id = record.get("case_id") or record.get("record_id") or "UNKNOWN-CASE"
     record_id = record.get("record_id") or record.get("case_id") or "UNKNOWN-RECORD"
     component_id = record.get("component_id") or record.get("part_number") or "UNKNOWN-COMP"
@@ -223,101 +189,109 @@ def investigate_record(
         "current_record": current_record,
         "source_record_modified": False
     }
+    return base_response, current_record
 
-    # Resolve extractor instance
-    if isinstance(extractor, str):
-        if extractor.lower() in ("gemini", "google-genai"):
-            extractor_inst = get_extractor(
-                "gemini",
-                api_key=gemini_api_key,
-                model=gemini_model
-            )
-        else:
-            extractor_inst = get_extractor("deterministic")
-    else:
-        extractor_inst = extractor
 
+def make_extractor_metadata(
+    res: Any = None,
+    extractor_inst: Any = None,
+    not_invoked_reason: Optional[str] = None
+) -> Dict[str, Any]:
+    """Construct structured telemetry and metadata for the measurement extractor."""
     is_gemini = isinstance(extractor_inst, GeminiMeasurementExtractor)
     default_provider = "google-genai" if is_gemini else "deterministic"
     default_model = getattr(extractor_inst, "model", None) if is_gemini else None
 
-    def make_extractor_meta(
-        res=None,
-        not_invoked_reason: Optional[str] = None
-    ) -> Dict[str, Any]:
-        if res is not None:
-            return {
-                "provider": res.provider,
-                "model": res.model,
-                "mode": "deterministic" if res.provider == "deterministic" else "model",
-                "is_fallback": res.is_fallback,
-                "call_duration_ms": res.call_duration_ms,
-                "token_usage": res.token_usage,
-                "token_usage_reason": res.token_usage_reason,
-                "status": getattr(res, "status", None),
-                "error_type": getattr(res, "error_type", None)
-            }
+    if res is not None:
         return {
-            "provider": default_provider,
-            "model": default_model,
-            "mode": "model" if is_gemini else "deterministic",
-            "is_fallback": False,
-            "call_duration_ms": 0.0,
-            "token_usage": None,
-            "token_usage_reason": not_invoked_reason or "Extractor was not invoked.",
-            "status": "not_invoked",
-            "error_type": None
+            "provider": res.provider,
+            "model": res.model,
+            "mode": "deterministic" if res.provider == "deterministic" else "model",
+            "is_fallback": res.is_fallback,
+            "call_duration_ms": res.call_duration_ms,
+            "token_usage": res.token_usage,
+            "token_usage_reason": res.token_usage_reason,
+            "status": getattr(res, "status", None),
+            "error_type": getattr(res, "error_type", None)
         }
+    return {
+        "provider": default_provider,
+        "model": default_model,
+        "mode": "model" if is_gemini else "deterministic",
+        "is_fallback": False,
+        "call_duration_ms": 0.0,
+        "token_usage": None,
+        "token_usage_reason": not_invoked_reason or "Extractor was not invoked.",
+        "status": "not_invoked",
+        "error_type": None
+    }
 
-    # Validate record's recorded value
+
+def validate_record_inputs(
+    record: Dict[str, Any],
+    base_response: Dict[str, Any],
+    extractor_inst: Any = None
+) -> Tuple[bool, Optional[Decimal], Optional[str], Optional[Dict[str, Any]]]:
+    """Validate engineering record recorded_value and recorded_unit.
+    
+    Returns:
+        (is_valid, record_val_dec, record_unit_clean, error_response)
+    """
+    raw_rec_val = record.get("recorded_value")
+    raw_rec_unit = record.get("recorded_unit")
+
     if raw_rec_val is None:
-        return {
+        return False, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
-            "extractor": make_extractor_meta(not_invoked_reason="Record value is missing; extractor not invoked."),
+            "extractor": make_extractor_metadata(extractor_inst=extractor_inst, not_invoked_reason="Record value is missing; extractor not invoked."),
             "explanation": "Engineering record is missing 'recorded_value'."
         }
 
     try:
         record_val_dec = Decimal(str(raw_rec_val))
     except (InvalidOperation, TypeError):
-        return {
+        return False, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
-            "extractor": make_extractor_meta(not_invoked_reason="Record value is not numeric; extractor not invoked."),
+            "extractor": make_extractor_metadata(extractor_inst=extractor_inst, not_invoked_reason="Record value is not numeric; extractor not invoked."),
             "explanation": f"Engineering record contains invalid numeric value: {raw_rec_val}."
         }
 
-    # Validate record's unit
     record_unit_clean = str(raw_rec_unit).strip().lower() if raw_rec_unit else ""
     if record_unit_clean not in SUPPORTED_UNITS:
-        return {
+        return False, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
-            "extractor": make_extractor_meta(not_invoked_reason="Record unit is unsupported; extractor not invoked."),
+            "extractor": make_extractor_metadata(extractor_inst=extractor_inst, not_invoked_reason="Record unit is unsupported; extractor not invoked."),
             "explanation": f"Record unit '{raw_rec_unit}' is unsupported. Only {sorted(SUPPORTED_UNITS)} are supported."
         }
 
-    # Run evidence retrieval directly as a Python function (baseline or pgvector)
-    retrieval_res = retrieve_evidence(
-        record,
-        extracted_dir=extracted_dir,
-        retriever=retriever,
-        corpus_id=corpus_id,
-        **(retriever_kwargs or {}),
-    )
+    return True, record_val_dec, record_unit_clean, None
+
+
+def evaluate_retrieval_outcome(
+    retrieval_res: Dict[str, Any],
+    base_response: Dict[str, Any],
+    extractor_inst: Any = None
+) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Inspect evidence retrieval result for errors or early abstentions.
+    
+    Returns:
+        (is_eligible, passage, evidence_dict, exit_response)
+    """
     retrieval_status = retrieval_res.get("status") or retrieval_res.get("retrieval_status")
     context_type = retrieval_res.get("context_type")
     retriever_meta = retrieval_res.get("retriever")
@@ -327,55 +301,63 @@ def investigate_record(
     if retriever_meta:
         base_response["retriever"] = retriever_meta
 
-    # Handle retrieval service/database errors without silent fallback
     if retrieval_status == "error":
-        return {
+        return False, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
-            "extractor": make_extractor_meta(not_invoked_reason=f"Retrieval error: {retrieval_res.get('reason')}"),
+            "extractor": make_extractor_metadata(extractor_inst=extractor_inst, not_invoked_reason=f"Retrieval error: {retrieval_res.get('reason')}"),
             "explanation": retrieval_res.get("reason", "Evidence retrieval failed."),
         }
 
-    # Handle retrieval abstentions
     if retrieval_status in ("insufficient_evidence", "ambiguous_evidence"):
-        return {
+        return False, None, None, {
             **base_response,
             "status": retrieval_status,
             "outcome": retrieval_status,
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
-            "extractor": make_extractor_meta(not_invoked_reason=f"Retrieval yielded {retrieval_status}; extractor not invoked."),
+            "extractor": make_extractor_metadata(extractor_inst=extractor_inst, not_invoked_reason=f"Retrieval yielded {retrieval_status}; extractor not invoked."),
             "explanation": retrieval_res.get("reason", f"Retrieval yielded {retrieval_status}.")
         }
-
 
     evidence_dict = retrieval_res.get("evidence")
     passage = retrieval_res.get("evidence_passage") or (evidence_dict.get("supporting_passage") if evidence_dict else None)
 
     if not passage:
-        return {
+        return False, None, None, {
             **base_response,
             "status": "insufficient_evidence",
             "outcome": "insufficient_evidence",
             "evidence_measurement": None,
             "proposed_correction": None,
             "evidence": None,
-            "extractor": make_extractor_meta(not_invoked_reason="No evidence passage returned by retrieval."),
+            "extractor": make_extractor_metadata(extractor_inst=extractor_inst, not_invoked_reason="No evidence passage returned by retrieval."),
             "explanation": "No evidence passage was returned by retrieval."
         }
 
-    # Extract measurement using selected extractor
-    extractor_res = extractor_inst.extract_measurement(passage, attribute_name)
-    extractor_meta = make_extractor_meta(extractor_res)
+    return True, passage, evidence_dict, None
 
-    # Handle extractor failures and errors
+
+def validate_extracted_quote_and_guardrails(
+    extractor_res: Any,
+    passage: str,
+    attribute_name: str,
+    evidence_dict: Optional[Dict[str, Any]],
+    base_response: Dict[str, Any],
+    extractor_meta: Dict[str, Any]
+) -> Tuple[bool, Optional[Dict[str, Any]], Optional[Dict[str, Any]], Optional[Decimal], Optional[str], Optional[Dict[str, Any]]]:
+    """Apply strict post-extraction verification guardrails.
+    
+    Returns:
+        (guardrails_passed, evidence_dict, evidence_measurement, ev_val_dec, ev_unit_clean, exit_response)
+    """
     if extractor_res.status == "error":
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
@@ -386,9 +368,8 @@ def investigate_record(
             "explanation": f"Extraction error: {extractor_res.error_message}"
         }
 
-    # Handle extractor abstentions
     if extractor_res.status == "insufficient":
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "insufficient_evidence",
             "outcome": "insufficient_evidence",
@@ -400,7 +381,7 @@ def investigate_record(
         }
 
     if extractor_res.status == "ambiguous":
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "ambiguous_evidence",
             "outcome": "ambiguous_evidence",
@@ -411,13 +392,12 @@ def investigate_record(
             "explanation": extractor_res.error_message or f"Extractor identified conflicting or ambiguous measurements for '{attribute_name}' in cited passage."
         }
 
-    # Extractor returned status="found" -> Apply strict post-extraction verification guardrails
     raw_quote = extractor_res.quote or ""
 
     # Guardrail 1: Quote grounding check with whitespace-aware alignment
     verbatim_span, align_type, align_err = align_quote_to_passage(raw_quote, passage)
     if not verbatim_span:
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
@@ -446,7 +426,7 @@ def investigate_record(
     # Guardrail 2: Attribute name alignment check
     extracted_attr = extractor_res.measurement_name
     if extracted_attr and extracted_attr.strip().lower() != attribute_name.strip().lower():
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
@@ -460,7 +440,7 @@ def investigate_record(
     # Guardrail 3: Numeric value validation
     ev_val_dec = extractor_res.value
     if ev_val_dec is None:
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
@@ -475,7 +455,7 @@ def investigate_record(
     val_str = str(ev_val_dec)
     unit_str = (extractor_res.unit or "").strip()
     if val_str not in raw_quote and val_str not in verbatim_span:
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
@@ -487,7 +467,7 @@ def investigate_record(
         }
 
     if unit_str.lower() not in raw_quote.lower() and unit_str.lower() not in verbatim_span.lower():
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
@@ -506,7 +486,7 @@ def investigate_record(
 
     # Guardrail 5: Supported unit check
     if ev_unit_clean not in SUPPORTED_UNITS:
-        return {
+        return False, None, None, None, None, {
             **base_response,
             "status": "needs_review",
             "outcome": "needs_review",
@@ -517,7 +497,26 @@ def investigate_record(
             "explanation": f"Evidence unit '{ev_unit_clean}' is unsupported. Only {sorted(SUPPORTED_UNITS)} are supported."
         }
 
-    # Convert evidence measurement into record's unit using deterministic Decimal arithmetic
+    return True, evidence_dict, evidence_measurement, ev_val_dec, ev_unit_clean, None
+
+
+def evaluate_and_compare_measurements(
+    ev_val_dec: Decimal,
+    ev_unit_clean: str,
+    record_val_dec: Decimal,
+    record_unit_clean: str,
+    raw_rec_val: Any,
+    raw_rec_unit: Any,
+    base_response: Dict[str, Any],
+    evidence_dict: Optional[Dict[str, Any]],
+    extractor_meta: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Perform deterministic Decimal conversion and comparison between record and evidence."""
+    evidence_measurement = {
+        "value": float(ev_val_dec),
+        "unit": ev_unit_clean
+    }
+
     try:
         converted_val_dec, multiplier_dec, calc_str = convert_measurement(
             ev_val_dec,
@@ -586,6 +585,132 @@ def investigate_record(
     }
 
 
+def investigate_record(
+    record_path: Union[Path, str, Dict[str, Any]],
+    extracted_dir: Optional[Path] = None,
+    extractor: Union[str, BaseMeasurementExtractor] = "deterministic",
+    retriever: Union[str, Any] = "baseline",
+    corpus_id: Optional[str] = None,
+    gemini_api_key: Optional[str] = None,
+    gemini_model: Optional[str] = None,
+    retriever_kwargs: Optional[Dict[str, Any]] = None,
+    orchestration: str = "direct",
+) -> Dict[str, Any]:
+    """Investigate an engineering record for measurement-unit mismatches against supplier evidence.
+    
+    Args:
+        record_path: Path to the engineering record JSON file or an in-memory record dict.
+        extracted_dir: Path to directory of extracted document JSONs (default: data/extracted).
+        extractor: Extractor type ('deterministic' or 'gemini') or a BaseMeasurementExtractor instance.
+        retriever: Retriever type ('baseline' or 'pgvector') or a BaseRetriever instance.
+        corpus_id: Optional corpus identifier for vector retrieval (default: supplier-corpus).
+        gemini_api_key: Optional Gemini API key override (otherwise uses GEMINI_API_KEY env var).
+        gemini_model: Optional Gemini model name override (otherwise uses GEMINI_MODEL env var).
+        retriever_kwargs: Optional kwargs forwarded to retriever instance.
+        orchestration: Execution engine ('direct' for zero-dependency baseline, 'langchain' for Runnable pipeline).
+    """
+    if str(orchestration).strip().lower() == "langchain":
+        # Lazy import of LangChain orchestration engine
+        from scripts.investigate_chain import investigate_record_langchain
+        return investigate_record_langchain(
+            record_path=record_path,
+            extracted_dir=extracted_dir,
+            extractor=extractor,
+            retriever=retriever,
+            corpus_id=corpus_id,
+            gemini_api_key=gemini_api_key,
+            gemini_model=gemini_model,
+            retriever_kwargs=retriever_kwargs,
+        )
+
+    # Direct execution path using shared domain functions
+    repo_root = Path(__file__).resolve().parent.parent
+    if extracted_dir is None:
+        extracted_dir = repo_root / "data" / "extracted"
+
+    if isinstance(record_path, dict):
+        record = record_path
+    else:
+        rec_path_obj = Path(record_path)
+        if not rec_path_obj.exists():
+            raise FileNotFoundError(f"Record file not found: {record_path}")
+        with open(rec_path_obj, "r", encoding="utf-8") as f:
+            record = json.load(f)
+
+    # 1. Initialize base response
+    base_response, current_record = init_base_response(record)
+    attribute_name = base_response["attribute_name"]
+    raw_rec_val = current_record["value"]
+    raw_rec_unit = current_record["unit"]
+
+    # 2. Resolve extractor instance
+    if isinstance(extractor, str):
+        if extractor.lower() in ("gemini", "google-genai"):
+            extractor_inst = get_extractor(
+                "gemini",
+                api_key=gemini_api_key,
+                model=gemini_model
+            )
+        else:
+            extractor_inst = get_extractor("deterministic")
+    else:
+        extractor_inst = extractor
+
+    # 3. Validate record inputs
+    is_valid, record_val_dec, record_unit_clean, validation_err = validate_record_inputs(
+        record, base_response, extractor_inst=extractor_inst
+    )
+    if not is_valid:
+        return validation_err  # type: ignore
+
+    # 4. Run evidence retrieval directly as a Python function (baseline or pgvector)
+    retrieval_res = retrieve_evidence(
+        record,
+        extracted_dir=extracted_dir,
+        retriever=retriever,
+        corpus_id=corpus_id,
+        **(retriever_kwargs or {}),
+    )
+
+    # 5. Evaluate retrieval outcome
+    is_eligible, passage, evidence_dict, retrieval_exit = evaluate_retrieval_outcome(
+        retrieval_res, base_response, extractor_inst=extractor_inst
+    )
+    if not is_eligible:
+        return retrieval_exit  # type: ignore
+
+    # 6. Extract measurement using selected extractor
+    extractor_res = extractor_inst.extract_measurement(passage, attribute_name)
+    extractor_meta = make_extractor_metadata(res=extractor_res, extractor_inst=extractor_inst)
+
+    # 7. Apply strict post-extraction verification guardrails
+    guardrails_passed, evidence_dict, evidence_measurement, ev_val_dec, ev_unit_clean, guardrail_exit = (
+        validate_extracted_quote_and_guardrails(
+            extractor_res=extractor_res,
+            passage=passage,  # type: ignore
+            attribute_name=attribute_name,
+            evidence_dict=evidence_dict,
+            base_response=base_response,
+            extractor_meta=extractor_meta,
+        )
+    )
+    if not guardrails_passed:
+        return guardrail_exit  # type: ignore
+
+    # 8. Convert measurement and compare values using deterministic Decimal arithmetic
+    return evaluate_and_compare_measurements(
+        ev_val_dec=ev_val_dec,  # type: ignore
+        ev_unit_clean=ev_unit_clean,  # type: ignore
+        record_val_dec=record_val_dec,  # type: ignore
+        record_unit_clean=record_unit_clean,  # type: ignore
+        raw_rec_val=raw_rec_val,
+        raw_rec_unit=raw_rec_unit,
+        base_response=base_response,
+        evidence_dict=evidence_dict,
+        extractor_meta=extractor_meta,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Investigate an engineering record and propose evidence-backed unit corrections.")
     parser.add_argument("record_path", type=Path, help="Path to input record JSON")
@@ -620,6 +745,12 @@ def main():
         help="Gemini model name (default: GEMINI_MODEL env var or gemini-2.5-flash)",
     )
     parser.add_argument(
+        "--orchestration",
+        choices=["direct", "langchain"],
+        default="direct",
+        help="Workflow orchestration execution path: 'direct' (default) or 'langchain'",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=None,
@@ -635,6 +766,7 @@ def main():
             retriever=args.retriever,
             corpus_id=args.corpus_id,
             gemini_model=args.model,
+            orchestration=args.orchestration,
         )
 
         output_str = json.dumps(result, indent=2, ensure_ascii=False)

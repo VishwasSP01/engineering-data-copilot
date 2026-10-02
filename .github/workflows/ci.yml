@@ -41,13 +41,25 @@ jobs:
         run: |
           python scripts/verify_sample.py
 
-      - name: Run offline API and chunking tests
+      - name: Install optional orchestration dependencies
+        run: |
+          pip install -r requirements-orchestration.txt
+
+      - name: Run offline API, chunking, and LangChain tests
         run: |
           python -m unittest discover -s tests -p "test_*.py"
 
-      - name: Run deterministic evaluation on baseline suite (10 cases)
+      - name: Run Step 23 LangChain orchestration verification
         run: |
-          python scripts/evaluate.py --extractor deterministic --suite baseline
+          python scripts/verify_step23_langchain.py
+
+      - name: Run deterministic evaluation on baseline suite (10 cases, direct)
+        run: |
+          python scripts/evaluate.py --extractor deterministic --suite baseline --orchestration direct
+
+      - name: Run deterministic evaluation on baseline suite (10 cases, LangChain)
+        run: |
+          python scripts/evaluate.py --extractor deterministic --suite baseline --orchestration langchain
 
       - name: Run deterministic evaluation on challenge suite (6 cases)
         run: |

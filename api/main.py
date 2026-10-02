@@ -147,6 +147,7 @@ async def create_investigation(
     )
 
     record_dict = payload.to_record_dict()
+    orchestration_mode = os.environ.get("INVESTIGATION_ORCHESTRATION", "direct").strip().lower()
 
     # Execute investigation off the async event loop to avoid blocking concurrent requests
     result = await asyncio.to_thread(
@@ -155,6 +156,7 @@ async def create_investigation(
         extracted_dir=CORPUS_DIR,
         extractor=active_extractor,
         retriever=active_retriever,
+        orchestration=orchestration_mode,
     )
 
     # Check for retriever service or database failures

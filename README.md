@@ -29,22 +29,29 @@ flowchart TD
         VECDB["PostgreSQL / pgvector<br/>(Normalized 384d Chunks & HNSW Index)"]
     end
 
-    subgraph Pipeline ["Investigation Pipeline"]
-        subgraph Retrieval ["Evidence Retrieval (Pluggable)"]
+    subgraph Orchestration ["Execution Modes (Pluggable Orchestration)"]
+        DIR_EXEC["Direct Execution<br/>(Fast, zero-dependency procedural execution)"]
+        LC_EXEC["LangChain Runnable Sequence<br/>(Named composable stages with local telemetry)"]
+    end
+
+    subgraph Pipeline ["7 Named Investigation Stages"]
+        S1["1. validate_record<br/>(Value presence, Decimal parseability, supported units)"]
+        
+        subgraph S2 ["2. retrieve_eligible_evidence (Pluggable)"]
             BASE_RET["Baseline Document Matching<br/>(Deterministic regex scan over extracted text)"]
             PG_RET["PgVector Semantic Retrieval<br/>(Exact cosine ranking, metadata-filtered)"]
         end
         
-        ABSTAIN["Early Safety Abstention<br/>(insufficient_evidence / ambiguous_evidence)"]
+        S3["3. branch_on_retrieval_outcome<br/>(Early abstention on insufficient/ambiguous evidence)"]
         
-        subgraph Extraction ["Measurement Extraction (Pluggable)"]
+        subgraph S4 ["4. extract_measurement (Pluggable)"]
             DET["Deterministic Regex Extractor<br/>(Pattern matching & labelled tuple parsing)"]
             GEM["Live Gemini Extractor<br/>(gemini-3.5-flash-lite, strict JSON schema)"]
         end
         
-        SQV["Source-Quote Validation<br/>(Verbatim substring match & whitespace alignment)"]
-        DC["Deterministic Arithmetic<br/>(Python Decimal conversion; no model math)"]
-        DEC["Decision Outcome<br/>(correction_proposed or no_change)"]
+        S5["5. validate_and_align_source_quote<br/>(Whitespace alignment, attribute & unit grounding)"]
+        S6["6. perform_decimal_conversion_and_comparison<br/>(Deterministic Python Decimal conversion & arithmetic)"]
+        S7["7. produce_investigation_response<br/>(Structured output: correction_proposed, no_change, abstention)"]
     end
 
     subgraph Evaluation ["Offline Evaluation & CI"]
@@ -52,26 +59,25 @@ flowchart TD
         CMP["Benchmark Evaluator & Comparator<br/>(Verifies outcomes, proposals, citations & IR metrics)"]
     end
 
-    REC --> BASE_RET
-    REC --> PG_RET
+    REC --> DIR_EXEC
+    REC --> LC_EXEC
+    DIR_EXEC --> S1
+    LC_EXEC --> S1
+    
+    S1 --> S2
     CORPUS --> BASE_RET
     VECDB --> PG_RET
     
-    BASE_RET -->|Missing or Conflicting Evidence| ABSTAIN
-    PG_RET -->|Missing or Conflicting Evidence| ABSTAIN
-    BASE_RET -->|Retrieved Evidence Passage/Section| DET
-    BASE_RET -->|Retrieved Evidence Passage/Section| GEM
-    PG_RET -->|Citation-Preserving Chunk| DET
-    PG_RET -->|Citation-Preserving Chunk| GEM
+    S2 --> S3
+    S3 -->|Missing or Conflicting Evidence| S7
+    S3 -->|Eligible Evidence (Doc / Passage)| S4
     
-    DET -->|Extracted Measurement & Quote| SQV
-    GEM -->|Extracted Measurement & Quote| SQV
+    S4 --> S5
+    S5 -->|Guardrail Pass| S6
+    S5 -->|Guardrail Fail (Ungrounded/Unsupported)| S7
     
-    SQV -->|Validated Grounded Measurement| DC
-    DC --> DEC
-    
-    DEC --> CMP
-    ABSTAIN --> CMP
+    S6 --> S7
+    S7 --> CMP
     EA -.->|Ground Truth (Evaluator Only)| CMP
 ```
 
@@ -80,6 +86,7 @@ flowchart TD
 ## 3. Technology Stack
 
 - **Runtime & Language**: Python (tested environments documented below).
+- **Workflow Orchestration**: [`langchain-core==0.3.86`](https://pypi.org/project/langchain-core/) — Optional Runnable orchestration composing the investigation workflow into 7 named stages with local stage-level telemetry and Document representations.
 - **PDF Extraction**: [`pypdf>=6.19.0`](https://pypi.org/project/pypdf/) — Page-by-page selectable text extraction preserving source filenames and 1-based page numbers.
 - **Document Generation**: [`reportlab>=5.0.1`](https://pypi.org/project/reportlab/) — Programmatic generation of reproducible synthetic PDF datasheets with vector typography.
 - **Data Validation & Schemas**: [`pydantic>=2.13.5`](https://pypi.org/project/pydantic/) — Strict type validation and JSON schema enforcement for model extraction contracts.
@@ -88,7 +95,7 @@ flowchart TD
 - **Embedding Model**: [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — 384-dimensional normalized vector representations for document chunks.
 - **Deterministic Arithmetic**: Python standard library `decimal.Decimal` — Precise floating-point-free unit conversions (`cm` ↔ `mm`).
 - **Foundation Model SDK**: [`google-genai>=1.47.0`](https://pypi.org/project/google-genai/) — Official Google GenAI SDK using structured JSON schema extraction (`gemini-3.5-flash-lite`).
-- **Reproducible Dependencies**: Fully pinned dependency lock via [`requirements-lock.txt`](requirements-lock.txt).
+- **Reproducible Dependencies**: Fully pinned dependency lock via [`requirements-lock.txt`](requirements-lock.txt) with optional modular requirements for database (`requirements-database.txt`), embeddings (`requirements-embeddings.txt`), and orchestration (`requirements-orchestration.txt`).
 - **Continuous Integration**: GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) running automated offline verification on Python 3.13.
 
 ---
@@ -425,7 +432,63 @@ In Step 22, PostgreSQL/pgvector was integrated as an active, pluggable retrieval
 
 ---
 
-## 11. Offline vs. Live Workflows
+## 11. LangChain Workflow Orchestration (Step 23)
+
+In Step 23, an optional LangChain orchestration execution path was introduced using `langchain-core` Runnables, preserving existing business decisions, citation provenance, and error behavior with 100% parity.
+
+### Composable Named Runnable Stages
+
+The investigation workflow is composed into 7 explicit, named `RunnableLambda` stages executed as a `RunnableSequence`:
+
+1. **`validate_record`**: Checks presence of `recorded_value`, validates numeric parseability via `Decimal`, and verifies supported units (`mm`, `cm`).
+2. **`retrieve_eligible_evidence`**: Executes pluggable retrieval (`baseline` or `pgvector`), packages retrieved evidence into standard LangChain `Document` objects with complete provenance metadata, and tracks `retrieval_status` separately in typed workflow state.
+3. **`branch_on_retrieval_outcome`**: Inspects retrieval status. Early abstentions (`insufficient_evidence`, `ambiguous_evidence`) or retrieval errors immediately short-circuit to exit responses, ensuring the measurement extractor is **never invoked** when evidence is missing or conflicting.
+4. **`extract_measurement`**: Executes the measurement extractor (`deterministic` or `gemini`) exactly once on eligible passages.
+5. **`validate_and_align_source_quote`**: Applies strict whitespace-aware quote alignment, attribute name verification, and value/unit grounding checks. Ungrounded or unparseable extractions trigger guardrail failure and return `needs_review` without proposing a correction.
+6. **`perform_decimal_conversion_and_comparison`**: Performs deterministic Python `Decimal` conversion and arithmetic comparison (`correction_proposed` vs. `no_change`).
+7. **`produce_investigation_response`**: Assembles the structured final response dictionary matching the exact schema contract.
+
+### What LangChain Adds
+
+- **Composable Pipeline**: Explicit stage boundaries using standard LangChain primitives (`RunnableLambda`, `RunnableSequence`).
+- **Standard Document Representations**: Packaging retrieved text as `Document(page_content=..., metadata=...)` with document filename, 1-based page number, character offsets, SHA-256 hash, and component ID.
+- **Typed State Isolation**: Preserves `retrieval_status` distinctly in workflow state (`ambiguous_evidence` is never converted into an ordinary empty document list).
+- **Local Telemetry & Invocation Tracking**: Captures execution duration (ms) and invocation counts for each named stage in `telemetry["stage_metrics"]`. Confirms early abstentions invoke the extractor 0 times and eligible cases invoke it exactly 1 time.
+- **Strictly Offline Tracing**: External LangSmith/LangChain tracing is disabled by default (`LANGCHAIN_TRACING_V2=false`, `LANGSMITH_TRACING=false`), requiring zero external API keys or credentials.
+- **Exact PgVector Query Plan**: Confirmed using `WITH filtered_chunks AS MATERIALIZED (...)` SQL query plan to guarantee exact cosine distance ranking over the B-tree filtered metadata partition and prevent approximate HNSW index scans from altering rankings.
+
+### 100% Parity Benchmark Across All 16 Cases
+
+Evaluation across the complete 16-case benchmark (10 baseline + 6 challenge cases) demonstrates **100.0% concordance** between direct execution and LangChain execution for both retrievers:
+
+| Suite | Total Cases | Direct Execution Pass Rate | LangChain Orchestration Pass Rate | Concordance Rate |
+|---|:---:|:---:|:---:|:---:|
+| **Baseline Suite** | 10 | 10/10 (100.0%) | 10/10 (100.0%) | **10/10 (100.0%)** |
+| **Challenge Suite** | 6 | 5/6 (83.3%)* | 5/6 (83.3%)* | **6/6 (100.0%)** |
+| **Complete Suite (Baseline Retriever)** | 16 | 15/16 (93.8%) | 15/16 (93.8%) | **16/16 (100.0%)** |
+| **Complete Suite (PgVector Retriever)** | 16 | 15/16 (93.8%) | 15/16 (93.8%) | **16/16 (100.0%)** |
+
+*\*`challenge-01` fails at deterministic regex extraction due to documented sentence-structure limitation; both direct and LangChain produce identical outputs.*
+
+### Setup & Commands
+
+```bash
+# 1. Install optional LangChain orchestration dependencies
+pip install -r requirements-orchestration.txt
+
+# 2. Run investigation with LangChain orchestration
+python3 scripts/investigate_record.py data/records/unit-mismatch-001.json --orchestration langchain
+
+# 3. Run Step 23 automated verification suite
+python3 scripts/verify_step23_langchain.py
+
+# 4. Run baseline evaluation with LangChain
+python3 scripts/evaluate.py --extractor deterministic --suite baseline --orchestration langchain
+```
+
+---
+
+## 12. Offline vs. Live Workflows
 
 The repository strictly separates offline verification from live model evaluations:
 
@@ -441,6 +504,7 @@ The repository strictly separates offline verification from live model evaluatio
 | **Pretrained Embeddings Verification** | `python3 scripts/verify_step20_embeddings.py` | None | None (after initial cache) | Yes |
 | **Database & Vector Storage Verification** | `python3 scripts/verify_step21_database.py` | None | None (local Docker/Postgres) | Yes |
 | **Retriever Verification (Step 22)** | `python3 scripts/verify_step22_retrieval.py` | None | None (local Docker/Postgres) | Yes |
+| **LangChain Orchestration Verification (Step 23)** | `python3 scripts/verify_step23_langchain.py` | None | None | Yes |
 | **Retriever Comparative Benchmark (16 cases)** | `python3 scripts/evaluate.py --retriever both --suite all` | None | None (zero Gemini calls) | Yes |
 | **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None | Yes |
 | **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None | Yes |

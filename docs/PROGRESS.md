@@ -507,4 +507,41 @@
     * `scripts/verify_step22_retrieval.py`: Automated verification suite testing all 7 Step 22 requirements.
     * `tests/test_retrievers.py`: 13 unit and integration tests (factory, query formulation, full-context conflict detection, password sanitization, API status code mapping, and live database queries).
     * All 34 tests in `tests/` pass offline in 0.088s.
+- [x] **Step 23: Compose Investigation Workflow with LangChain** — Completed.
+  - **Goal & Scope**: Create an optional LangChain execution path that preserves the existing workflow's decisions, citations, and error behavior with 100% parity. Keep direct execution as the default.
+  - **Reproducible Optional Dependencies (`requirements-orchestration.txt`)**:
+    * Pinned `langchain-core==0.3.86` and supporting dependencies (`langsmith==0.4.37`, `jsonpatch==1.33`, `jsonpointer==3.0.0`, `orjson==3.11.5`, `packaging==25.0`, `requests-toolbelt==1.0.0`, `uuid-utils==0.15.0`, `zstandard==0.25.0`).
+    * Kept optional imports lazy: direct execution and service health checks remain completely operational without the orchestration dependency.
+  - **PgVector Exact Filtered Search Verification**:
+    * Confirmed using SQL `EXPLAIN ANALYZE` that `ORDER BY embedding <=> query` alone does not guarantee exact search when an HNSW index is present.
+    * Enforced exact filtered search via `WITH filtered_chunks AS MATERIALIZED (...)` CTE in `scripts/retrievers.py`. This guarantees PostgreSQL scans via the B-Tree index on `(corpus_id, component_id, revision)` to extract eligible chunks, materializes the candidate set, and performs exact in-memory cosine ranking with deterministic tie-breaking, preventing approximate HNSW graph searches from altering true top-1 rankings.
+  - **7 Named, Composable Runnable Stages (`scripts/investigate_chain.py`)**:
+    * `validate_record`: Checks recorded value presence, Decimal validity, and supported units (`mm`, `cm`).
+    * `retrieve_eligible_evidence`: Pluggable retrieval returning standard LangChain `Document` representations with complete metadata.
+    * `branch_on_retrieval_outcome`: Evaluates retrieval status; early abstentions (`insufficient_evidence`, `ambiguous_evidence`) or errors bypass extraction without invoking the extractor.
+    * `extract_measurement`: Invoked only once on eligible evidence passages; preserves early abstentions (0 calls).
+    * `validate_and_align_source_quote`: Enforces whitespace-aware quote alignment, attribute name verification, and value/unit grounding checks. Rejects invalid extractions without proposing corrections.
+    * `perform_decimal_conversion_and_comparison`: Exact Python `Decimal` conversion and comparison (`no_change` vs `correction_proposed`).
+    * `produce_investigation_response`: Formats the final response dictionary matching the exact schema contract.
+  - **Document Representation & State Isolation**:
+    * Packages retrieved evidence as `langchain_core.documents.Document` preserving filename, page number, character offsets, token count, SHA-256 hash, component ID, revision, and corpus ID.
+    * Keeps `retrieval_status` distinct in typed workflow state; conflicting evidence (`case-08`, `challenge-06`) is never flattened into an ordinary empty document list.
+  - **Preservation of Gemini Adapter & Grounding Behavior**:
+    * Preserved existing Gemini SDK adapter, structured output schema, prompt, timeout, and retry settings.
+    * Zero live Gemini calls made during Step 23 verification. Verified offline with mock Gemini extractors that whitespace alignment succeeds, ungrounded quotes fail guardrails, and model errors yield `needs_review` with `proposed_correction: None`.
+  - **Opt-In Execution Framework**:
+    * CLI flag `--orchestration {direct,langchain}` (default: `direct`) added to `scripts/investigate_record.py` and `scripts/evaluate.py`.
+    * FastAPI service configured via `INVESTIGATION_ORCHESTRATION` environment variable while preserving the external HTTP schema contract.
+  - **100% Parity Across All 16 Evaluation Cases**:
+    * Verified 16/16 (100.0%) concordance between direct and LangChain execution on both `baseline` and `pgvector` retrievers:
+      - Baseline suite: 10/10 (100.0%) pass rate.
+      - Challenge suite: 5/6 (83.3%) pass rate (`challenge-01` fails deterministically at regex extraction on both).
+  - **Local Telemetry & Invocation Tracking**:
+    * Named stage timings (ms) and invocation counts captured in `telemetry["stage_metrics"]`.
+    * Extractor invocation counts explicitly verified: 0 invocations for abstentions (`case-05`, `case-08`), exactly 1 invocation for eligible cases (`case-01`).
+    * External tracing strictly disabled by default (`LANGCHAIN_TRACING_V2=false`, `LANGSMITH_TRACING=false`). Zero secrets or LangSmith credentials required.
+  - **Automated Verification & CI Tests**:
+    * `scripts/verify_step23_langchain.py`: Comprehensive 8-point verification script passing 100%.
+    * `tests/test_chain.py`: 13 offline unit and integration tests covering pipeline composition, Document metadata, early abstention skips, fake Gemini grounding, dependency isolation, and live pgvector parity.
+    * CI workflow updated to install optional orchestration dependencies and verify LangChain pipeline parity on Python 3.13. All 48 tests pass.
 
