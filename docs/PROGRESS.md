@@ -258,3 +258,55 @@
     - Fixtures in `evaluation/cases/` and expected answers in `evaluation/expected/` untouched.
     - Frozen Step 13 reports (`challenge_comparison_report.json` and `.md`) preserved without modification.
     - `.env` strictly excluded from git tracking.
+- [x] **Step 15: Evaluate Updated Evidence Validation with Live Gemini on Challenge Cases** — Completed.
+  - **Goal & Scope**: Evaluate the updated evidence validation pipeline (with whitespace-aware quote alignment and labelled tuple measurement binding from Step 14) using live `gemini-3.5-flash-lite` against the 6 challenging synthetic supplier datasheets.
+  - **Frozen Baseline Versions**:
+    * Git Commit: `cfcbbda5b5df1a915a2e074caf015a3fbd34f4be`
+    * Configured Model: `gemini-3.5-flash-lite` (max attempts = 1, automatic retries disabled)
+    * Challenge Fixtures: `evaluation/cases/` (6 isolated synthetic challenge cases)
+    * Expected Answers: `evaluation/expected/` (frozen expected JSONs)
+    * Retrieval Implementation: `scripts/retrieve_evidence.py` (decoupled retrieval with verbatim section/page fallback)
+    * Extraction Prompt: `scripts/extractors.py:build_extraction_prompt` (strict boundary extraction)
+    * Validation Implementation: `scripts/investigate_record.py` (whitespace-aware quote alignment & tuple parsing)
+  - **Comparative Benchmark Results (Challenge Suite: 6 Cases)**:
+    * **Overall Pass Rate**: Deterministic **5 / 6 (83.3%)** vs. Live Gemini **6 / 6 (100.0%)** (+16.7 percentage points improvement).
+    * **Evidence Retrieval Success Rate**: **4 / 4 (100.0%)** for both providers on cases expecting evidence (`challenge-01` through `challenge-04`).
+    * **Retrieval Abstention Success Rate**: **2 / 2 (100.0%)** for both providers on missing/conflicting cases (`challenge-05` and `challenge-06`).
+    * **Combined Retrieval Accuracy**: **6 / 6 (100.0%)** for both providers.
+    * **Correction-Case Pass Rate**: Deterministic **2 / 3 (66.7%)** vs. Live Gemini **3 / 3 (100.0%)**.
+    * **Agreement-Case Pass Rate (`no_change`)**: Deterministic **1 / 1 (100.0%)** vs. Live Gemini **1 / 1 (100.0%)**.
+    * **Abstention-Case Pass Rate**: Deterministic **2 / 2 (100.0%)** vs. Live Gemini **2 / 2 (100.0%)**.
+    * **Citation Validity**: **4 / 4 (100.0%)** (4 valid citations out of 4 cases producing citations).
+    * **Provider Concordance**: **5 / 6 (83.3%)** matching outcomes.
+    * **API Execution Metrics**:
+      - Requests Attempted: 4 / 6 (max 6 budget preserved).
+      - Requests Completed: 4 / 4 (100.0% completion, zero retries).
+      - Requests Skipped (Early Retrieval Abstention): 2 / 6 (33.3%; `challenge-05` and `challenge-06` abstained before model invocation).
+    * **Performance & Latency Profile**:
+      - All Cases Median Latency: 0.48 ms (deterministic) vs. 813.33 ms (Gemini).
+      - Model-Called Cases Median Latency (4 Cases): 880.62 ms (Gemini; mean: 872.25 ms).
+      - Non-Model Cases Median Latency (2 Cases): 0.48 ms (deterministic) vs. 0.23 ms (Gemini).
+    * **Resource Consumption**:
+      - Token Usage: 1,395 total tokens (1,142 prompt tokens, 253 candidate tokens) across 4 live generation requests.
+      - Estimated Cost: null (unestimated; pricing rates external to API metadata).
+  - **Comparative Evolution Across Milestone Steps**:
+    | Step | Mode | Deterministic Pass Rate | Gemini Pass Rate | `challenge-01` (Sentence) | `challenge-04` (Tuple) | Key Finding |
+    |---|---|---|---|---|---|---|
+    | **Step 13** | Live API Call | 4 / 6 (66.7%) | 5 / 6 (83.3%) | Gemini FAIL (strict quote newline) | Gemini PASS (`no_change`) | Gemini resolved multi-dimension tuple; newline in sentence triggered strict verbatim rejection |
+    | **Step 14** | Offline Replay | 5 / 6 (83.3%) | 6 / 6 (100.0%) [Replay] | Replay PASS (whitespace mapped) | Det PASS (tuple parsed) | Token index mapping aligned quote offline; labelled tuple parsed deterministically |
+    | **Step 15** | Live API Call | 5 / 6 (83.3%) | **6 / 6 (100.0%)** | **Gemini PASS (live)** | **Gemini PASS (live)** | Live validation confirmed end-to-end; whitespace alignment resolved `challenge-01` live |
+  - **Key Step 15 Findings & Value-Add Analysis**:
+    1. **Live Resolution of `challenge-01-complete-sentence`**:
+       - In Step 13, Gemini extracted `"1.2 cm"` but formatted the supporting quote with a single space (`"is manufactured"`) instead of the source PDF's newline (`"is\nmanufactured"`), triggering Guardrail 1 literal rejection (`needs_review`).
+       - In Step 15, whitespace-aware quote alignment (`align_quote_to_passage`) cleanly mapped the model quote back to the exact contiguous source span containing the newline, while strictly maintaining character fidelity and rejection of altered numbers/units. Downstream Decimal conversion computed `1.2 cm * 10 = 12.0 mm`, proposing correction to `12.0 mm` (**PASS**).
+       - Deterministic baseline still fails on `challenge-01` at `measurement extraction` due to interstitial prose (`"of component COMP-C01 is"`), proving Gemini's semantic flexibility adds measurable value on unstructured natural language sentences (+16.7 percentage points).
+    2. **Safety & Early Abstention Preserved**:
+       - On `challenge-05-incorrect-revision` and `challenge-06-conflicting-statements`, retrieval guardrails aborted locally with `insufficient_evidence` and `ambiguous_evidence`, completely bypassing the model extractor and saving 33.3% of API requests.
+    3. **Zero Regressions & Full Deterministic Math**:
+       - Live Gemini achieved 100% concordance on all cases passed by the deterministic baseline.
+       - All unit conversions (`1.2 cm -> 12.0 mm`, `15.0 mm -> 1.5 cm`, `2.4 mm -> 0.24 cm`, `6.0 mm -> 0.6 cm`) were computed via deterministic Python `Decimal` arithmetic.
+  - **Generated Artifacts**:
+    * `evaluation/reports/step15_challenge_comparison_report.json`
+    * `evaluation/reports/step15_challenge_comparison_report.md`
+    * Historical Step 13 reports (`challenge_comparison_report.json` and `.md`) preserved without alteration.
+  - **Limitations Notice**: Findings are strictly bounded to the 6 synthetic challenge cases and do not claim generalization across unconstrained production engineering documents.

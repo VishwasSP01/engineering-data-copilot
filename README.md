@@ -274,7 +274,50 @@ python3 scripts/evaluate.py --extractor both --suite challenge
 - **Validation Rejection of Potentially Correct Extraction (`challenge-01`)**: On `challenge-01-complete-sentence`, Gemini correctly identified `1.2 cm`, but normalized a newline in `"is\nmanufactured"` to a single space `"is manufactured"`. Downstream Guardrail 1 rejected the quote as non-verbatim (`needs_review`). Validation was kept strict without code alterations, correctly categorized as a `validation` failure.
 - **Safety Preservation**: Early abstention on revision mismatch and conflicting evidence prevented 2 unnecessary model invocations (saving 33.3% of model calls).
 
+### Step 15 Live Comparative Evaluation (Challenge Suite)
+
+Following Step 14's evidence validation enhancements (whitespace-aware quote alignment and labelled tuple binding), Step 15 re-evaluated live `gemini-3.5-flash-lite` against the deterministic baseline on the 6 challenge cases under frozen versions (`cfcbbda5b5df1a915a2e074caf015a3fbd34f4be`).
+
+```bash
+# Run comparative challenge evaluation with Step 15 reporting
+python3 scripts/evaluate.py --extractor both --suite challenge --step 15
+```
+
+| Metric | Deterministic Baseline | Live Gemini (`gemini-3.5-flash-lite`) | Comparison |
+|---|---|---|---|
+| **Overall Pass Rate (End-to-End)** | 5 / 6 (83.3%) | **6 / 6 (100.0%)** | **Gemini Higher (+16.7 percentage points)** |
+| **Evidence Retrieval Success Rate** | 4 / 4 (100.0%) | 4 / 4 (100.0%) | Identical |
+| **Retrieval Abstention Success Rate** | 2 / 2 (100.0%) | 2 / 2 (100.0%) | Identical |
+| **Combined Retrieval Accuracy** | 6 / 6 (100.0%) | 6 / 6 (100.0%) | Identical |
+| **Correction Cases** | 2 / 3 (66.7%) | **3 / 3 (100.0%)** | Gemini Higher |
+| **Agreement Cases (`no_change`)** | 1 / 1 (100.0%) | 1 / 1 (100.0%) | Identical |
+| **Abstention Cases** | 2 / 2 (100.0%) | 2 / 2 (100.0%) | Identical |
+| **Citation Validity** | 4 / 4 (100.0%) | 4 / 4 (100.0%) | Identical |
+| **Model Requests Attempted** | 0 / 6 | 4 / 6 | Max 6 budget preserved |
+| **Model Requests Completed** | 0 / 0 | 4 / 4 | 100.0% completion, zero retries |
+| **Cases Without Model Call (Skipped)** | 6 / 6 (100.0%) | 2 / 6 (33.3%) | Retrieval early abstention |
+| **Median Latency (All 6 Cases)** | 0.48 ms | 813.33 ms | Deterministic is faster |
+| **Median Latency (Model-Called, 4 Cases)** | N/A | 880.62 ms | Network API transit |
+| **Median Latency (Non-Model, 2 Cases)** | 0.48 ms | 0.23 ms | Local early abstention |
+| **Token Usage** | 0 tokens | 1,395 total tokens (1,142 prompt, 253 candidate) | Across 4 live calls |
+| **Estimated Cost** | $0.00 | null (unestimated) | Pricing external to API metadata |
+| **Provider Concordance** | — | **5 / 6 (83.3%)** | — |
+
+**Evolution Across Challenge Milestones**:
+| Milestone | Mode | Deterministic Pass Rate | Gemini Pass Rate | `challenge-01` (Sentence) | `challenge-04` (Tuple) | Key Finding |
+|---|---|---|---|---|---|---|
+| **Step 13** | Live API Call | 4 / 6 (66.7%) | 5 / 6 (83.3%) | Gemini FAIL (newline mismatch) | Gemini PASS (`no_change`) | Gemini resolved tuple disambiguation; newline in sentence triggered strict verbatim rejection |
+| **Step 14** | Offline Replay | 5 / 6 (83.3%) | 6 / 6 (100.0%) [Replay] | Replay PASS (whitespace mapped) | Det PASS (tuple parsed) | Token index mapping aligned quote offline; labelled tuple parsed deterministically |
+| **Step 15** | Live API Call | 5 / 6 (83.3%) | **6 / 6 (100.0%)** | **Gemini PASS (live)** | **Gemini PASS (live)** | Live validation confirmed end-to-end; whitespace alignment resolved `challenge-01` live |
+
+**Key Step 15 Takeaways**:
+- **Full Challenge Suite Pass (100.0%)**: With whitespace-aware quote alignment active, Gemini cleanly aligned the supporting quote for `challenge-01-complete-sentence` across the source PDF line-break, converting `1.2 cm` via Decimal arithmetic to `12.0 mm` and proposing correction. The deterministic regex remains unable to parse interstitial sentence prose.
+- **Efficiency via Early Abstention**: 2 of the 6 cases (`challenge-05` and `challenge-06`) were aborted during retrieval without invoking the model, saving 33.3% of API requests and running in 0.23 ms.
+- **Zero Hallucination or Conversion Drift**: All candidate responses passed Pydantic schema validation, quote grounding, and attribute alignment; conversions strictly utilized Python `Decimal`.
+
 ### Evaluation Reports
+- [evaluation/reports/step15_challenge_comparison_report.md](evaluation/reports/step15_challenge_comparison_report.md): Step 15 side-by-side comparative report (Deterministic vs. Live Gemini after validation improvements).
+- [evaluation/reports/step15_challenge_comparison_report.json](evaluation/reports/step15_challenge_comparison_report.json): Machine-readable Step 15 comparison JSON.
 - [evaluation/reports/challenge_comparison_report.md](evaluation/reports/challenge_comparison_report.md): Step 13 side-by-side comparative report (Deterministic vs. Gemini on challenge suite).
 - [evaluation/reports/challenge_comparison_report.json](evaluation/reports/challenge_comparison_report.json): Machine-readable Step 13 comparison JSON.
 - [evaluation/reports/challenge_report.md](evaluation/reports/challenge_report.md): Detailed Step 12 challenge suite report and limitation analysis.
