@@ -24,5 +24,6 @@ htmlcov/
 *.swo
 .DS_Store
 
-# Regenerable extracted data output
+# Regenerable extracted data and embedding outputs
 data/extracted/
+data/embeddings/

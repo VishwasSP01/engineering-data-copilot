@@ -41,7 +41,7 @@ jobs:
         run: |
           python scripts/verify_sample.py
 
-      - name: Run FastAPI offline integration tests
+      - name: Run offline API and chunking tests
         run: |
           python -m unittest discover -s tests -p "test_*.py"
 

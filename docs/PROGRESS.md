@@ -404,3 +404,35 @@
     * Zero live Gemini API calls during tests.
   - **Automated CI Integration**:
     * Added `Run FastAPI offline integration tests` step to `.github/workflows/ci.yml`.
+- [x] **Step 20: Citation-Preserving Document Chunks and Pretrained Embeddings** — Completed.
+  - **Goal & Scope**: Generate pretrained semantic embeddings and citation-preserving chunks from supplier document text without connecting a vector database or replacing default retrieval.
+  - **Embedding Model & Environment**:
+    * Model: `sentence-transformers/all-MiniLM-L6-v2` pinned to resolved HuggingFace commit SHA `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`.
+    * Dimension: 384 finite float32 values.
+    * Runtime: CPU inference exclusively (`device="cpu"`, `batch_size=32`).
+    * Normalization: Unit Euclidean norm (`normalize_embeddings=True`, verified $\|v\|_2 \approx 1.0 \pm 10^{-5}$).
+    * Frozen Weights: Pretrained model weights are never trained or fine-tuned.
+  - **Optional Dependencies Strategy**:
+    * Created `requirements-embeddings.txt` pinning exact versions (`sentence-transformers==5.1.2`, `torch==2.8.0`, `transformers==4.57.6`, `tokenizers==0.22.2`, `numpy==2.0.2`, `safetensors==0.7.0`, `huggingface-hub==0.36.2`, `scikit-learn==1.6.1`, `scipy==1.13.1`).
+    * Preserved lightweight core dependencies in `requirements.txt` and `requirements-lock.txt` so that core CLI and API checks do not require heavy PyTorch or model downloads.
+  - **Citation-Preserving Chunking (`scripts/embed_documents.py`)**:
+    * Single-Page Invariance: Chunks never cross page boundaries.
+    * Exact Verbatim Spans: Character offsets (`start_char`, `end_char`) strictly reproduce original page text (`page_text[start:end] == chunk_text`).
+    * Tokenizer-Aware Boundaries: Imposed a maximum limit of 250 tokens per chunk (including `[CLS]` and `[SEP]` special tokens within the 256-token limit), completely eliminating silent truncation.
+    * Context & Structure Preservation: Preserved measurement lines and parameter tables as coherent units without splitting rows or attributes.
+    * Authoritative Document Identity: Derived component ID, revision, and document ID strictly from document text regex headers. Rejects documents with missing or conflicting identities rather than guessing. Never consults expected answers or records.
+  - **Isolated Storage & Manifest (`data/embeddings/`)**:
+    * Saved `chunks.json` (metadata, offsets, SHA-256 digests, and authoritative identifiers).
+    * Saved `embeddings.npy` (binary NumPy float32 matrix of shape `(num_chunks, 384)`).
+    * Saved `manifest.json` (execution metadata, model commit SHA, dimensions, chunking settings, and file integrity hashes).
+    * Added `data/embeddings/` to `.gitignore` to prevent committing generated vectors or caches.
+  - **Comprehensive Verification (`scripts/verify_step20_embeddings.py`)**:
+    * Vector Integrity: Verified 100% of vectors have 384 finite float values and unit Euclidean norms (min=1.000000, max=1.000000).
+    * Verbatim Reproduction: Verified character offsets reproduce page text with 100% exact character fidelity.
+    * Deterministic Reproducibility: Confirmed repeated CPU inference yields identical vectors with $0.00$ numerical difference ($< 10^{-5}$).
+    * Offline Cached Execution: Verified model loads from local HuggingFace cache using `local_files_only=True` without making external network calls.
+    * Safety Identity Rejection: Verified rejection of missing component IDs, ambiguous component IDs, missing revisions, and ambiguous revisions.
+    * Cosine Similarity Demonstration: Successfully matched "Physical Dimensions Query" to Chunk 3 (Physical Dimensions, similarity 0.5112) and "Product Overview Query" to Chunk 2 (Product Overview, similarity 0.6599). Documented disclaimer that semantic dot-product properties do not replace or benchmark document retrieval accuracy.
+  - **Lightweight Offline Tests & CI (`tests/test_chunking.py`)**:
+    * Added 7 unit tests verifying verbatim reproduction, offset accuracy, SHA-256 calculation, and identity safety rules offline without requiring model downloads or PyTorch.
+    * All 15 unit tests in `tests/` pass in 0.026s.

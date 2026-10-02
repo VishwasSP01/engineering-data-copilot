@@ -299,29 +299,69 @@ curl -s -X POST "http://localhost:8000/investigations?extractor=deterministic" \
 
 ---
 
-## 9. Offline vs. Live Workflows
+## 9. Citation-Preserving Document Embeddings
+
+Step 20 introduces pretrained semantic embeddings and citation-preserving chunking for supplier technical datasheets without altering default retrieval or connecting a vector database.
+
+### Core Concepts
+- **Embeddings**: Dense 384-dimensional mathematical vector representations capturing semantic meaning of technical text spans.
+- **Normalization**: Vectors are projected onto a unit hypersphere ($\|v\|_2 = 1.0 \pm 10^{-5}$) so that vector length differences do not distort semantic similarity calculations.
+- **Cosine Similarity**: Computed as the dot product between two unit-normalized vectors ($S_C(u, v) = u \cdot v$), measuring the angular alignment between queries and document chunks from -1.0 to 1.0.
+
+### Model & Settings
+- **Pretrained Model**: [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
+- **Pinned HuggingFace Revision**: `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`
+- **Embedding Dimension**: 384 finite float32 values
+- **Inference Runtime**: CPU inference exclusively (no GPU required, no fine-tuning)
+- **Token Limit**: 250 tokens per chunk (leaves margin for `[CLS]` and `[SEP]` special tokens within the 256-token limit, preventing silent truncation)
+
+### First-Download vs. Cached Execution
+- **First Run**: Downloads the model weights (~91 MB) from HuggingFace to the local cache (`~/.cache/huggingface/hub/`).
+- **Subsequent Runs**: Loads instantaneously from local cache using `local_files_only=True` with zero network requests.
+
+### Setup & Commands
+```bash
+# 1. Install optional embedding dependencies (keeps core environment lightweight)
+pip install -r requirements-embeddings.txt
+
+# 2. Generate citation-preserving chunks and embeddings for the extracted corpus
+python3 scripts/embed_documents.py --extracted-dir data/extracted --output-dir data/embeddings
+
+# 3. Run the Step 20 verification suite
+python3 scripts/verify_step20_embeddings.py
+```
+
+### Generated Artifacts (Gitignored under `data/embeddings/`)
+- `chunks.json`: Structured chunks recording verbatim text, 1-based page number, character offsets (`start_char`, `end_char`), token counts, content SHA-256, and authoritative component/revision IDs.
+- `embeddings.npy`: Binary NumPy float32 matrix of shape `(num_chunks, 384)`.
+- `manifest.json`: Execution metadata, model name and commit SHA, dimensions, normalization flag, and file hashes.
+
+---
+
+## 10. Offline vs. Live Workflows
 
 The repository strictly separates offline verification from live model evaluations:
 
-- **No Gemini API calls during offline verification**: All offline verification suites, mock extractor checks, deterministic evaluations, and FastAPI integration tests run locally with no Gemini API calls.
-- **Network Usage Clarification**: While initial environment setup (cloning and `pip install -r requirements-lock.txt`) and GitHub Actions runner setup naturally use network transit to download dependencies from PyPI, the offline verification suite itself makes zero external API requests.
+- **No Gemini API calls during offline verification**: All offline verification suites, mock extractor checks, deterministic evaluations, FastAPI integration tests, and embedding verification run locally with no Gemini API calls.
+- **Network Usage Clarification**: While initial environment setup and optional model downloading require network transit to fetch packages and weights, all verification suites and cached runs operate completely offline.
 - **Live Gemini Workflows**: Require `GEMINI_API_KEY` and perform live network generation requests to the Gemini API.
 
-| Workflow | Command | Credentials Required? | Gemini API Calls? | Local Offline Execution? |
+| Workflow | Command | Credentials Required? | External Network Calls? | Local Offline Execution? |
 |---|---|:---:|:---:|:---:|
 | **Comprehensive Offline Verification** | `python3 scripts/verify_sample.py` | None | None | Yes |
 | **Mock Extractor & Guardrail Checks** | `python3 scripts/verify_step8_extractor.py` | None | None | Yes |
 | **FastAPI Offline Integration Tests** | `python3 -m unittest discover -s tests -p "test_*.py"` | None | None | Yes |
+| **Pretrained Embeddings Verification** | `python3 scripts/verify_step20_embeddings.py` | None | None (after initial cache) | Yes |
 | **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None | Yes |
 | **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None | Yes |
 | **Deterministic Single Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor deterministic` | None | None | Yes |
-| **Live Gemini Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor gemini` | `GEMINI_API_KEY` | Yes (1 call) | No (API transit) |
+| **Live Gemini Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor gemini` | `GEMINI_API_KEY` | Yes (1 API call) | No (API transit) |
 | **Live Challenge Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite challenge --step 15` | `GEMINI_API_KEY` | Yes (max 6 calls) | No (API transit) |
 | **Live Baseline Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite baseline` | `GEMINI_API_KEY` | Yes (max 10 calls) | No (API transit) |
 
 ---
 
-## 10. Evaluation Results & Benchmark Suite
+## 11. Evaluation Results & Benchmark Suite
 
 The repository contains two evaluation suites testing length unit mismatches (`cm` ↔ `mm`), agreements, unknown components, incorrect revisions, missing measurements, conflicting evidence, unsupported units, and complex layouts.
 
@@ -365,7 +405,7 @@ The repository contains two evaluation suites testing length unit mismatches (`c
 
 ---
 
-## 11. Continuous Integration (CI)
+## 12. Continuous Integration (CI)
 
 An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on all pushes and pull requests targeting the `main` branch.
 
@@ -374,7 +414,7 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 2. **Data & Text Extraction**: Generates synthetic investigation records and extracts document text page-by-page into `data/extracted/`.
 3. **Mock & Schema Validation**: Runs [`scripts/verify_step8_extractor.py`](scripts/verify_step8_extractor.py) verifying Pydantic schema validation, prompt boundaries, and 7 mock scenarios.
 4. **Comprehensive Regression Suite**: Runs [`scripts/verify_sample.py`](scripts/verify_sample.py) verifying sample validity, text extraction, retrieval, conversion arithmetic, whitespace quote alignment, labelled tuple binding, immutability, and offline replay.
-5. **FastAPI Offline Integration Tests**: Runs `python -m unittest discover -s tests -p "test_*.py"` verifying `/health`, sample correction reproduction, CLI/API concordance, malformed input rejection (HTTP 422), business abstentions (HTTP 200), provider error translation (HTTP 502/503), and record/document immutability.
+5. **Offline API & Chunking Tests**: Runs `python -m unittest discover -s tests -p "test_*.py"` verifying API endpoints, verbatim citation-preserving chunking boundaries, and document identity safety rejection rules.
 6. **Deterministic Benchmark Evaluations**:
    - Baseline Suite: Asserts 10/10 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite baseline`).
    - Challenge Suite: Verifies 5/6 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite challenge`), preserving the known `challenge-01` sentence regex limitation while failing if any unexpected regression occurs.
@@ -383,12 +423,12 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 
 ---
 
-## 12. Limitations & Deferred Features
+## 13. Limitations & Deferred Features
 
 To maintain reliability, security, and auditability, the project's scope is strictly bounded:
 
 ### What Is Not Implemented
-- **No Vector Databases or Embeddings**: Retrieval uses deterministic metadata filtering (part number, revision) and text matching rather than embedding-based similarity search.
+- **No Vector Database or Vector Retrieval**: Pretrained document embeddings (`sentence-transformers/all-MiniLM-L6-v2`) generate dense vector representations and citation chunks offline, but are not yet connected to a vector database or active retrieval pipeline. Active retrieval currently operates via deterministic metadata filtering (part number, revision) and verbatim text matching.
 - **No OCR for Raster Scans**: Documents must contain selectable digital text (`pypdf` extraction); scanned raster PDFs or image-only drawings are not supported.
 - **No Multi-Turn Chat or Autonomous Agents**: The investigation workflow is a deterministic, single-turn audit pipeline, not an interactive conversational agent.
 - **No Direct Database Mutation**: The tool generates proposed correction payloads; it does not write directly to production ERP or PLM systems.
@@ -396,7 +436,7 @@ To maintain reliability, security, and auditability, the project's scope is stri
 
 ---
 
-## 13. Project Documentation
+## 14. Project Documentation
 
 - [docs/DEMO.md](docs/DEMO.md): Interactive CLI walkthrough and interview demonstration guide.
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.
