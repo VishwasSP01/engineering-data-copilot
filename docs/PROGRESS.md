@@ -331,3 +331,23 @@
     * Runs strictly offline with zero live network calls and zero API key requirements.
   - **Documentation & Instructions**:
     * Updated `README.md` with supported environment, fresh-checkout setup, data generation, clear offline vs. live commands, and CI workflow details.
+- [x] **Step 17: CLI Demo and Final Project Documentation** — Completed.
+  - **Goal & Scope**: Prepare interview-ready CLI walkthrough and refined project documentation, update GitHub Actions CI to Python 3.13, accurately document tested environments, and embed architecture diagrams.
+  - **CI Upgrade to Python 3.13**:
+    * Updated `.github/workflows/ci.yml` from Python 3.9 to Python 3.13 on `ubuntu-latest`.
+    * Preserved all dependency pins in `requirements-lock.txt`.
+    * Verified automated CI run passes completely offline with zero credentials or network transit.
+  - **Accurate Environment Documentation**:
+    * Documented tested environments accurately: macOS (Darwin arm64) with Python 3.9.6, and Linux (`ubuntu-latest` / Ubuntu 24.04 x86_64) with Python 3.13 via GitHub Actions.
+    * Explicitly avoided unsubstantiated claims regarding Windows or untested Python versions.
+  - **Refined Project Documentation (`README.md`)**:
+    * Structured for first-time reviewers: clear problem definition and narrowly scoped solution.
+    * Implemented technology stack: `pypdf`, `reportlab`, `pydantic`, Python standard library `decimal.Decimal`, `google-genai`.
+    * Embedded Mermaid architecture diagram showing end-to-end pipeline (`record -> eligible retrieval -> extraction [deterministic / Gemini] -> source-quote validation -> Decimal conversion -> proposal/abstention`), keeping expected answers connected solely to the evaluator.
+    * Included one copy-paste deterministic investigation command with its actual JSON output.
+    * Documented optional live Gemini setup and execution commands with safety guardrail notes.
+    * Honest evaluation presentation: baseline 10/10, challenge 5/6 deterministic vs. 6/6 live Gemini, with explicit limitation notice that results reflect synthetic benchmark fixtures rather than claims of generalized production accuracy.
+    * Explicitly listed deferred features (no vector DB, no OCR, no web UI/API server).
+  - **Interactive CLI Demo Guide (`docs/DEMO.md`)**:
+    * Created interview-ready walkthrough covering 4 core scenarios: supported discrepancy correction (`unit-mismatch-001`), safety abstentions on conflicting evidence (`case-08`) and revision mismatches (`challenge-05`), demonstrated Gemini value-add on unstructured sentence prose (`challenge-01`), and automated offline CI verification.
+    * All demo CLI commands tested and verified 100% offline; saved live model outputs clearly labeled as historical artifacts.
