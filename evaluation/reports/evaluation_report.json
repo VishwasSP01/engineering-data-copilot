@@ -2,7 +2,7 @@
   "evaluation_scope": "Synthetic Evaluation Suite (Step 10: Deterministic Baseline Suite)",
   "evaluation_notice": "Notice: This benchmark tests pipeline behavior across a synthetic dataset. It does not demonstrate production accuracy.",
   "suite": "baseline",
-  "timestamp": "2026-10-02T06:55:24.758256+00:00",
+  "timestamp": "2026-10-02T08:05:11.109620+00:00",
   "extractor": "deterministic",
   "model": null,
   "summary": {
@@ -28,19 +28,22 @@
       "percentage": 100.0
     },
     "performance": {
-      "all_cases_median_duration_ms": 0.68,
-      "all_cases_mean_duration_ms": 0.7,
+      "all_cases_median_duration_ms": 0.63,
+      "all_cases_mean_duration_ms": 0.72,
       "model_called_cases_median_duration_ms": null,
       "model_called_cases_mean_duration_ms": null,
-      "non_model_cases_median_duration_ms": 0.69,
-      "non_model_cases_mean_duration_ms": 0.7,
-      "median_investigation_duration_ms": 0.68,
-      "mean_investigation_duration_ms": 0.7
+      "non_model_cases_median_duration_ms": 0.63,
+      "non_model_cases_mean_duration_ms": 0.72,
+      "median_investigation_duration_ms": 0.63,
+      "mean_investigation_duration_ms": 0.72
     },
     "model_metrics": {
       "model_requests_attempted": "0/10",
       "model_requests_succeeded": "0/0",
       "cases_without_model_call": "10/10",
+      "requests_attempted": "0/10",
+      "requests_completed": "0/0",
+      "requests_skipped": "10/10",
       "token_usage": null,
       "estimated_cost_usd": null,
       "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
@@ -51,7 +54,7 @@
       "case_id": "case-01-correction-cm-to-mm",
       "category": "correction",
       "description": "Recorded thickness = 0.8 mm vs datasheet thickness = 0.8 cm -> propose 8.0 mm.",
-      "duration_ms": 1.11,
+      "duration_ms": 1.37,
       "passed": true,
       "status": "passed",
       "outcome": "correction_proposed",
@@ -102,7 +105,8 @@
           "document_filename": "supplier-COMP-001.pdf",
           "page_number": 1,
           "supporting_passage": "Component thickness: 0.8 cm.",
-          "context_type": "passage"
+          "context_type": "passage",
+          "quote_alignment": "literal"
         }
       }
     },
@@ -110,7 +114,7 @@
       "case_id": "case-02-correction-mm-to-cm",
       "category": "correction",
       "description": "Recorded width = 25.0 cm vs datasheet width = 25.0 mm -> propose 2.5 cm.",
-      "duration_ms": 1.03,
+      "duration_ms": 1.14,
       "passed": true,
       "status": "passed",
       "outcome": "correction_proposed",
@@ -161,7 +165,8 @@
           "document_filename": "supplier-COMP-002.pdf",
           "page_number": 1,
           "supporting_passage": "Component width: 25.0 mm.",
-          "context_type": "passage"
+          "context_type": "passage",
+          "quote_alignment": "literal"
         }
       }
     },
@@ -169,7 +174,7 @@
       "case_id": "case-03-agreement-mm",
       "category": "abstention",
       "description": "Recorded thickness = 8.0 mm vs datasheet thickness = 0.8 cm -> values agree, no_change.",
-      "duration_ms": 0.47,
+      "duration_ms": 0.63,
       "passed": true,
       "status": "passed",
       "outcome": "no_change",
@@ -206,7 +211,8 @@
           "document_filename": "supplier-COMP-003.pdf",
           "page_number": 1,
           "supporting_passage": "Component thickness: 0.8 cm.",
-          "context_type": "passage"
+          "context_type": "passage",
+          "quote_alignment": "literal"
         }
       }
     },
@@ -214,7 +220,7 @@
       "case_id": "case-04-agreement-cm",
       "category": "abstention",
       "description": "Recorded width = 2.5 cm vs datasheet width = 25.0 mm -> values agree, no_change.",
-      "duration_ms": 0.66,
+      "duration_ms": 0.62,
       "passed": true,
       "status": "passed",
       "outcome": "no_change",
@@ -251,7 +257,8 @@
           "document_filename": "supplier-COMP-004.pdf",
           "page_number": 1,
           "supporting_passage": "Component width: 25.0 mm.",
-          "context_type": "passage"
+          "context_type": "passage",
+          "quote_alignment": "literal"
         }
       }
     },
@@ -259,7 +266,7 @@
       "case_id": "case-05-unknown-component",
       "category": "abstention",
       "description": "Record references COMP-999 not present in document corpus -> insufficient_evidence.",
-      "duration_ms": 0.71,
+      "duration_ms": 0.63,
       "passed": true,
       "status": "passed",
       "outcome": "insufficient_evidence",
@@ -295,7 +302,7 @@
       "case_id": "case-06-incorrect-revision",
       "category": "abstention",
       "description": "Record asks for Rev B, but document is Rev A -> insufficient_evidence.",
-      "duration_ms": 0.85,
+      "duration_ms": 0.7,
       "passed": true,
       "status": "passed",
       "outcome": "insufficient_evidence",
@@ -331,7 +338,7 @@
       "case_id": "case-07-missing-measurement",
       "category": "abstention",
       "description": "Record investigates 'weight', which is missing from document -> insufficient_evidence.",
-      "duration_ms": 0.98,
+      "duration_ms": 0.85,
       "passed": true,
       "status": "passed",
       "outcome": "insufficient_evidence",
@@ -367,7 +374,7 @@
       "case_id": "case-08-conflicting-evidence",
       "category": "abstention",
       "description": "Document contains conflicting measurements (0.8 cm vs 1.2 cm) -> ambiguous_evidence.",
-      "duration_ms": 0.62,
+      "duration_ms": 0.57,
       "passed": true,
       "status": "passed",
       "outcome": "ambiguous_evidence",
@@ -403,7 +410,7 @@
       "case_id": "case-09-unsupported-unit",
       "category": "abstention",
       "description": "Document specifies thickness in unsupported unit 'in' (0.8 in) -> needs_review.",
-      "duration_ms": 0.52,
+      "duration_ms": 0.57,
       "passed": true,
       "status": "passed",
       "outcome": "needs_review",
@@ -440,7 +447,8 @@
           "document_filename": "supplier-COMP-009.pdf",
           "page_number": 1,
           "supporting_passage": "Component thickness: 0.8 in.",
-          "context_type": "passage"
+          "context_type": "passage",
+          "quote_alignment": "literal"
         }
       }
     },
@@ -448,7 +456,7 @@
       "case_id": "case-10-malformed-measurement",
       "category": "abstention",
       "description": "Record value 'INVALID_NUM' is not numeric -> needs_review.",
-      "duration_ms": 0.08,
+      "duration_ms": 0.16,
       "passed": true,
       "status": "passed",
       "outcome": "needs_review",

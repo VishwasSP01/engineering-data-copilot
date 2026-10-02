@@ -223,16 +223,25 @@ python3 scripts/evaluate.py --suite challenge
 
 | Challenge Case ID | Description / Layout Variation | Expected Outcome | Actual Outcome | Retrieval | Cit. Valid | Result | Failure Stage |
 |---|---|---|---|---|---|---|---|
-| `challenge-01-complete-sentence` | Thickness stated in complete sentence | `correction_proposed` | `needs_review` | ✓ (section) | ✓ | **FAIL** | Measurement extraction (false token pairing `01 is`) |
+| `challenge-01-complete-sentence` | Thickness stated in complete sentence | `correction_proposed` | `needs_review` | ✓ (section) | ✓ | **FAIL** | Measurement extraction (interstitial prose `COMP-C01 is`) |
 | `challenge-02-table-value-unit-columns` | Separate parameter, value, and unit table columns | `correction_proposed` | `correction_proposed` | ✓ (section) | ✓ | **PASS** | — (Parsed 15.0 mm -> proposed 1.5 cm) |
 | `challenge-03-split-lines-label-measurement` | Label and measurement wrapped across line break | `correction_proposed` | `correction_proposed` | ✓ (section) | ✓ | **PASS** | — (Parsed 2.4 mm -> proposed 0.24 cm) |
-| `challenge-04-distracting-measurements` | Thickness alongside concatenated length and width | `no_change` | `correction_proposed` | ✓ (section) | ✓ | **FAIL** | Measurement extraction (captured adjacent length 60.0 mm) |
+| `challenge-04-distracting-measurements` | Thickness alongside concatenated length and width | `no_change` | `no_change` | ✓ (section) | ✓ | **PASS** | — (Labelled tuple parsed 6.0 mm -> no_change) |
 | `challenge-05-incorrect-revision` | Correct component ID but incorrect Revision B | `insufficient_evidence` | `insufficient_evidence` | ✓ (abstained) | ✓ | **PASS** | — (Revision guardrail confirmed) |
 | `challenge-06-conflicting-statements` | Two conflicting thickness values in document | `ambiguous_evidence` | `ambiguous_evidence` | ✓ (abstained) | ✓ | **PASS** | — (Ambiguity guardrail confirmed) |
 
-- **Retrieval Success Rate**: **6 / 6 (100.0%)** (all 4 layout challenge cases now retrieve valid verbatim section context with provenance).
-- **End-to-End Pass Rate**: **4 / 6 (66.7%)** (up from 2 / 6 in Step 11).
-- **Failure Stage Transition**: Zero cases failed at `retrieval`. The remaining 2 failures (`challenge-01` and `challenge-04`) are accurately attributed to `measurement extraction`, where deterministic regexes fail on interstitial prose and concatenated multi-dimension lists.
+- **Evidence Retrieval Success Rate**: **4 / 4 (100.0%)** on cases expecting evidence.
+- **Retrieval Abstention Success Rate**: **2 / 2 (100.0%)** on missing/conflicting cases.
+- **Combined Retrieval Accuracy**: **6 / 6 (100.0%)**.
+- **End-to-End Pass Rate**: **5 / 6 (83.3%)** (an increase of 16.7 percentage points from 4 / 6 in Step 12, and 50.0 percentage points from 2 / 6 in Step 11).
+- **Remaining Deterministic Limitations**: Only `challenge-01` remains failing deterministically at `measurement extraction`, where regex cannot parse interstitial sentence prose.
+
+### Step 14: Quote Alignment and Measurement Binding
+
+Step 14 addressed the findings from Step 13 without making live Gemini calls:
+1. **Whitespace-Aware Quote Alignment (`align_quote_to_passage`)**: Preserves strict literal matching as primary check; falls back to token index mapping for whitespace/line-break variations (e.g. `challenge-01`). Returns the original verbatim contiguous source span as citation, retaining the model quote for audit. Strictly rejects modified numbers, units, invented words, or ambiguities.
+2. **Deterministic Labelled Tuple Binding (`parse_labelled_tuple`)**: Positionally binds multi-dimension tuples (e.g. `(length, width, thickness): 60 mm x 40 mm x 6 mm`) to requested attributes, resolving `challenge-04` deterministically. Safely abstains if correspondence is unclear.
+3. **Replay Validation**: Validated the saved Step 13 `challenge-01` Gemini extraction offline through quote alignment and deterministic Decimal arithmetic (`1.2 cm` -> `12.0 mm`), confirming exact agreement with expected answer.
 
 ### Step 13 Comparative Results (Challenge Suite: Varied Datasheets)
 

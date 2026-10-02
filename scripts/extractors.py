@@ -128,6 +128,109 @@ class BaseMeasurementExtractor(ABC):
         pass
 
 
+def parse_labelled_tuple(
+    evidence_passage: str,
+    attribute_name: str
+) -> Optional[Tuple[Optional[Decimal], Optional[str], Optional[str], Optional[str]]]:
+    """Parse labelled measurement tuples such as:
+    '(length, width, thickness): 60 mm x 40 mm x 6 mm'
+    
+    Associates each label with its corresponding value.
+    Does not select the first number appearing after the attribute keyword.
+    If correspondence is unclear, returns an error message without a correction.
+    Generic to any requested attribute.
+
+    Returns:
+        None if no labelled tuple structure matching attribute_name is found.
+        (value, unit, quote, error_message) if a tuple structure is identified.
+        If error_message is not None, value and unit will be None (unclear mapping -> abstain).
+    """
+    attr_clean = attribute_name.strip().lower()
+
+    for line in evidence_passage.splitlines():
+        line_clean = line.strip()
+        if not line_clean or attr_clean not in line_clean.lower():
+            continue
+
+        # Look for a delimiter ':' or '='
+        m_delim = re.search(r'[:=]', line_clean)
+        if not m_delim:
+            continue
+
+        header = line_clean[:m_delim.start()].strip()
+        body = line_clean[m_delim.end():].strip()
+        if not header or not body:
+            continue
+
+        # Check for label group in parentheses, brackets, or as comma/x-separated header
+        m_paren = re.search(r'[\(\[]([^\)\]]+)[\)\]]', header)
+        if m_paren:
+            labels_str = m_paren.group(1).strip()
+        else:
+            labels_str = header
+
+        # Extract labels separated by commas, 'x', or '/'
+        if ',' in labels_str:
+            labels = [l.strip().lower() for l in labels_str.split(',') if l.strip()]
+        elif re.search(r'\s+[xX×/]\s+', labels_str) and not any(ch.isdigit() for ch in labels_str):
+            labels = [l.strip().lower() for l in re.split(r'\s+[xX×/]\s+', labels_str) if l.strip()]
+        else:
+            continue
+
+        # A tuple requires at least two distinct labels
+        if len(labels) < 2:
+            continue
+
+        # Check if requested attribute matches any label in the sequence
+        matching_indices = []
+        for idx, lbl in enumerate(labels):
+            lbl_clean = re.sub(r'^(?:nominal|package|component)\s+', '', lbl).strip()
+            if attr_clean == lbl or attr_clean == lbl_clean or attr_clean.split()[-1] == lbl_clean or lbl_clean == attr_clean.split()[-1]:
+                matching_indices.append(idx)
+
+        if not matching_indices:
+            continue
+
+        # Unclear correspondence if attribute matches multiple positions in tuple
+        if len(matching_indices) > 1:
+            return None, None, line_clean, f"Unclear tuple mapping: attribute '{attribute_name}' matches multiple label positions {matching_indices}."
+
+        target_idx = matching_indices[0]
+
+        # Extract measurement values from body
+        # Split body by 'x', 'X', '×', ',', or 'and'
+        raw_items = re.findall(r'(\d+(?:\.\d+)?)\s*([a-zA-Zµ°Ω%]+)?', body)
+        if not raw_items:
+            return None, None, line_clean, "Unclear tuple mapping: no numeric values found in tuple body."
+
+        # Handle shared trailing unit (e.g., '60 x 40 x 6 mm')
+        has_units = [bool(u) for _, u in raw_items]
+        last_unit = raw_items[-1][1] if raw_items else ""
+        resolved_items = []
+        if not all(has_units) and last_unit:
+            for val, u in raw_items:
+                resolved_items.append((val, u if u else last_unit))
+        else:
+            resolved_items = raw_items
+
+        # Verify 1-to-1 correspondence between labels and values
+        if len(labels) != len(resolved_items):
+            return None, None, line_clean, f"Unclear tuple mapping: label count ({len(labels)}) does not match value count ({len(resolved_items)})."
+
+        target_val_str, target_unit_str = resolved_items[target_idx]
+        if not target_unit_str:
+            return None, None, line_clean, f"Unclear tuple mapping: no unit found for measurement at position {target_idx}."
+
+        try:
+            val_dec = Decimal(target_val_str)
+        except InvalidOperation:
+            return None, None, line_clean, f"Unclear tuple mapping: could not convert '{target_val_str}' to Decimal."
+
+        return val_dec, target_unit_str.lower(), line_clean, None
+
+    return None
+
+
 class DeterministicMeasurementExtractor(BaseMeasurementExtractor):
     """Deterministic regex-based measurement extractor (default baseline)."""
 
@@ -143,6 +246,34 @@ class DeterministicMeasurementExtractor(BaseMeasurementExtractor):
             return ExtractorResult(
                 status="insufficient",
                 error_message="Empty evidence passage provided.",
+                provider="deterministic",
+                model=None,
+                call_duration_ms=duration_ms,
+                token_usage=None,
+                token_usage_reason="Token usage not applicable for deterministic extractor."
+            )
+
+        # Pattern 0: Check for explicit labelled tuple first (e.g. '(length, width, thickness): 60 mm x 40 mm x 6 mm')
+        tuple_res = parse_labelled_tuple(evidence_passage, attribute_name)
+        if tuple_res is not None:
+            val_dec, raw_unit, quote, err = tuple_res
+            duration_ms = round((time.perf_counter() - t0) * 1000, 2)
+            if err is not None:
+                return ExtractorResult(
+                    status="error",
+                    error_message=err,
+                    provider="deterministic",
+                    model=None,
+                    call_duration_ms=duration_ms,
+                    token_usage=None,
+                    token_usage_reason="Token usage not applicable for deterministic extractor."
+                )
+            return ExtractorResult(
+                status="found",
+                measurement_name=attribute_name,
+                value=val_dec,
+                unit=raw_unit,
+                quote=quote,
                 provider="deterministic",
                 model=None,
                 call_duration_ms=duration_ms,

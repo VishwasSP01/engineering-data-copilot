@@ -443,25 +443,172 @@ def main():
     assert c6_ret["status"] == "ambiguous_evidence", f"Expected ambiguous_evidence, got {c6_ret['status']}"
     print("✓ Challenge 06 (conflicting statements) correctly abstained with 'ambiguous_evidence'.")
 
-    # Run evaluation benchmark on challenge suite
-    challenge_report = run_evaluation(repo_root, extractor="deterministic", suite="challenge")
-    assert challenge_report["summary"]["total_cases"] == 6
-    assert challenge_report["summary"]["retrieval_success_rate"] == "6/6 (100.0%)"
-    assert challenge_report["summary"]["passed_cases"] == 4
-    assert challenge_report["summary"]["failed_cases"] == 2
-    assert challenge_report["summary"]["abstention_pass_rate"] == "2/2 (100.0%)"
-    assert challenge_report["summary"]["citation_validity"]["valid"] == 4
-    assert (repo_root / "evaluation" / "reports" / "challenge_report.json").exists()
-    assert (repo_root / "evaluation" / "reports" / "challenge_report.md").exists()
+    # 12. Step 14 Verification: Quote alignment and labelled measurement binding
+    print("=== Step 14 Verification Suite ===")
+    import hashlib
+    from decimal import Decimal
+    from investigate_record import align_quote_to_passage, convert_measurement
+    from extractors import parse_labelled_tuple
 
-    # Confirm remaining failures are honestly attributed to measurement extraction
-    failed_challenge_cases = [c for c in challenge_report["cases"] if not c["passed"]]
-    assert len(failed_challenge_cases) == 2
-    for fc in failed_challenge_cases:
-        assert fc["failure_stage"] == "measurement extraction", f"Expected measurement extraction failure, got {fc['failure_stage']}"
-    print("✓ Step 12 challenge suite verified: 6/6 retrieval success, 4/6 passed end-to-end, 2 failed at measurement extraction.\n")
+    # 12.1 Whitespace-aware quote alignment tests
+    passage_sample = (
+        "2. Physical Dimensions & Mechanical Parameters\n"
+        "Mechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\n"
+        "Under standard ambient conditions, the nominal thickness of component COMP-C01 is\n"
+        "manufactured to 1.2 cm across all production lots.\n"
+        "Component thickness: 0.8 cm."
+    )
 
-    print("ALL STEP 3, STEP 4, STEP 5, STEP 6, STEP 7, STEP 8, STEP 11 & STEP 12 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
+    # 12.1.1 Strict literal matching preserved as first option
+    lit_span, lit_type, lit_err = align_quote_to_passage("Component thickness: 0.8 cm.", passage_sample)
+    assert lit_span == "Component thickness: 0.8 cm.", f"Expected literal span, got {lit_span}"
+    assert lit_type == "literal", f"Expected literal, got {lit_type}"
+    assert lit_err is None
+    print("✓ Strict literal matching preserved as first option.")
+
+    # 12.1.2 Whitespace differences allowed (line breaks in PDF)
+    ws_quote = "the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+    ws_span, ws_type, ws_err = align_quote_to_passage(ws_quote, passage_sample)
+    assert ws_span is not None, "Expected whitespace-aligned span"
+    assert ws_type == "whitespace_aligned"
+    assert ws_err is None
+    assert "\n" in ws_span, "Expected newline in source span"
+    assert ws_span == "the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots."
+    print("✓ Whitespace-aware quote alignment maps to original verbatim span with index mapping.")
+
+    # 12.1.3 Rejection of modified numbers
+    bad_num_quote = "the nominal thickness of component COMP-C01 is manufactured to 1.5 cm across all production lots."
+    bad_span, bad_type, bad_err = align_quote_to_passage(bad_num_quote, passage_sample)
+    assert bad_span is None and bad_type == "missing"
+    print("✓ Rejection of modified numbers verified.")
+
+    # 12.1.4 Rejection of modified units
+    bad_unit_quote = "the nominal thickness of component COMP-C01 is manufactured to 1.2 mm across all production lots."
+    bad_span, bad_type, bad_err = align_quote_to_passage(bad_unit_quote, passage_sample)
+    assert bad_span is None and bad_type == "missing"
+    print("✓ Rejection of modified units verified.")
+
+    # 12.1.5 Rejection of invented words
+    bad_word_quote = "the exact thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+    bad_span, bad_type, bad_err = align_quote_to_passage(bad_word_quote, passage_sample)
+    assert bad_span is None and bad_type == "missing"
+    print("✓ Rejection of invented words verified.")
+
+    # 12.1.6 Rejection of ambiguous quote (multiple matches)
+    ambig_passage = "thickness: 1.2 cm ... other section ... thickness: 1.2 cm"
+    ambig_span, ambig_type, ambig_err = align_quote_to_passage("thickness: 1.2 cm", ambig_passage)
+    assert ambig_span is None and ambig_type == "ambiguous"
+    print("✓ Ambiguous quote rejection verified.")
+
+    # 12.2 Deterministic measurement binding for labelled tuples
+    tuple_text = "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm"
+    # Target: thickness (3rd position) -> 6.0 mm (must not greedily pick 60.0 mm)
+    t_val, t_unit, t_quote, t_err = parse_labelled_tuple(tuple_text, "thickness")
+    assert t_val == Decimal("6.0"), f"Expected 6.0 mm for thickness, got {t_val}"
+    assert t_unit == "mm"
+    assert t_err is None
+    print("✓ Labelled tuple: thickness correctly bound to 3rd position (6.0 mm, not 60.0 mm).")
+
+    # Target: length (1st position) -> 60.0 mm
+    l_val, l_unit, l_quote, l_err = parse_labelled_tuple(tuple_text, "length")
+    assert l_val == Decimal("60.0") and l_unit == "mm" and l_err is None
+    print("✓ Labelled tuple: length correctly bound to 1st position (60.0 mm).")
+
+    # Target: width (2nd position) -> 40.0 mm
+    w_val, w_unit, w_quote, w_err = parse_labelled_tuple(tuple_text, "width")
+    assert w_val == Decimal("40.0") and w_unit == "mm" and w_err is None
+    print("✓ Labelled tuple: width correctly bound to 2nd position (40.0 mm).")
+
+    # Shared trailing unit: (length, width, height): 10 x 20 x 30 mm
+    shared_text = "(length, width, height): 10 x 20 x 30 mm"
+    h_val, h_unit, h_quote, h_err = parse_labelled_tuple(shared_text, "height")
+    assert h_val == Decimal("30") and h_unit == "mm"
+    print("✓ Labelled tuple with shared trailing unit correctly propagates unit.")
+
+    # 12.2.1 Unclear tuple abstention (count mismatch)
+    mismatch_text = "(length, width, thickness): 60.0 mm x 40.0 mm"
+    m_val, m_unit, m_quote, m_err = parse_labelled_tuple(mismatch_text, "thickness")
+    assert m_val is None and "does not match value count" in str(m_err)
+    print("✓ Unclear tuple (label/value count mismatch) safely abstains.")
+
+    # 12.2.2 Unclear tuple abstention (duplicate matching label)
+    dup_text = "(thickness, thickness): 6.0 mm x 8.0 mm"
+    d_val, d_unit, d_quote, d_err = parse_labelled_tuple(dup_text, "thickness")
+    assert d_val is None and "matches multiple label positions" in str(d_err)
+    print("✓ Unclear tuple (duplicate matching labels) safely abstains.")
+
+    # 12.2.3 Unclear tuple abstention (missing units)
+    nounit_text = "(length, width, thickness): 60 x 40 x 6"
+    nu_val, nu_unit, nu_quote, nu_err = parse_labelled_tuple(nounit_text, "thickness")
+    assert nu_val is None and "no unit found" in str(nu_err)
+    print("✓ Unclear tuple (missing units) safely abstains.")
+
+    # 12.3 Offline replay validation of saved challenge-01 model response
+    # Step 13 frozen comparison report must be preserved and used as replay input
+    frozen_report_path = repo_root / "evaluation" / "reports" / "challenge_comparison_report.json"
+    assert frozen_report_path.exists(), "Frozen Step 13 challenge_comparison_report.json missing"
+    with open(frozen_report_path, "r", encoding="utf-8") as f:
+        frozen_data = json.load(f)
+    c1_frozen = [c for c in frozen_data["cases"] if c["case_id"] == "challenge-01-complete-sentence"][0]
+
+    # Verify frozen extraction details from Step 13
+    assert c1_frozen["gemini_model_called"] is True
+    assert c1_frozen["gemini_token_usage"] is not None
+    saved_quote = "the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+    assert saved_quote in c1_frozen["gemini_explanation"]
+
+    # Replay through whitespace-aware quote alignment
+    c1_case_dir = repo_root / "evaluation" / "cases" / "challenge-01-complete-sentence"
+    c1_ret = retrieve_evidence(c1_case_dir / "record.json", extracted_dir=c1_case_dir / "extracted")
+    c1_passage = c1_ret["evidence_passage"]
+    c1_span, c1_align_type, c1_align_err = align_quote_to_passage(saved_quote, c1_passage)
+    assert c1_span is not None
+    assert c1_align_type == "whitespace_aligned"
+    assert c1_align_err is None
+    assert "is\nmanufactured" in c1_span
+
+    # Verify downstream deterministic conversion and comparison
+    c1_conv_val, c1_mult, c1_calc = convert_measurement(Decimal("1.2"), "cm", "mm")
+    assert c1_conv_val == Decimal("12.0")
+    with open(c1_case_dir / "record.json", "r", encoding="utf-8") as f:
+        c1_rec = json.load(f)
+    assert Decimal(str(c1_rec["recorded_value"])) == Decimal("1.2")
+    assert c1_rec["recorded_unit"] == "mm"
+    assert c1_conv_val != Decimal(str(c1_rec["recorded_value"]))  # 12.0 mm != 1.2 mm -> correction proposed!
+    print("✓ Offline replay validation of saved challenge-01 response verified (1.2 cm -> 12.0 mm).")
+
+    # 12.4 Record and source file immutability verification
+    for case_folder in (repo_root / "evaluation" / "cases").iterdir():
+        if not case_folder.is_dir():
+            continue
+        rec_f = case_folder / "record.json"
+        if rec_f.exists():
+            h_before = hashlib.sha256(rec_f.read_bytes()).hexdigest()
+            # Investigate record
+            investigate_record(rec_f, extracted_dir=case_folder / "extracted")
+            h_after = hashlib.sha256(rec_f.read_bytes()).hexdigest()
+            assert h_before == h_after, f"Record was mutated by investigation: {rec_f}"
+    print("✓ Immutability of record and source files verified across all cases.")
+
+    # 12.5 Challenge suite evaluation verification (5/6 pass deterministically, 1 honest regex limitation)
+    challenge_report_14 = run_evaluation(repo_root, extractor="deterministic", suite="challenge")
+    assert challenge_report_14["summary"]["total_cases"] == 6
+    assert challenge_report_14["summary"]["passed_cases"] == 5, f"Expected 5 passed cases, got {challenge_report_14['summary']['passed_cases']}"
+    assert challenge_report_14["summary"]["failed_cases"] == 1
+    assert challenge_report_14["summary"]["overall_pass_rate_pct"] == 83.3
+    assert challenge_report_14["summary"]["evidence_retrieval_success_rate"] == "4/4 (100.0%)"
+    assert challenge_report_14["summary"]["retrieval_abstention_success_rate"] == "2/2 (100.0%)"
+    assert challenge_report_14["summary"]["agreement_pass_rate_pct"] == 100.0
+    assert challenge_report_14["summary"]["abstention_pass_rate_pct"] == 100.0
+    assert challenge_report_14["summary"]["citation_validity"]["valid"] == 4
+
+    failed_14 = [c for c in challenge_report_14["cases"] if not c["passed"]]
+    assert len(failed_14) == 1
+    assert failed_14[0]["case_id"] == "challenge-01-complete-sentence"
+    assert failed_14[0]["failure_stage"] == "measurement extraction"
+    print("✓ Step 14 deterministic challenge suite verified: 5/6 (83.3%) pass, challenge-04 resolved, challenge-01 honestly documented as regex sentence limitation.\n")
+
+    print("ALL STEP 3, STEP 4, STEP 5, STEP 6, STEP 7, STEP 8, STEP 11, STEP 12 & STEP 14 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
 
 
 if __name__ == "__main__":

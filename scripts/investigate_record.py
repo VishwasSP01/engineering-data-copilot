@@ -104,6 +104,66 @@ def convert_measurement(
     raise ValueError(f"Unhandled unit conversion from '{from_unit}' to '{to_unit}'.")
 
 
+def align_quote_to_passage(quote: str, passage: str) -> Tuple[Optional[str], str, Optional[str]]:
+    """Align model-extracted quote to cited evidence passage.
+    
+    Step 14 whitespace-aware quote alignment rules:
+    1. Preserve strict literal matching as the first option.
+    2. If that fails, allow only whitespace differences between the quote and source text.
+       Maintains exact index mapping back to original source text.
+    3. Accept only a uniquely located, contiguous source span.
+    4. Return that original verbatim span as the citation, preserving filename and page.
+    5. Retain model quote separately for audit.
+    6. Never normalize numbers, units, punctuation, or other characters.
+    7. Never use fuzzy similarity or join disconnected excerpts.
+    8. Missing or ambiguous matches cause rejection (returning None span).
+
+    Returns:
+        (verbatim_span, alignment_type, error_message)
+        alignment_type is one of: "literal", "whitespace_aligned", "missing", "ambiguous"
+    """
+    if not quote or not quote.strip():
+        return None, "missing", "Empty or missing supporting quote."
+    if not passage or not passage.strip():
+        return None, "missing", "Empty or missing evidence passage."
+
+    raw_quote = quote.strip()
+
+    # 1. Strict literal matching (first option)
+    exact_count = passage.count(raw_quote)
+    if exact_count == 1:
+        return raw_quote, "literal", None
+    elif exact_count > 1:
+        return None, "ambiguous", f"Ambiguous quote grounding: quote appears {exact_count} times literally in evidence passage."
+
+    # 2. Whitespace-aware quote alignment (fallback for non-literal whitespace differences)
+    quote_tokens = [m.group(0) for m in re.finditer(r'\S+', raw_quote)]
+    if not quote_tokens:
+        return None, "missing", "No non-whitespace tokens in quote."
+
+    passage_tokens = [(m.group(0), m.start(), m.end()) for m in re.finditer(r'\S+', passage)]
+    k = len(quote_tokens)
+    if len(passage_tokens) < k:
+        return None, "missing", f"Ungrounded extraction: supporting quote '{raw_quote}' was not found in cited evidence passage."
+
+    match_starts = []
+    for i in range(len(passage_tokens) - k + 1):
+        if [p[0] for p in passage_tokens[i : i + k]] == quote_tokens:
+            match_starts.append(i)
+
+    if len(match_starts) == 0:
+        return None, "missing", f"Ungrounded extraction: supporting quote '{raw_quote}' was not found in cited evidence passage."
+    elif len(match_starts) > 1:
+        return None, "ambiguous", f"Ambiguous quote grounding: supporting quote matches {len(match_starts)} distinct spans in cited evidence passage."
+
+    start_idx = match_starts[0]
+    span_start = passage_tokens[start_idx][1]
+    span_end = passage_tokens[start_idx + k - 1][2]
+    verbatim_span = passage[span_start:span_end]
+
+    return verbatim_span, "whitespace_aligned", None
+
+
 def investigate_record(
     record_path: Path,
     extracted_dir: Optional[Path] = None,
@@ -315,10 +375,11 @@ def investigate_record(
         }
 
     # Extractor returned status="found" -> Apply strict post-extraction verification guardrails
-    quote = extractor_res.quote or ""
+    raw_quote = extractor_res.quote or ""
 
-    # Guardrail 1: Quote grounding check (quote must exist verbatim in evidence passage)
-    if not quote or quote not in passage:
+    # Guardrail 1: Quote grounding check with whitespace-aware alignment
+    verbatim_span, align_type, align_err = align_quote_to_passage(raw_quote, passage)
+    if not verbatim_span:
         return {
             **base_response,
             "status": "needs_review",
@@ -327,8 +388,23 @@ def investigate_record(
             "proposed_correction": None,
             "evidence": evidence_dict,
             "extractor": extractor_meta,
-            "explanation": f"Ungrounded extraction: supporting quote '{quote}' was not found verbatim in cited evidence passage."
+            "explanation": align_err or f"Ungrounded extraction: supporting quote '{raw_quote}' was not found in cited evidence passage."
         }
+
+    # Update evidence citation with verbatim contiguous span when whitespace alignment is used
+    if evidence_dict:
+        if align_type == "whitespace_aligned":
+            evidence_dict = {
+                **evidence_dict,
+                "supporting_passage": verbatim_span,
+                "model_quote": raw_quote,
+                "quote_alignment": "whitespace_aligned"
+            }
+        else:
+            evidence_dict = {
+                **evidence_dict,
+                "quote_alignment": "literal"
+            }
 
     # Guardrail 2: Attribute name alignment check
     extracted_attr = extractor_res.measurement_name
@@ -358,10 +434,10 @@ def investigate_record(
             "explanation": "Extractor did not return a valid numeric value."
         }
 
-    # Guardrail 4: Value and unit grounding within supporting quote
+    # Guardrail 4: Value and unit grounding within supporting quote and aligned verbatim span
     val_str = str(ev_val_dec)
     unit_str = (extractor_res.unit or "").strip()
-    if val_str not in quote:
+    if val_str not in raw_quote and val_str not in verbatim_span:
         return {
             **base_response,
             "status": "needs_review",
@@ -370,10 +446,10 @@ def investigate_record(
             "proposed_correction": None,
             "evidence": evidence_dict,
             "extractor": extractor_meta,
-            "explanation": f"Ungrounded extraction: extracted value '{val_str}' does not appear in supporting quote '{quote}'."
+            "explanation": f"Ungrounded extraction: extracted value '{val_str}' does not appear in supporting quote '{raw_quote}'."
         }
 
-    if unit_str.lower() not in quote.lower():
+    if unit_str.lower() not in raw_quote.lower() and unit_str.lower() not in verbatim_span.lower():
         return {
             **base_response,
             "status": "needs_review",
@@ -382,7 +458,7 @@ def investigate_record(
             "proposed_correction": None,
             "evidence": evidence_dict,
             "extractor": extractor_meta,
-            "explanation": f"Ungrounded extraction: extracted unit '{unit_str}' does not appear in supporting quote '{quote}'."
+            "explanation": f"Ungrounded extraction: extracted unit '{unit_str}' does not appear in supporting quote '{raw_quote}'."
         }
 
     ev_unit_clean = unit_str.lower()

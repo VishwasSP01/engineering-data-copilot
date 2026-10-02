@@ -220,3 +220,41 @@
        - Because downstream Guardrail 1 requires exact verbatim substring containment (`quote in passage`), the literal string check rejected the extraction (`needs_review`).
        - As required by Step 13, runtime validation was kept strict and unmodified. The failure was documented and classified as a `"validation"` failure stage (rather than `retrieval` or `extraction`).
   - **Limitations Notice**: All findings are strictly bounded to the 6 synthetic challenge cases and do not claim to demonstrate generalization across unconstrained production engineering documents.
+- [x] **Step 14: Improved Quote Alignment and Measurement Binding** — Completed.
+  - **Goal & Scope**: Address failures identified in Step 13 (`challenge-01` validation rejection from PDF line-breaks, and `challenge-04` deterministic greedy attribute binding) by implementing whitespace-aware quote alignment and labelled measurement binding without making live Gemini API calls.
+  - **Core Implementations**:
+    1. **Whitespace-Aware Quote Alignment (`align_quote_to_passage`)**:
+       - Preserves strict literal substring matching as the primary check.
+       - Implements a token index mapping fallback that permits only whitespace differences between model quotes and source text (e.g., spaces vs newlines).
+       - Requires a unique contiguous source span; returns that original verbatim span as citation, retaining the model quote separately for audit.
+       - Strictly rejects modified numbers, modified units, invented words, missing matches, and ambiguous (multiple) matches without fuzzy matching.
+       - Integrated into downstream validation Guardrail 1 and Guardrail 4 in `scripts/investigate_record.py`.
+    2. **Deterministic Labelled Tuple Binding (`parse_labelled_tuple`)**:
+       - Parses multi-attribute tuples such as `(length, width, thickness): 60 mm x 40 mm x 6 mm` and maps target attributes to their specific positional indices.
+       - Avoids greedy selection of the first number following attribute keywords.
+       - Safely abstains (`needs_review`) when label count does not match value count, multiple labels match target, or units are missing.
+       - Integrated as Pattern 0 in `DeterministicMeasurementExtractor` in `scripts/extractors.py`.
+    3. **Evaluator Terminology & Metrics Clarification**:
+       - Separated evidence retrieval success (cases expecting evidence) from retrieval abstention (cases expecting missing/ambiguous evidence).
+       - Formatted pass-rate comparisons in percentage points (`pp`).
+    4. **Comprehensive Offline Verification Suite (`scripts/verify_sample.py`)**:
+       - Strict literal matching and whitespace alignment tests.
+       - Rejection tests for modified numbers, modified units, invented words, and ambiguous matches.
+       - Positional mapping and shared trailing unit propagation for labelled tuples.
+       - Abstention checks for label/value count mismatches, duplicate labels, and missing units.
+       - Replay validation of frozen Step 13 `challenge-01` model extraction (1.2 cm -> 12.0 mm correction proposal).
+       - Record and source document immutability verification via SHA-256 digests.
+       - Evaluation verification on challenge suite: 5/6 pass deterministically, with `challenge-01` honestly documented as remaining regex limitation.
+  - **Benchmark Results (Challenge Suite - Deterministic)**:
+    - Overall Pass Rate: **5 / 6 (83.3%)** (an increase of 16.7 percentage points from 4/6 [66.7%] in Step 12, and 50.0 percentage points from 2/6 [33.3%] in Step 11).
+    - Evidence Retrieval Success Rate: **4 / 4 (100.0%)** on cases with evidence.
+    - Retrieval Abstention Success Rate: **2 / 2 (100.0%)** on missing/conflicting cases.
+    - Combined Retrieval Accuracy: **6 / 6 (100.0%)**.
+    - Citation Validity: **4 / 4 (100.0%)**.
+    - Resolved Case: `challenge-04-distracting-measurements` successfully resolved deterministically (`no_change`).
+    - Remaining Limitation: `challenge-01-complete-sentence` fails deterministically at `measurement extraction` due to interstitial sentence structure.
+  - **Constraints Enforced**:
+    - Zero live Gemini API calls made.
+    - Fixtures in `evaluation/cases/` and expected answers in `evaluation/expected/` untouched.
+    - Frozen Step 13 reports (`challenge_comparison_report.json` and `.md`) preserved without modification.
+    - `.env` strictly excluded from git tracking.
