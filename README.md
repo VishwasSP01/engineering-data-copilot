@@ -234,11 +234,44 @@ python3 scripts/evaluate.py --suite challenge
 - **End-to-End Pass Rate**: **4 / 6 (66.7%)** (up from 2 / 6 in Step 11).
 - **Failure Stage Transition**: Zero cases failed at `retrieval`. The remaining 2 failures (`challenge-01` and `challenge-04`) are accurately attributed to `measurement extraction`, where deterministic regexes fail on interstitial prose and concatenated multi-dimension lists.
 
+### Step 13 Comparative Results (Challenge Suite: Varied Datasheets)
+
+Following Step 12's retrieval improvement, Step 13 compared the deterministic regex baseline against live `gemini-3.5-flash-lite` across the 6 challenging datasheets to determine whether model extraction adds value when sufficient evidence reaches the extractor.
+
+```bash
+# Run comparative challenge evaluation between deterministic and live Gemini
+python3 scripts/evaluate.py --extractor both --suite challenge
+```
+
+| Metric | Deterministic Baseline | Live Gemini (`gemini-3.5-flash-lite`) | Comparison |
+|---|---|---|---|
+| **Overall Pass Rate (End-to-End)** | 4 / 6 (66.7%) | **5 / 6 (83.3%)** | **Gemini Improved (+16.6%)** |
+| **Retrieval Success Rate** | 6 / 6 (100.0%) | 6 / 6 (100.0%) | Identical |
+| **Correction Cases** | 2 / 3 (66.7%) | 2 / 3 (66.7%) | Identical |
+| **Agreement Cases (`no_change`)** | 0 / 1 (0.0%) | **1 / 1 (100.0%)** | Gemini Higher |
+| **Abstention Cases** | 2 / 2 (100.0%) | 2 / 2 (100.0%) | Identical |
+| **Citation Validity** | 4 / 4 (100.0%) | 4 / 4 (100.0%) | Identical |
+| **Model Requests** | 0 | 4 attempted / 4 completed | 2 safely skipped (retrieval abstention) |
+| **Median Latency (All 6 Cases)** | 0.46 ms | 821.71 ms | Deterministic is faster |
+| **Median Latency (Model-Called, 4 Cases)** | N/A | 872.17 ms | Network API transit |
+| **Median Latency (Non-Model, 2 Cases)** | 0.46 ms | 0.43 ms | Local early abstention |
+| **Token Usage** | 0 tokens | 1,395 total tokens (1,142 prompt, 253 candidate) | — |
+| **Estimated Cost** | $0.00 | null (unestimated) | Pricing external to API metadata |
+| **Provider Concordance** | — | **5 / 6 (83.3%)** | — |
+
+**Key Step 13 Findings**:
+- **Measurable Value-Add**: Gemini resolved the multi-dimension disambiguation limitation on `challenge-04-distracting-measurements` (`"Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."`), correctly identifying thickness as `6.0 mm` (0.6 cm) and proposing `no_change` where the deterministic regex greedily grabbed `60.0 mm`.
+- **Zero Regressions**: Gemini matched deterministic performance on table columns (`challenge-02`), split lines (`challenge-03`), revision mismatch (`challenge-05`), and ambiguity (`challenge-06`).
+- **Validation Rejection of Potentially Correct Extraction (`challenge-01`)**: On `challenge-01-complete-sentence`, Gemini correctly identified `1.2 cm`, but normalized a newline in `"is\nmanufactured"` to a single space `"is manufactured"`. Downstream Guardrail 1 rejected the quote as non-verbatim (`needs_review`). Validation was kept strict without code alterations, correctly categorized as a `validation` failure.
+- **Safety Preservation**: Early abstention on revision mismatch and conflicting evidence prevented 2 unnecessary model invocations (saving 33.3% of model calls).
+
 ### Evaluation Reports
+- [evaluation/reports/challenge_comparison_report.md](evaluation/reports/challenge_comparison_report.md): Step 13 side-by-side comparative report (Deterministic vs. Gemini on challenge suite).
+- [evaluation/reports/challenge_comparison_report.json](evaluation/reports/challenge_comparison_report.json): Machine-readable Step 13 comparison JSON.
 - [evaluation/reports/challenge_report.md](evaluation/reports/challenge_report.md): Detailed Step 12 challenge suite report and limitation analysis.
 - [evaluation/reports/challenge_report.json](evaluation/reports/challenge_report.json): Machine-readable challenge evaluation JSON.
-- [evaluation/reports/comparison_report.md](evaluation/reports/comparison_report.md): Markdown comparison report with side-by-side per-case results (Step 10).
-- [evaluation/reports/comparison_report.json](evaluation/reports/comparison_report.json): Machine-readable comparative benchmark JSON (Step 10).
+- [evaluation/reports/comparison_report.md](evaluation/reports/comparison_report.md): Markdown comparison report with side-by-side per-case results (Step 10 baseline).
+- [evaluation/reports/comparison_report.json](evaluation/reports/comparison_report.json): Machine-readable comparative benchmark JSON (Step 10 baseline).
 - [evaluation/reports/live_investigation_report.md](evaluation/reports/live_investigation_report.md): Step 9 single live investigation report and attempt history.
 - [evaluation/reports/evaluation_report.md](evaluation/reports/evaluation_report.md): Deterministic baseline evaluation report (10 cases).
 

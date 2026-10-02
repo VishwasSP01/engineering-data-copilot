@@ -305,24 +305,40 @@ def run_evaluation(
         call_note = f"[model: {case_token_usage['total_tokens']}t]" if (is_gemini and case_token_usage) else ("[no model call]" if is_gemini else "")
         print(f"  [{status_symbol}] {cid} ({duration_ms:.2f} ms) {call_note} -> {act_outcome}")
 
-        # Attribute failure stage dynamically based on retrieval vs extraction
+        # Attribute failure stage dynamically based on retrieval vs extraction vs validation vs API
         limitation_note = expected.get("limitation_note")
         if not case_passed:
             if not retrieval_success:
                 failure_stage = "retrieval"
-            elif act_outcome != exp_outcome:
-                failure_stage = "measurement extraction"
-                if not limitation_note or "regex" in limitation_note:
-                    if cid == "challenge-01-complete-sentence":
-                        limitation_note = "Retrieval succeeded in extracting the verbatim physical dimensions section. The deterministic regex extractor failed because interstitial sentence phrasing ('of component COMP-C01 is') led to extracting unit 'is', triggering unit guardrails."
-                    elif cid == "challenge-04-distracting-measurements":
-                        limitation_note = "Retrieval succeeded in extracting the verbatim dimensions section. The deterministic regex extractor failed because it greedily extracted the adjacent length dimension ('60.0 mm') after the attribute keyword instead of thickness ('6.0 mm')."
-            elif not proposal_match:
-                failure_stage = "measurement extraction"
-            elif not citation_valid:
-                failure_stage = "verification"
+            elif is_gemini:
+                if is_api_error or (act_meta.get("token_usage_reason") and "API" in str(act_meta.get("token_usage_reason"))):
+                    failure_stage = "api"
+                    limitation_note = f"Gemini API call failed: {explanation_str}"
+                elif act_outcome == "needs_review":
+                    failure_stage = "validation"
+                    limitation_note = f"Gemini extraction was rejected by downstream validation guardrails: {explanation_str}"
+                elif not citation_valid:
+                    failure_stage = "validation"
+                    limitation_note = "Citation verification failed: cited evidence does not match expected PDF evidence."
+                elif act_outcome != exp_outcome or not proposal_match:
+                    failure_stage = "extraction"
+                    limitation_note = f"Gemini extracted outcome '{act_outcome}' (proposal: {act_prop}), differing from expected '{exp_outcome}'."
+                else:
+                    failure_stage = "extraction"
             else:
-                failure_stage = "measurement extraction"
+                if act_outcome != exp_outcome:
+                    failure_stage = "measurement extraction"
+                    if not limitation_note or "regex" in limitation_note:
+                        if cid == "challenge-01-complete-sentence":
+                            limitation_note = "Retrieval succeeded in extracting the verbatim physical dimensions section. The deterministic regex extractor failed because interstitial sentence phrasing ('of component COMP-C01 is') led to extracting unit 'is', triggering unit guardrails."
+                        elif cid == "challenge-04-distracting-measurements":
+                            limitation_note = "Retrieval succeeded in extracting the verbatim dimensions section. The deterministic regex extractor failed because it greedily extracted the adjacent length dimension ('60.0 mm') after the attribute keyword instead of thickness ('6.0 mm')."
+                elif not proposal_match:
+                    failure_stage = "measurement extraction"
+                elif not citation_valid:
+                    failure_stage = "verification"
+                else:
+                    failure_stage = "measurement extraction"
         else:
             failure_stage = None
 
@@ -446,6 +462,9 @@ def run_evaluation(
                 "model_requests_attempted": f"{model_requests_attempted}/{total_cases}",
                 "model_requests_succeeded": f"{model_requests_succeeded}/{model_requests_attempted}" if model_requests_attempted else "0/0",
                 "cases_without_model_call": f"{cases_without_model_call}/{total_cases}",
+                "requests_attempted": f"{model_requests_attempted}/{total_cases}",
+                "requests_completed": f"{model_requests_succeeded}/{model_requests_attempted}" if model_requests_attempted else "0/0",
+                "requests_skipped": f"{cases_without_model_call}/{total_cases}",
                 "token_usage": accumulated_tokens if is_gemini else None,
                 "estimated_cost_usd": None,
                 "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
@@ -457,17 +476,23 @@ def run_evaluation(
     return report_data
 
 
-def run_comparison(repo_root: Path, model: Optional[str] = None) -> Dict[str, Any]:
+def run_comparison(
+    repo_root: Path,
+    model: Optional[str] = None,
+    suite: str = "baseline"
+) -> Dict[str, Any]:
     """Run both deterministic and Gemini evaluators and produce comparison reports."""
+    suite_title = "CHALLENGE SUITE (6 CASES)" if suite == "challenge" else "BASELINE SUITE (10 CASES)"
+    step_num = "13" if suite == "challenge" else "10"
     print("=" * 60)
-    print("STEP 10: COMPARATIVE EVALUATION (DETERMINISTIC VS GEMINI)")
+    print(f"STEP {step_num}: COMPARATIVE EVALUATION ({suite_title})")
     print("=" * 60)
 
     # 1. Deterministic baseline evaluation
-    det_report = run_evaluation(repo_root, extractor="deterministic")
+    det_report = run_evaluation(repo_root, extractor="deterministic", suite=suite)
 
     # 2. Live Gemini evaluation
-    gemini_report = run_evaluation(repo_root, extractor="gemini", model=model)
+    gemini_report = run_evaluation(repo_root, extractor="gemini", model=model, suite=suite)
 
     comparison_cases = []
     for d_case, g_case in zip(det_report["cases"], gemini_report["cases"]):
@@ -475,44 +500,74 @@ def run_comparison(repo_root: Path, model: Optional[str] = None) -> Dict[str, An
         agreement = (
             d_case["actual"]["outcome"] == g_case["actual"]["outcome"] and
             (d_case["actual"]["correction"] or {}).get("value") == (g_case["actual"]["correction"] or {}).get("value") and
+            (d_case["actual"]["correction"] or {}).get("unit") == (g_case["actual"]["correction"] or {}).get("unit") and
             d_case["citation_valid"] == g_case["citation_valid"]
         )
 
         comparison_cases.append({
             "case_id": cid,
             "category": d_case["category"],
+            "description": d_case.get("description", ""),
             "expected_outcome": d_case["expected"]["outcome"],
+            "expected_correction": d_case["expected"]["correction"],
+            "expected_evidence": d_case["expected"]["evidence"],
+            "retrieval_success": d_case.get("retrieval_success"),
+            "context_type": d_case.get("context_type"),
             "deterministic_outcome": d_case["actual"]["outcome"],
             "gemini_outcome": g_case["actual"]["outcome"],
             "deterministic_proposal": d_case["actual"]["correction"],
             "gemini_proposal": g_case["actual"]["correction"],
             "deterministic_passed": d_case["passed"],
             "gemini_passed": g_case["passed"],
+            "deterministic_citation_valid": d_case["citation_valid"],
+            "gemini_citation_valid": g_case["citation_valid"],
+            "deterministic_failure_stage": d_case.get("failure_stage"),
+            "gemini_failure_stage": g_case.get("failure_stage"),
             "agreement": agreement,
-            "gemini_model_called": g_case["model_call_made"],
+            "gemini_model_attempted": g_case.get("model_call_attempted", False),
+            "gemini_model_called": g_case.get("model_call_made", False),
             "gemini_no_call_reason": g_case.get("no_call_reason"),
             "gemini_token_usage": g_case.get("token_usage"),
             "deterministic_duration_ms": d_case["duration_ms"],
             "gemini_duration_ms": g_case["duration_ms"],
+            "deterministic_limitation_note": d_case.get("limitation_note"),
+            "gemini_limitation_note": g_case.get("limitation_note"),
+            "deterministic_explanation": d_case.get("explanation"),
+            "gemini_explanation": g_case.get("explanation"),
             "gemini_status": g_case.get("status", "unknown")
         })
 
+    total_cases = len(comparison_cases)
+    matching_count = sum(1 for c in comparison_cases if c["agreement"])
+
+    g_m = gemini_report["summary"]["model_metrics"]
     comparison_report = {
-        "report_type": "step_10_provider_comparison",
+        "report_type": f"step_{step_num}_provider_comparison",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "evaluation_notice": "Notice: This comparison tests pipeline behavior across a 10-case synthetic dataset. All conclusions are strictly limited to these synthetic fixtures.",
+        "suite": suite,
+        "evaluation_notice": (
+            f"Notice: This comparison tests pipeline behavior across a {total_cases}-case synthetic dataset. "
+            "All conclusions are strictly limited to these synthetic fixtures."
+        ),
         "model": gemini_report["model"],
         "summary": {
-            "total_cases": 10,
+            "total_cases": total_cases,
             "deterministic_summary": det_report["summary"],
             "gemini_summary": gemini_report["summary"],
             "concordance": {
-                "matching_outcomes": sum(1 for c in comparison_cases if c["agreement"]),
-                "total": 10,
-                "concordance_rate": f"{sum(1 for c in comparison_cases if c['agreement'])}/10 ({round(sum(1 for c in comparison_cases if c['agreement'])/10*100, 1)}%)"
+                "matching_outcomes": matching_count,
+                "total": total_cases,
+                "concordance_rate": f"{matching_count}/{total_cases} ({round(matching_count/total_cases*100, 1)}%)"
+            },
+            "requests": {
+                "requests_attempted": g_m.get("requests_attempted", g_m.get("model_requests_attempted")),
+                "requests_completed": g_m.get("requests_completed", g_m.get("model_requests_succeeded")),
+                "requests_skipped": g_m.get("requests_skipped", g_m.get("cases_without_model_call"))
             }
         },
-        "cases": comparison_cases
+        "cases": comparison_cases,
+        "_det_report": det_report,
+        "_gemini_report": gemini_report
     }
 
     return comparison_report
@@ -682,7 +737,150 @@ def generate_markdown_report(report_data: Dict[str, Any]) -> str:
     return "\n".join(md)
 
 
+def generate_challenge_comparison_markdown(comp_data: Dict[str, Any]) -> str:
+    summary = comp_data["summary"]
+    d_sum = summary["deterministic_summary"]
+    g_sum = summary["gemini_summary"]
+    model_name = comp_data["model"] or "gemini-3.5-flash-lite"
+    total_cases = summary["total_cases"]
+
+    md = []
+    md.append("# Step 13: Challenge Comparison Report (Deterministic vs. Live Gemini)")
+    md.append("")
+    md.append("> **Scope & Limitations**: This report evaluates the deterministic rule-based extractor against live "
+              f"`{model_name}` across the 6 challenging synthetic supplier datasheets (sentence, table columns, "
+              "split lines, distracting dimensions, revision mismatch, and conflicting statements) following the Step 12 "
+              "retrieval improvement. **All findings are strictly limited to these 6 synthetic test fixtures.**")
+    md.append("")
+    md.append("## Executive Summary")
+    md.append("")
+    md.append(f"| Metric | Deterministic Baseline | Live Gemini (`{model_name}`) | Comparison |")
+    md.append("|---|---|---|---|")
+
+    d_pass = d_sum["overall_pass_rate_pct"]
+    g_pass = g_sum["overall_pass_rate_pct"]
+    comp_eval = "Identical" if d_pass == g_pass else ("Gemini Improved" if g_pass > d_pass else "Gemini Lower")
+    md.append(f"| **Overall Pass Rate (End-to-End)** | {d_sum['overall_pass_rate']} | {g_sum['overall_pass_rate']} | **{comp_eval}** |")
+
+    d_ret = d_sum.get("retrieval_success_rate", "6/6 (100.0%)")
+    g_ret = g_sum.get("retrieval_success_rate", "6/6 (100.0%)")
+    md.append(f"| **Retrieval Success Rate** | {d_ret} | {g_ret} | Identical (100.0%) |")
+    md.append(f"| **Correction-Case Pass Rate** | {d_sum['correction_pass_rate']} | {g_sum['correction_pass_rate']} | {'Identical' if d_sum['correction_pass_rate_pct'] == g_sum['correction_pass_rate_pct'] else ('Gemini Higher' if g_sum['correction_pass_rate_pct'] > d_sum['correction_pass_rate_pct'] else 'Deterministic Higher')} |")
+    md.append(f"| **Agreement-Case Pass Rate (`no_change`)** | {d_sum['agreement_pass_rate']} | {g_sum['agreement_pass_rate']} | {'Identical' if d_sum['agreement_pass_rate_pct'] == g_sum['agreement_pass_rate_pct'] else ('Gemini Higher' if g_sum['agreement_pass_rate_pct'] > d_sum['agreement_pass_rate_pct'] else 'Deterministic Higher')} |")
+    md.append(f"| **Abstention-Case Pass Rate** | {d_sum['abstention_pass_rate']} | {g_sum['abstention_pass_rate']} | {'Identical' if d_sum['abstention_pass_rate_pct'] == g_sum['abstention_pass_rate_pct'] else 'Differing'} |")
+    md.append(f"| **Citation Validity** | {d_sum['citation_validity']['ratio']} ({d_sum['citation_validity']['percentage']}%) | {g_sum['citation_validity']['ratio']} ({g_sum['citation_validity']['percentage']}%) | {'Identical' if d_sum['citation_validity']['percentage'] == g_sum['citation_validity']['percentage'] else 'Differing'} |")
+    md.append(f"| **API Errors / Failures** | {d_sum['api_error_cases']}/{total_cases} (0.0%) | {g_sum['api_error_cases']}/{total_cases} ({round(g_sum['api_error_cases']/total_cases*100, 1)}%) | — |")
+    md.append(f"| **Unrun Cases** | {d_sum['unrun_cases']}/{total_cases} (0.0%) | {g_sum['unrun_cases']}/{total_cases} ({round(g_sum['unrun_cases']/total_cases*100, 1)}%) | — |")
+
+    g_req = summary["requests"]
+    md.append(f"| **Model Requests Attempted** | 0/{total_cases} | {g_req['requests_attempted']} | At most 6 requests |")
+    md.append(f"| **Model Requests Completed** | 0/0 | {g_req['requests_completed']} | Zero retries |")
+    md.append(f"| **Cases Without Model Call (Skipped)** | {total_cases}/{total_cases} (100.0%) | {g_req['requests_skipped']} | Retrieval early abstention |")
+
+    d_perf = d_sum["performance"]
+    g_perf = g_sum["performance"]
+    md.append(f"| **Median Latency (All {total_cases} Cases)** | {d_perf['all_cases_median_duration_ms']} ms | {g_perf['all_cases_median_duration_ms']} ms | Deterministic is faster |")
+    md.append(f"| **Median Latency (Model-Called Cases)** | N/A | {g_perf.get('model_called_cases_median_duration_ms', 'N/A')} ms | Network transit overhead |")
+    md.append(f"| **Median Latency (Non-Model Cases)** | {d_perf.get('non_model_cases_median_duration_ms', d_perf['all_cases_median_duration_ms'])} ms | {g_perf.get('non_model_cases_median_duration_ms', 'N/A')} ms | Local early abstention |")
+
+    token_usage = g_sum["model_metrics"].get("token_usage")
+    token_str = f"{token_usage['total_tokens']} total ({token_usage.get('prompt_tokens', 0)} prompt, {token_usage.get('candidates_tokens', 0)} candidate)" if token_usage else "N/A"
+    md.append(f"| **Token Usage** | 0 tokens | {token_str} | — |")
+    md.append("| **Estimated Cost** | $0.00 | null (unestimated) | Pricing external to API metadata |")
+    md.append("")
+    md.append(f"- **Provider Concordance**: **{summary['concordance']['concordance_rate']}**")
+    md.append("")
+    md.append("## Detailed Per-Case Comparison")
+    md.append("")
+    md.append("| Case ID | Category | Expected Outcome | Deterministic Outcome | Gemini Outcome | Retrieval | Model Called | Det Result | Gem Result | Agreement | Det Failure Stage | Gem Failure Stage |")
+    md.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
+
+    for c in comp_data["cases"]:
+        cid = c["case_id"]
+        cat = c["category"]
+        exp = f"`{c['expected_outcome']}`"
+        det_out = f"`{c['deterministic_outcome']}`"
+        gem_out = f"`{c['gemini_outcome']}`"
+        ret = "✓" if c.get("retrieval_success") else "✗"
+        called = "Yes" if c.get("gemini_model_called") else "No"
+        det_res = "**PASS**" if c["deterministic_passed"] else "**FAIL**"
+        gem_res = "**PASS**" if c["gemini_passed"] else ("**API_ERROR**" if c.get("gemini_status") == "api_error" else "**FAIL**")
+        agree = "✓ Match" if c["agreement"] else "✗ Mismatch"
+        det_stage = c.get("deterministic_failure_stage") or "—"
+        gem_stage = c.get("gemini_failure_stage") or "—"
+
+        md.append(f"| `{cid}` | {cat} | {exp} | {det_out} | {gem_out} | {ret} | {called} | {det_res} | {gem_res} | {agree} | {det_stage} | {gem_stage} |")
+
+    md.append("")
+    md.append("## Comparative Analysis: Value Added by Gemini Extractor")
+    md.append("")
+
+    # Determine improvements, matches, and regressions
+    improved = [c for c in comp_data["cases"] if not c["deterministic_passed"] and c["gemini_passed"]]
+    matched = [c for c in comp_data["cases"] if c["deterministic_passed"] == c["gemini_passed"]]
+    worsened = [c for c in comp_data["cases"] if c["deterministic_passed"] and not c["gemini_passed"]]
+
+    if improved:
+        md.append("### Where Gemini Improved Results")
+        for c in improved:
+            md.append(f"- **`{c['case_id']}`**: Deterministic failed at `{c.get('deterministic_failure_stage')}`, whereas Gemini successfully passed with `{c['gemini_outcome']}`.")
+            md.append(f"  * Deterministic limitation: {c.get('deterministic_limitation_note', c.get('deterministic_explanation', ''))}")
+            md.append(f"  * Gemini resolution: Correctly extracted target measurement from retrieved section.")
+        md.append("")
+
+    if matched:
+        md.append("### Where Gemini Matched the Baseline")
+        for c in matched:
+            status_text = "Both passed" if c["gemini_passed"] else "Both failed"
+            md.append(f"- **`{c['case_id']}`**: {status_text} (`{c['gemini_outcome']}`).")
+            if not c.get("gemini_model_called"):
+                md.append(f"  * Early abstention preserved: {c.get('gemini_no_call_reason', 'Abstained during retrieval')}.")
+        md.append("")
+
+    if worsened:
+        md.append("### Where Gemini Worsened Results")
+        for c in worsened:
+            md.append(f"- **`{c['case_id']}`**: Deterministic passed, but Gemini failed at stage `{c.get('gemini_failure_stage')}` (`{c['gemini_outcome']}`).")
+            md.append(f"  * Explanation: {c.get('gemini_explanation', '')}")
+        md.append("")
+    else:
+        md.append("### Regressions")
+        md.append("- **Zero Regressions**: Gemini did not degrade or worsen any case that the deterministic extractor passed.")
+        md.append("")
+
+    md.append("## Failure Stage & Validation Rejection Analysis")
+    md.append("")
+    val_rejections = [c for c in comp_data["cases"] if c.get("gemini_failure_stage") == "validation"]
+    if val_rejections:
+        md.append("### Validation Rejections of Model Extractions")
+        for c in val_rejections:
+            md.append(f"- **`{c['case_id']}`**: Downstream validation guardrails rejected extraction: {c.get('gemini_explanation')}")
+        md.append("")
+    else:
+        md.append("### Validation Guardrails")
+        md.append("- No model extractions were rejected by downstream validation guardrails.")
+        md.append("")
+
+    md.append("## Resource & Latency Profile")
+    md.append(f"- **Deterministic Baseline**: Median investigation duration was **{d_perf['all_cases_median_duration_ms']} ms** (sub-millisecond local execution).")
+    md.append(f"- **Gemini Provider**: Median investigation duration across all cases was **{g_perf['all_cases_median_duration_ms']} ms**.")
+    if g_perf.get("model_called_cases_median_duration_ms"):
+        md.append(f"- **Model-Called Cases**: Median call latency was **{g_perf['model_called_cases_median_duration_ms']} ms** across {g_req['requests_completed']} API requests.")
+    if g_perf.get("non_model_cases_median_duration_ms"):
+        md.append(f"- **Non-Model Cases**: Median latency for early abstentions was **{g_perf['non_model_cases_median_duration_ms']} ms**, confirming that retrieval guardrails avert unnecessary model latency.")
+    md.append("")
+    md.append("## Limitations Notice")
+    md.append("- All challenge cases represent isolated synthetic PDF documents.")
+    md.append("- These results demonstrate model reasoning capability on diverse layouts (sentences, multi-column tables, line breaks, distracting dimensions) under controlled test conditions, but do not imply production guarantees across unconstrained real-world supplier documents.")
+    md.append("")
+
+    return "\n".join(md)
+
+
 def generate_comparison_markdown(comp_data: Dict[str, Any]) -> str:
+    if comp_data.get("suite") == "challenge":
+        return generate_challenge_comparison_markdown(comp_data)
+
     summary = comp_data["summary"]
     d_sum = summary["deterministic_summary"]
     g_sum = summary["gemini_summary"]
@@ -799,25 +997,37 @@ def main():
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     if args.extractor == "both":
-        comp_report = run_comparison(repo_root, model=args.model)
+        comp_report = run_comparison(repo_root, model=args.model, suite=args.suite)
 
         # Save comparison JSON report
-        comp_json_path = reports_dir / "comparison_report.json"
+        if args.suite == "challenge":
+            comp_json_path = reports_dir / "challenge_comparison_report.json"
+            comp_md_path = reports_dir / "challenge_comparison_report.md"
+            det_json_path = reports_dir / "challenge_report.json"
+            det_md_path = reports_dir / "challenge_report.md"
+            det_md_content = generate_challenge_markdown_report(comp_report["_det_report"])
+        else:
+            comp_json_path = reports_dir / "comparison_report.json"
+            comp_md_path = reports_dir / "comparison_report.md"
+            det_json_path = reports_dir / "evaluation_report.json"
+            det_md_path = reports_dir / "evaluation_report.md"
+            det_md_content = generate_markdown_report(comp_report["_det_report"])
+
         with open(comp_json_path, "w", encoding="utf-8") as f:
             json.dump(comp_report, f, indent=2, ensure_ascii=False)
         print(f"\nSaved Comparison JSON report: {comp_json_path}")
 
         # Save comparison Markdown report
         comp_md_content = generate_comparison_markdown(comp_report)
-        comp_md_path = reports_dir / "comparison_report.md"
         with open(comp_md_path, "w", encoding="utf-8") as f:
             f.write(comp_md_content + "\n")
         print(f"Saved Comparison Markdown report: {comp_md_path}")
 
-        # Also save the baseline evaluation report to keep evaluation_report.json updated
-        det_json_path = reports_dir / "evaluation_report.json"
+        # Also save the baseline evaluation report to keep challenge_report.json or evaluation_report.json updated
         with open(det_json_path, "w", encoding="utf-8") as f:
-            json.dump(comp_report["summary"]["deterministic_summary"], f, indent=2, ensure_ascii=False)
+            json.dump(comp_report["_det_report"], f, indent=2, ensure_ascii=False)
+        with open(det_md_path, "w", encoding="utf-8") as f:
+            f.write(det_md_content + "\n")
 
         # Print summary
         d_sum = comp_report["summary"]["deterministic_summary"]
@@ -836,8 +1046,12 @@ def main():
 
         # Save JSON report
         if args.suite == "challenge":
-            json_filename = "challenge_report.json"
-            md_filename = "challenge_report.md"
+            if args.extractor == "deterministic":
+                json_filename = "challenge_report.json"
+                md_filename = "challenge_report.md"
+            else:
+                json_filename = f"challenge_report_{args.extractor}.json"
+                md_filename = f"challenge_report_{args.extractor}.md"
         else:
             filename_prefix = "evaluation_report" if args.extractor == "deterministic" else f"evaluation_report_{args.extractor}"
             json_filename = f"{filename_prefix}.json"

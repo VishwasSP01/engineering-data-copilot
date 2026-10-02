@@ -1,0 +1,1107 @@
+{
+  "report_type": "step_13_provider_comparison",
+  "timestamp": "2026-10-02T07:48:06.445384+00:00",
+  "suite": "challenge",
+  "evaluation_notice": "Notice: This comparison tests pipeline behavior across a 6-case synthetic dataset. All conclusions are strictly limited to these synthetic fixtures.",
+  "model": "gemini-3.5-flash-lite",
+  "summary": {
+    "total_cases": 6,
+    "deterministic_summary": {
+      "total_cases": 6,
+      "passed_cases": 4,
+      "failed_cases": 2,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "retrieval_success_rate": "6/6 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "4/6 (66.7%)",
+      "overall_pass_rate_pct": 66.7,
+      "correction_pass_rate": "2/3 (66.7%)",
+      "correction_pass_rate_pct": 66.7,
+      "agreement_pass_rate": "0/1 (0.0%)",
+      "agreement_pass_rate_pct": 0.0,
+      "abstention_pass_rate": "2/2 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 4,
+        "total_checked": 4,
+        "ratio": "4/4",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 0.46,
+        "all_cases_mean_duration_ms": 0.56,
+        "model_called_cases_median_duration_ms": null,
+        "model_called_cases_mean_duration_ms": null,
+        "non_model_cases_median_duration_ms": 0.46,
+        "non_model_cases_mean_duration_ms": 0.56,
+        "median_investigation_duration_ms": 0.46,
+        "mean_investigation_duration_ms": 0.56
+      },
+      "model_metrics": {
+        "model_requests_attempted": "0/6",
+        "model_requests_succeeded": "0/0",
+        "cases_without_model_call": "6/6",
+        "requests_attempted": "0/6",
+        "requests_completed": "0/0",
+        "requests_skipped": "6/6",
+        "token_usage": null,
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "gemini_summary": {
+      "total_cases": 6,
+      "passed_cases": 5,
+      "failed_cases": 1,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "retrieval_success_rate": "6/6 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "5/6 (83.3%)",
+      "overall_pass_rate_pct": 83.3,
+      "correction_pass_rate": "2/3 (66.7%)",
+      "correction_pass_rate_pct": 66.7,
+      "agreement_pass_rate": "1/1 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "2/2 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 4,
+        "total_checked": 4,
+        "ratio": "4/4",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 821.71,
+        "all_cases_mean_duration_ms": 595.83,
+        "model_called_cases_median_duration_ms": 872.17,
+        "model_called_cases_mean_duration_ms": 893.54,
+        "non_model_cases_median_duration_ms": 0.43,
+        "non_model_cases_mean_duration_ms": 0.43,
+        "median_investigation_duration_ms": 821.71,
+        "mean_investigation_duration_ms": 595.83
+      },
+      "model_metrics": {
+        "model_requests_attempted": "4/6",
+        "model_requests_succeeded": "4/4",
+        "cases_without_model_call": "2/6",
+        "requests_attempted": "4/6",
+        "requests_completed": "4/4",
+        "requests_skipped": "2/6",
+        "token_usage": {
+          "prompt_tokens": 1142,
+          "candidates_tokens": 253,
+          "total_tokens": 1395
+        },
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "concordance": {
+      "matching_outcomes": 5,
+      "total": 6,
+      "concordance_rate": "5/6 (83.3%)"
+    },
+    "requests": {
+      "requests_attempted": "4/6",
+      "requests_completed": "4/4",
+      "requests_skipped": "2/6"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "challenge-01-complete-sentence",
+      "category": "challenge_sentence",
+      "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 12.0,
+        "unit": "mm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C01.pdf",
+        "page_number": 1,
+        "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+      },
+      "retrieval_success": true,
+      "context_type": "section",
+      "deterministic_outcome": "needs_review",
+      "gemini_outcome": "needs_review",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": false,
+      "gemini_passed": false,
+      "deterministic_citation_valid": true,
+      "gemini_citation_valid": true,
+      "deterministic_failure_stage": "measurement extraction",
+      "gemini_failure_stage": "validation",
+      "agreement": true,
+      "gemini_model_attempted": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 298,
+        "candidates_tokens": 68,
+        "total_tokens": 366
+      },
+      "deterministic_duration_ms": 1.12,
+      "gemini_duration_ms": 1020.98,
+      "deterministic_limitation_note": "Retrieval succeeded in extracting the verbatim physical dimensions section. The deterministic regex extractor failed because interstitial sentence phrasing ('of component COMP-C01 is') led to extracting unit 'is', triggering unit guardrails.",
+      "gemini_limitation_note": "Gemini extraction was rejected by downstream validation guardrails: Ungrounded extraction: supporting quote 'the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots.' was not found verbatim in cited evidence passage.",
+      "deterministic_explanation": "Evidence unit 'is' is unsupported. Only ['cm', 'mm'] are supported.",
+      "gemini_explanation": "Ungrounded extraction: supporting quote 'the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots.' was not found verbatim in cited evidence passage.",
+      "gemini_status": "failed"
+    },
+    {
+      "case_id": "challenge-02-table-value-unit-columns",
+      "category": "challenge_table",
+      "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 1.5,
+        "unit": "cm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C02.pdf",
+        "page_number": 1,
+        "supporting_passage": "Thickness\n15.0\nmm"
+      },
+      "retrieval_success": true,
+      "context_type": "section",
+      "deterministic_outcome": "correction_proposed",
+      "gemini_outcome": "correction_proposed",
+      "deterministic_proposal": {
+        "value": 1.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 15.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "gemini_proposal": {
+        "value": 1.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 15.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "deterministic_citation_valid": true,
+      "gemini_citation_valid": true,
+      "deterministic_failure_stage": null,
+      "gemini_failure_stage": null,
+      "agreement": true,
+      "gemini_model_attempted": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 284,
+        "candidates_tokens": 57,
+        "total_tokens": 341
+      },
+      "deterministic_duration_ms": 0.52,
+      "gemini_duration_ms": 808.82,
+      "deterministic_limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines.",
+      "gemini_limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines.",
+      "deterministic_explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm.",
+      "gemini_explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm.",
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "challenge-03-split-lines-label-measurement",
+      "category": "challenge_split_lines",
+      "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 0.24,
+        "unit": "cm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C03.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component Thickness:\n2.4 mm"
+      },
+      "retrieval_success": true,
+      "context_type": "section",
+      "deterministic_outcome": "correction_proposed",
+      "gemini_outcome": "correction_proposed",
+      "deterministic_proposal": {
+        "value": 0.24,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 2.4,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "gemini_proposal": {
+        "value": 0.24,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 2.4,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "deterministic_citation_valid": true,
+      "gemini_citation_valid": true,
+      "deterministic_failure_stage": null,
+      "gemini_failure_stage": null,
+      "agreement": true,
+      "gemini_model_attempted": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 262,
+        "candidates_tokens": 54,
+        "total_tokens": 316
+      },
+      "deterministic_duration_ms": 0.46,
+      "gemini_duration_ms": 909.74,
+      "deterministic_limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction.",
+      "gemini_limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction.",
+      "deterministic_explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm.",
+      "gemini_explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm.",
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "challenge-04-distracting-measurements",
+      "category": "challenge_distracting",
+      "description": "Thickness listed alongside length and width: thickness is 6.0 mm vs recorded 0.6 cm -> values agree, no_change.",
+      "expected_outcome": "no_change",
+      "expected_correction": null,
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C04.pdf",
+        "page_number": 1,
+        "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+      },
+      "retrieval_success": true,
+      "context_type": "section",
+      "deterministic_outcome": "correction_proposed",
+      "gemini_outcome": "no_change",
+      "deterministic_proposal": {
+        "value": 6.0,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 60.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "60.0 mm * 0.1 cm/mm = 6.00 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "gemini_proposal": null,
+      "deterministic_passed": false,
+      "gemini_passed": true,
+      "deterministic_citation_valid": true,
+      "gemini_citation_valid": true,
+      "deterministic_failure_stage": "measurement extraction",
+      "gemini_failure_stage": null,
+      "agreement": false,
+      "gemini_model_attempted": true,
+      "gemini_model_called": true,
+      "gemini_no_call_reason": null,
+      "gemini_token_usage": {
+        "prompt_tokens": 298,
+        "candidates_tokens": 74,
+        "total_tokens": 372
+      },
+      "deterministic_duration_ms": 0.45,
+      "gemini_duration_ms": 834.61,
+      "deterministic_limitation_note": "Retrieval succeeded in extracting the verbatim dimensions section. The deterministic regex extractor failed because it greedily extracted the adjacent length dimension ('60.0 mm') after the attribute keyword instead of thickness ('6.0 mm').",
+      "gemini_limitation_note": "Candidate passage regex matches the nearest numeric token following 'thickness' (which matches the adjacent length '60.0 mm' after the closing parenthesis). As a result, the pipeline extracts the wrong dimension (60.0 mm instead of 6.0 mm) and proposes an incorrect correction (6.0 cm) instead of no_change.",
+      "deterministic_explanation": "Supplier document specifies 60.0 mm, which converts via deterministic arithmetic to 6.00 cm (60.0 mm * 0.1 cm/mm = 6.00 cm). Recorded value is 0.6 cm. Proposing correction to 6.0 cm.",
+      "gemini_explanation": "Evidence states 6.0 mm (6.0 mm * 0.1 cm/mm = 0.60 cm), which agrees with the recorded value 0.6 cm. No change required.",
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "challenge-05-incorrect-revision",
+      "category": "challenge_revision",
+      "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+      "expected_outcome": "insufficient_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "retrieval_success": true,
+      "context_type": null,
+      "deterministic_outcome": "insufficient_evidence",
+      "gemini_outcome": "insufficient_evidence",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "deterministic_citation_valid": true,
+      "gemini_citation_valid": true,
+      "deterministic_failure_stage": null,
+      "gemini_failure_stage": null,
+      "agreement": true,
+      "gemini_model_attempted": false,
+      "gemini_model_called": false,
+      "gemini_no_call_reason": "Retrieval yielded insufficient_evidence; extractor not invoked.",
+      "gemini_token_usage": null,
+      "deterministic_duration_ms": 0.41,
+      "gemini_duration_ms": 0.48,
+      "deterministic_limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence.",
+      "gemini_limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence.",
+      "deterministic_explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+      "gemini_explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+      "gemini_status": "passed"
+    },
+    {
+      "case_id": "challenge-06-conflicting-statements",
+      "category": "challenge_conflict",
+      "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+      "expected_outcome": "ambiguous_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "retrieval_success": true,
+      "context_type": null,
+      "deterministic_outcome": "ambiguous_evidence",
+      "gemini_outcome": "ambiguous_evidence",
+      "deterministic_proposal": null,
+      "gemini_proposal": null,
+      "deterministic_passed": true,
+      "gemini_passed": true,
+      "deterministic_citation_valid": true,
+      "gemini_citation_valid": true,
+      "deterministic_failure_stage": null,
+      "gemini_failure_stage": null,
+      "agreement": true,
+      "gemini_model_attempted": false,
+      "gemini_model_called": false,
+      "gemini_no_call_reason": "Retrieval yielded ambiguous_evidence; extractor not invoked.",
+      "gemini_token_usage": null,
+      "deterministic_duration_ms": 0.4,
+      "gemini_duration_ms": 0.38,
+      "deterministic_limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence.",
+      "gemini_limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence.",
+      "deterministic_explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+      "gemini_explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+      "gemini_status": "passed"
+    }
+  ],
+  "_det_report": {
+    "evaluation_scope": "Synthetic Evaluation Suite (Step 11: Challenge Suite)",
+    "evaluation_notice": "Notice: This benchmark tests pipeline behavior across a synthetic dataset. It does not demonstrate production accuracy.",
+    "suite": "challenge",
+    "timestamp": "2026-10-02T07:48:02.804020+00:00",
+    "extractor": "deterministic",
+    "model": null,
+    "summary": {
+      "total_cases": 6,
+      "passed_cases": 4,
+      "failed_cases": 2,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "retrieval_success_rate": "6/6 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "4/6 (66.7%)",
+      "overall_pass_rate_pct": 66.7,
+      "correction_pass_rate": "2/3 (66.7%)",
+      "correction_pass_rate_pct": 66.7,
+      "agreement_pass_rate": "0/1 (0.0%)",
+      "agreement_pass_rate_pct": 0.0,
+      "abstention_pass_rate": "2/2 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 4,
+        "total_checked": 4,
+        "ratio": "4/4",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 0.46,
+        "all_cases_mean_duration_ms": 0.56,
+        "model_called_cases_median_duration_ms": null,
+        "model_called_cases_mean_duration_ms": null,
+        "non_model_cases_median_duration_ms": 0.46,
+        "non_model_cases_mean_duration_ms": 0.56,
+        "median_investigation_duration_ms": 0.46,
+        "mean_investigation_duration_ms": 0.56
+      },
+      "model_metrics": {
+        "model_requests_attempted": "0/6",
+        "model_requests_succeeded": "0/0",
+        "cases_without_model_call": "6/6",
+        "requests_attempted": "0/6",
+        "requests_completed": "0/0",
+        "requests_skipped": "6/6",
+        "token_usage": null,
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "cases": [
+      {
+        "case_id": "challenge-01-complete-sentence",
+        "category": "challenge_sentence",
+        "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+        "duration_ms": 1.12,
+        "passed": false,
+        "status": "failed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": false,
+        "proposal_match": false,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": "measurement extraction",
+        "limitation_note": "Retrieval succeeded in extracting the verbatim physical dimensions section. The deterministic regex extractor failed because interstitial sentence phrasing ('of component COMP-C01 is') led to extracting unit 'is', triggering unit guardrails.",
+        "explanation": "Evidence unit 'is' is unsupported. Only ['cm', 'mm'] are supported.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 12.0,
+            "unit": "mm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+          }
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\nUnder standard ambient conditions, the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots.\nParameter\nNominal Value\nTolerance\nNotes\nOperating Temp\n-40°C to +85°C\n±2°C\nStandard commercial range\nMounting Style\nSurface Mount\nN/A\nSolder reflow compliant",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-02-table-value-unit-columns",
+        "category": "challenge_table",
+        "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+        "duration_ms": 0.52,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines.",
+        "explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "Thickness\n15.0\nmm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 15.0,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C02 (25°C, 50% RH):\nAuthoritative dimensional values are detailed in the parameter table below:\nParameter\nNominal Value\nUnit\nTolerance\nThickness\n15.0\nmm\n±0.1 mm\nWidth\n25.0\nmm\n±0.2 mm\nLength\n50.0\nmm\n±0.2 mm",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-03-split-lines-label-measurement",
+        "category": "challenge_split_lines",
+        "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+        "duration_ms": 0.46,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction.",
+        "explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component Thickness:\n2.4 mm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 2.4,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C03 (25°C, 50% RH):\nComponent Thickness:\n2.4 mm\nParameter\nNominal Value\nTolerance\nNotes\nLead Count\n8\nN/A\nGold plated leads\nPackage Material\nCeramic\nN/A\nHermetic seal",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-04-distracting-measurements",
+        "category": "challenge_distracting",
+        "description": "Thickness listed alongside length and width: thickness is 6.0 mm vs recorded 0.6 cm -> values agree, no_change.",
+        "duration_ms": 0.45,
+        "passed": false,
+        "status": "failed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": false,
+        "proposal_match": false,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": "measurement extraction",
+        "limitation_note": "Retrieval succeeded in extracting the verbatim dimensions section. The deterministic regex extractor failed because it greedily extracted the adjacent length dimension ('60.0 mm') after the attribute keyword instead of thickness ('6.0 mm').",
+        "explanation": "Supplier document specifies 60.0 mm, which converts via deterministic arithmetic to 6.00 cm (60.0 mm * 0.1 cm/mm = 6.00 cm). Recorded value is 0.6 cm. Proposing correction to 6.0 cm.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 6.0,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 60.0,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "60.0 mm * 0.1 cm/mm = 6.00 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C04 (25°C, 50% RH):\nPackage dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nMass\n1.8 g\n±0.05 g\nDry component mass\nThermal Resistance\n12.5 °C/W\n±1 °C/W\nJunction to ambient",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-05-incorrect-revision",
+        "category": "challenge_revision",
+        "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+        "duration_ms": 0.41,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence.",
+        "explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "challenge-06-conflicting-statements",
+        "category": "challenge_conflict",
+        "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+        "duration_ms": 0.4,
+        "passed": true,
+        "status": "passed",
+        "outcome": "ambiguous_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "ambiguous_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence.",
+        "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+        "expected": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      }
+    ]
+  },
+  "_gemini_report": {
+    "evaluation_scope": "Synthetic Evaluation Suite (Step 11: Challenge Suite)",
+    "evaluation_notice": "Notice: This benchmark tests pipeline behavior across a synthetic dataset. It does not demonstrate production accuracy.",
+    "suite": "challenge",
+    "timestamp": "2026-10-02T07:48:06.444224+00:00",
+    "extractor": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "summary": {
+      "total_cases": 6,
+      "passed_cases": 5,
+      "failed_cases": 1,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "retrieval_success_rate": "6/6 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "5/6 (83.3%)",
+      "overall_pass_rate_pct": 83.3,
+      "correction_pass_rate": "2/3 (66.7%)",
+      "correction_pass_rate_pct": 66.7,
+      "agreement_pass_rate": "1/1 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "2/2 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 4,
+        "total_checked": 4,
+        "ratio": "4/4",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 821.71,
+        "all_cases_mean_duration_ms": 595.83,
+        "model_called_cases_median_duration_ms": 872.17,
+        "model_called_cases_mean_duration_ms": 893.54,
+        "non_model_cases_median_duration_ms": 0.43,
+        "non_model_cases_mean_duration_ms": 0.43,
+        "median_investigation_duration_ms": 821.71,
+        "mean_investigation_duration_ms": 595.83
+      },
+      "model_metrics": {
+        "model_requests_attempted": "4/6",
+        "model_requests_succeeded": "4/4",
+        "cases_without_model_call": "2/6",
+        "requests_attempted": "4/6",
+        "requests_completed": "4/4",
+        "requests_skipped": "2/6",
+        "token_usage": {
+          "prompt_tokens": 1142,
+          "candidates_tokens": 253,
+          "total_tokens": 1395
+        },
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "cases": [
+      {
+        "case_id": "challenge-01-complete-sentence",
+        "category": "challenge_sentence",
+        "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+        "duration_ms": 1020.98,
+        "passed": false,
+        "status": "failed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": true,
+        "model_call_made": true,
+        "no_call_reason": null,
+        "token_usage": {
+          "prompt_tokens": 298,
+          "candidates_tokens": 68,
+          "total_tokens": 366
+        },
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": false,
+        "proposal_match": false,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": "validation",
+        "limitation_note": "Gemini extraction was rejected by downstream validation guardrails: Ungrounded extraction: supporting quote 'the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots.' was not found verbatim in cited evidence passage.",
+        "explanation": "Ungrounded extraction: supporting quote 'the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots.' was not found verbatim in cited evidence passage.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 12.0,
+            "unit": "mm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+          }
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\nUnder standard ambient conditions, the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots.\nParameter\nNominal Value\nTolerance\nNotes\nOperating Temp\n-40°C to +85°C\n±2°C\nStandard commercial range\nMounting Style\nSurface Mount\nN/A\nSolder reflow compliant",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-02-table-value-unit-columns",
+        "category": "challenge_table",
+        "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+        "duration_ms": 808.82,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": true,
+        "model_call_made": true,
+        "no_call_reason": null,
+        "token_usage": {
+          "prompt_tokens": 284,
+          "candidates_tokens": 57,
+          "total_tokens": 341
+        },
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines.",
+        "explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "Thickness\n15.0\nmm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 15.0,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C02 (25°C, 50% RH):\nAuthoritative dimensional values are detailed in the parameter table below:\nParameter\nNominal Value\nUnit\nTolerance\nThickness\n15.0\nmm\n±0.1 mm\nWidth\n25.0\nmm\n±0.2 mm\nLength\n50.0\nmm\n±0.2 mm",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-03-split-lines-label-measurement",
+        "category": "challenge_split_lines",
+        "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+        "duration_ms": 909.74,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": true,
+        "model_call_made": true,
+        "no_call_reason": null,
+        "token_usage": {
+          "prompt_tokens": 262,
+          "candidates_tokens": 54,
+          "total_tokens": 316
+        },
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction.",
+        "explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component Thickness:\n2.4 mm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 2.4,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C03 (25°C, 50% RH):\nComponent Thickness:\n2.4 mm\nParameter\nNominal Value\nTolerance\nNotes\nLead Count\n8\nN/A\nGold plated leads\nPackage Material\nCeramic\nN/A\nHermetic seal",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-04-distracting-measurements",
+        "category": "challenge_distracting",
+        "description": "Thickness listed alongside length and width: thickness is 6.0 mm vs recorded 0.6 cm -> values agree, no_change.",
+        "duration_ms": 834.61,
+        "passed": true,
+        "status": "passed",
+        "outcome": "no_change",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": true,
+        "model_call_made": true,
+        "no_call_reason": null,
+        "token_usage": {
+          "prompt_tokens": 298,
+          "candidates_tokens": 74,
+          "total_tokens": 372
+        },
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Candidate passage regex matches the nearest numeric token following 'thickness' (which matches the adjacent length '60.0 mm' after the closing parenthesis). As a result, the pipeline extracts the wrong dimension (60.0 mm instead of 6.0 mm) and proposes an incorrect correction (6.0 cm) instead of no_change.",
+        "explanation": "Evidence states 6.0 mm (6.0 mm * 0.1 cm/mm = 0.60 cm), which agrees with the recorded value 0.6 cm. No change required.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C04 (25°C, 50% RH):\nPackage dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nMass\n1.8 g\n±0.05 g\nDry component mass\nThermal Resistance\n12.5 °C/W\n±1 °C/W\nJunction to ambient",
+            "context_type": "section"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-05-incorrect-revision",
+        "category": "challenge_revision",
+        "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+        "duration_ms": 0.48,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": "Retrieval yielded insufficient_evidence; extractor not invoked.",
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence.",
+        "explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "challenge-06-conflicting-statements",
+        "category": "challenge_conflict",
+        "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+        "duration_ms": 0.38,
+        "passed": true,
+        "status": "passed",
+        "outcome": "ambiguous_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": "Retrieval yielded ambiguous_evidence; extractor not invoked.",
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "ambiguous_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence.",
+        "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+        "expected": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      }
+    ]
+  }
+}

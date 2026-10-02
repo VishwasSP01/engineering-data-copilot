@@ -174,6 +174,49 @@
       * `challenge-06-conflicting-statements`: **PASS** (`ambiguous_evidence`). Retrieval: SUCCESS (ambiguity resolution guardrail correctly abstained).
     - **Failure Stage Transition**: Zero cases failed at `retrieval` (down from 4 in Step 11). Remaining failures cleanly shifted to `measurement extraction`.
     - **Regression Safety**: All Step 3–8 and Step 11–12 verification checks passed (100%). Zero Gemini API calls made.
-
-
-
+- [x] **Step 13: Comparative Evaluation on Varied Datasheets (Gemini vs. Deterministic)** — Completed.
+  - **Goal & Scope**: Measure whether Gemini adds value once relevant evidence reaches the extractor across the 6 challenging synthetic supplier datasheets (complete sentence, multi-column table, split lines, distracting dimensions, revision mismatch, and conflicting statements) following Step 12 retrieval improvements.
+  - **Frozen Baseline State**:
+    - Git Commit: `c75b443b1b906bf17ef506788e1b396cf4a321e2`
+    - Gemini Model: `gemini-3.5-flash-lite`
+    - Fixtures, expected answers, retrieval logic, and extraction prompts frozen without modification.
+  - **Artifacts Created & Updated**:
+    - Evaluator Extension: `scripts/evaluate.py` (Extended `run_comparison` to support `--suite challenge`; added `generate_challenge_comparison_markdown`; tracked retrieval success separately from decision correctness; tracked requests attempted, completed, and skipped; added explicit latency medians for model-called vs. non-model cases; refined dynamic failure stage categorization into `retrieval`, `extraction`, `validation`, and `api`).
+    - Comparison Reports: `evaluation/reports/challenge_comparison_report.json` and `evaluation/reports/challenge_comparison_report.md` (Side-by-side per-case evaluation, concordance rate, failure stage breakdown, request and token metrics).
+    - Baseline Challenge Reports: `evaluation/reports/challenge_report.json` and `evaluation/reports/challenge_report.md`.
+    - Project Documentation: `README.md` and `docs/PROGRESS.md`.
+  - **Comparative Benchmark Results (6 Challenge Cases)**:
+    - **Overall Pass Rate (End-to-End)**:
+      * Deterministic Baseline: **4 / 6 (66.7%)**
+      * Live Gemini (`gemini-3.5-flash-lite`): **5 / 6 (83.3%)** (**Gemini Improved**)
+    - **Retrieval Success Rate**: **6 / 6 (100.0%)** on both providers (identical; both operate on verbatim retrieved sections).
+    - **Provider Concordance Rate**: **5 / 6 (83.3%)**
+    - **Correction-Case Pass Rate**: 2 / 3 (66.7%) on both providers (`challenge-02` and `challenge-03` passed).
+    - **Agreement-Case Pass Rate (`no_change`)**: 0 / 1 (0.0%) deterministic vs. **1 / 1 (100.0%)** Gemini.
+    - **Abstention-Case Pass Rate**: 2 / 2 (100.0%) on both providers (`challenge-05` and `challenge-06` safely abstained).
+    - **Citation Validity**: 4 / 4 (100.0%) on both providers.
+    - **Model Request Control**:
+      * Requests Attempted: 4 / 6
+      * Requests Completed: 4 / 4 (100.0% completion, zero retries)
+      * Cases Without Model Call (Skipped): 2 / 6 (33.3%; `challenge-05` and `challenge-06` safely abstained during retrieval).
+    - **Performance & Latency Profile**:
+      * All Cases Median Latency: 0.46 ms (deterministic) vs. 821.71 ms (Gemini)
+      * Model-Called Cases Median Latency (4 Cases): 872.17 ms (Gemini; mean: 893.54 ms, range 808.82–1020.98 ms)
+      * Non-Model Cases Median Latency (2 Cases): 0.46 ms (deterministic) vs. 0.43 ms (Gemini)
+    - **Resource Consumption**:
+      * Token Usage: 1,395 total tokens (1,142 prompt, 253 candidate) across 4 generation requests.
+      * Estimated Cost: null (unestimated; pricing rates external to API metadata).
+  - **Comparative Findings & Value-Add Analysis**:
+    1. **Where Gemini Improved Over Baseline**:
+       - `challenge-04-distracting-measurements`: The datasheet specified `"Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."` The deterministic regex extractor greedily captured the adjacent length token (`60.0 mm`) and proposed an incorrect correction (`6.0 cm`, FAIL). Gemini correctly resolved the multi-dimension tuple correspondence, identified thickness as `6.0 mm` (converting to `0.6 cm`), and confirmed data agreement (`no_change`, **PASS**).
+    2. **Where Gemini Matched Baseline**:
+       - `challenge-02-table-value-unit-columns`: Both passed (`correction_proposed`, 15.0 mm -> 1.5 cm).
+       - `challenge-03-split-lines-label-measurement`: Both passed (`correction_proposed`, 2.4 mm -> 0.24 cm).
+       - `challenge-05-incorrect-revision`: Both passed (`insufficient_evidence`, retrieval revision guardrail early abstention).
+       - `challenge-06-conflicting-statements`: Both passed (`ambiguous_evidence`, retrieval conflict guardrail early abstention).
+    3. **Where Gemini Regressed / Worsened**: Zero regressions (Gemini passed all cases that deterministic passed).
+    4. **Validation Rejection of Potentially Correct Extraction (`challenge-01`)**:
+       - On `challenge-01-complete-sentence`, Gemini extracted the correct numerical value (`1.2`) and unit (`cm`). However, in its supporting quote, Gemini normalized the PDF newline in `"is\nmanufactured"` to a single space `"is manufactured"`.
+       - Because downstream Guardrail 1 requires exact verbatim substring containment (`quote in passage`), the literal string check rejected the extraction (`needs_review`).
+       - As required by Step 13, runtime validation was kept strict and unmodified. The failure was documented and classified as a `"validation"` failure stage (rather than `retrieval` or `extraction`).
+  - **Limitations Notice**: All findings are strictly bounded to the 6 synthetic challenge cases and do not claim to demonstrate generalization across unconstrained production engineering documents.
