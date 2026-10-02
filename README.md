@@ -7,13 +7,79 @@ Engineering Data Copilot audits engineering records (such as component dimension
 
 ## Setup
 
-Create and activate a local virtual environment:
+### Supported Environment
+- **Python**: Python 3.9+ (tested on Python 3.9.6).
+- **OS**: macOS, Linux, Windows.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+### Fresh Checkout Quickstart
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/VishwasSP01/engineering-data-copilot.git
+   cd engineering-data-copilot
+   ```
+
+2. **Create and activate a virtual environment**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Install dependencies**:
+   To install the exact reproducible dependency lock (including transitive dependencies):
+   ```bash
+   pip install -r requirements-lock.txt
+   ```
+   *(Alternatively, install package ranges using `pip install -r requirements.txt`)*
+
+4. **Prepare synthetic data and extracted text**:
+   `data/extracted/` is gitignored to avoid committing regenerable derivative text. Generate sample artifacts and extract document text:
+   ```bash
+   python3 scripts/generate_sample.py
+   python3 scripts/extract_documents.py
+   ```
+
+## Offline vs. Live Workflows
+
+The repository strictly separates zero-cost, offline verification from live model evaluations requiring credentials.
+
+### Offline Workflows (Zero Credentials, Zero Network, Zero API Cost)
+All regression suites, baseline deterministic evaluations, and unit tests run entirely offline:
+- **Comprehensive Offline Verification (Steps 3–14)**:
+  ```bash
+  python3 scripts/verify_sample.py
+  ```
+- **Step 8 Mock Extractor & Guardrail Checks**:
+  ```bash
+  python3 scripts/verify_step8_extractor.py
+  ```
+- **Deterministic Baseline Evaluation (10 Cases - Expected: 10/10)**:
+  ```bash
+  python3 scripts/evaluate.py --extractor deterministic --suite baseline
+  ```
+- **Deterministic Challenge Evaluation (6 Cases - Expected: 5/6, Documented Sentence Regex Limitation)**:
+  ```bash
+  python3 scripts/evaluate.py --extractor deterministic --suite challenge
+  ```
+- **Single Deterministic Investigation**:
+  ```bash
+  python3 scripts/investigate_record.py data/records/unit-mismatch-001.json --extractor deterministic
+  ```
+
+### Live Workflows (Requires `GEMINI_API_KEY`)
+Live Gemini calls require API credentials in `.env` (kept strictly gitignored) or shell environment:
+- **Single Record Investigation with Live Gemini**:
+  ```bash
+  python3 scripts/investigate_record.py data/records/unit-mismatch-001.json --extractor gemini
+  ```
+- **Live Challenge Comparison (Step 15)**:
+  ```bash
+  python3 scripts/evaluate.py --extractor both --suite challenge --step 15
+  ```
+- **Live Baseline Comparison (Step 10)**:
+  ```bash
+  python3 scripts/evaluate.py --extractor both --suite baseline
+  ```
 
 ## Synthetic Data Generation
 
@@ -327,6 +393,22 @@ python3 scripts/evaluate.py --extractor both --suite challenge --step 15
 - [evaluation/reports/live_investigation_report.md](evaluation/reports/live_investigation_report.md): Step 9 single live investigation report and attempt history.
 - [evaluation/reports/evaluation_report.md](evaluation/reports/evaluation_report.md): Deterministic baseline evaluation report (10 cases).
 
+## Continuous Integration (CI)
+
+A GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) automatically runs on all pushes and pull requests targeting the `main` branch.
+
+### CI Guarantees & Pipeline Steps
+1. **Environment Setup**: Provisions Python 3.9 on `ubuntu-latest` and installs dependencies from [`requirements-lock.txt`](requirements-lock.txt).
+2. **Data & Text Extraction**: Generates synthetic investigation records and extracts document text page-by-page into `data/extracted/`.
+3. **Step 8 Mock Extractor Suite**: Runs [`scripts/verify_step8_extractor.py`](scripts/verify_step8_extractor.py) verifying Pydantic schema validation, prompt boundaries, and 7 mock scenarios offline.
+4. **Comprehensive Regression Suite**: Runs [`scripts/verify_sample.py`](scripts/verify_sample.py) verifying sample validity, text extraction, retrieval, conversion arithmetic, whitespace quote alignment, labelled tuple binding, immutability, and offline replay.
+5. **Deterministic Benchmark Evaluations**:
+   - Baseline Suite: Asserts 10/10 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite baseline`).
+   - Challenge Suite: Verifies 5/6 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite challenge`), preserving the known `challenge-01` sentence regex limitation while failing if any unexpected regression occurs.
+6. **Report Archival**: Saves all generated evaluation reports from `evaluation/reports/` as workflow artifacts.
+7. **Zero Network & Secret Safety**: Runs strictly offline without requiring or accepting `GEMINI_API_KEY` credentials.
+
 ## Documentation
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.
 - [docs/PROGRESS.md](docs/PROGRESS.md): Step-by-step progress tracking and verification log.
+

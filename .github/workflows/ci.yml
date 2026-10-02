@@ -1,0 +1,58 @@
+name: CI - Offline Verification & Evaluation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  offline-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install dependencies from lock file
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-lock.txt
+
+      - name: Generate synthetic sample data
+        run: |
+          python scripts/generate_sample.py
+
+      - name: Extract document text
+        run: |
+          python scripts/extract_documents.py
+
+      - name: Run Step 8 mock extractor & guardrail checks
+        run: |
+          python scripts/verify_step8_extractor.py
+
+      - name: Run offline verification suite (Steps 3-14)
+        run: |
+          python scripts/verify_sample.py
+
+      - name: Run deterministic evaluation on baseline suite (10 cases)
+        run: |
+          python scripts/evaluate.py --extractor deterministic --suite baseline
+
+      - name: Run deterministic evaluation on challenge suite (6 cases)
+        run: |
+          python scripts/evaluate.py --extractor deterministic --suite challenge
+
+      - name: Upload evaluation reports as artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evaluation-reports
+          path: evaluation/reports/
+          retention-days: 14

@@ -1172,10 +1172,15 @@ def main():
         print(f"Citation Validity: {summary['citation_validity']['ratio']} ({summary['citation_validity']['percentage']}%)")
         print(f"Median Investigation Latency: {summary['performance']['all_cases_median_duration_ms']} ms")
 
-        # For challenge suite, failed cases represent documented baseline limitations and do not abort evaluation
-        if args.suite != "challenge":
-            if summary["failed_cases"] > 0 or summary.get("api_error_cases", 0) > 0:
+        # For challenge suite, challenge-01 represents a documented regex limitation (5/6 expected).
+        # Any other failure or unexpected regression must exit with code 1.
+        if args.suite == "challenge" and args.extractor == "deterministic":
+            unexpected = [c for c in report["cases"] if not c["passed"] and c["case_id"] != "challenge-01-complete-sentence"]
+            if unexpected or summary["failed_cases"] > 1 or summary.get("api_error_cases", 0) > 0:
+                print(f"Regression detected in challenge suite: {len(unexpected)} unexpected failure(s)", file=sys.stderr)
                 sys.exit(1)
+        elif summary["failed_cases"] > 0 or summary.get("api_error_cases", 0) > 0:
+            sys.exit(1)
 
 
 if __name__ == "__main__":

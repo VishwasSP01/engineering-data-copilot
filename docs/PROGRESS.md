@@ -310,3 +310,24 @@
     * `evaluation/reports/step15_challenge_comparison_report.md`
     * Historical Step 13 reports (`challenge_comparison_report.json` and `.md`) preserved without alteration.
   - **Limitations Notice**: Findings are strictly bounded to the 6 synthetic challenge cases and do not claim generalization across unconstrained production engineering documents.
+- [x] **Step 16: Reproducible Setup and Automated Offline CI Checks** — Completed.
+  - **Goal & Scope**: Ensure a fresh checkout runs reliably and automated GitHub Actions CI detects regressions without credentials or live API calls, preserving the honest 5/6 challenge baseline.
+  - **Environment & Dependency Lock**:
+    * Documented Supported Python: Python 3.9+ (tested on Python 3.9.6).
+    * Created `requirements-lock.txt` pinning all direct and transitive dependencies (`annotated-types`, `anyio`, `certifi`, `cffi`, `charset-normalizer`, `cryptography`, `exceptiongroup`, `google-auth`, `google-genai`, `h11`, `httpcore`, `httpx`, `idna`, `pillow`, `pyasn1`, `pyasn1_modules`, `pycparser`, `pydantic`, `pydantic_core`, `pypdf`, `reportlab`, `requests`, `tenacity`, `typing-inspection`, `typing_extensions`, `urllib3`, `websockets`).
+    * Installation command: `pip install -r requirements-lock.txt`.
+  - **Fresh Checkout & Isolated Verification**:
+    * Verified end-to-end setup in a clean temporary checkout with an isolated virtualenv, without copying `.env` or existing `.venv`.
+    * Validated `generate_sample.py` and `extract_documents.py` for fresh setup.
+    * Verified `verify_step8_extractor.py` (7 mock scenarios, Pydantic validation, prompt boundaries) passed 100% offline.
+    * Verified `verify_sample.py` (Steps 3–14 verification suite) passed 100% offline.
+    * Verified `evaluate.py --extractor deterministic --suite baseline` achieved 10/10 (100.0%).
+    * Verified `evaluate.py --extractor deterministic --suite challenge` achieved 5/6 (83.3%), with `challenge-01` honestly preserved as the known regex limitation on interstitial prose.
+  - **Regression-Proof Evaluator Exit Codes**:
+    * Updated `scripts/evaluate.py` to differentiate the expected 5/6 challenge baseline from regressions. An unexpected failure (or regression on any other case) exits with code 1.
+  - **Automated GitHub Actions CI Workflow (`.github/workflows/ci.yml`)**:
+    * Triggers on `push` and `pull_request` targeting `main`.
+    * Sets up Python 3.9 on `ubuntu-latest`, installs locked dependencies, generates sample data and extracted text, runs offline mock and verification suites, executes baseline and challenge evaluations, and uploads evaluation reports as artifacts.
+    * Runs strictly offline with zero live network calls and zero API key requirements.
+  - **Documentation & Instructions**:
+    * Updated `README.md` with supported environment, fresh-checkout setup, data generation, clear offline vs. live commands, and CI workflow details.
