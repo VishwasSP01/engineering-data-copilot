@@ -212,29 +212,30 @@ python3 scripts/evaluate.py --extractor both
 
 > **Limitations & Scope Notice**: Live `gemini-3.5-flash-lite` **matched** the deterministic baseline across all 10 synthetic test cases without improving or degrading decision quality. In 5 cases, retrieval or input checks safely abstained prior to model invocation. **All findings are strictly limited to these synthetic fixtures and do not claim to demonstrate generalization or accuracy on complex real-world engineering drawings or tables.**
 
-### Step 11 Challenge Suite (6 Varied Layout & Phrasing Cases)
+### Step 11 & 12 Challenge Suite (Varied Datasheet Layouts & Improved Retrieval)
 
-Step 11 introduces a 6-case challenge suite designed to expose limitations of the deterministic baseline when datasheet phrasing and formatting vary:
+Step 11 established a 6-case challenge suite designed to expose limitations of the baseline when datasheet phrasing and formatting vary. Step 12 decoupled evidence retrieval from measurement parsing, adding verbatim section/page fallback with `context_type` provenance (`passage`, `section`, `page`).
 
 ```bash
 # Run deterministic workflow against the 6 challenge cases
 python3 scripts/evaluate.py --suite challenge
 ```
 
-| Challenge Case ID | Description / Layout Variation | Expected Outcome | Actual Outcome | Result | Failure Stage |
-|---|---|---|---|---|---|
-| `challenge-01-complete-sentence` | Thickness stated in complete sentence | `correction_proposed` | `needs_review` | **FAIL** | Retrieval (false date/unit token pairing) |
-| `challenge-02-table-value-unit-columns` | Separate parameter, value, and unit table columns | `correction_proposed` | `insufficient_evidence` | **FAIL** | Retrieval (multi-line table cell splitting) |
-| `challenge-03-split-lines-label-measurement` | Label and measurement wrapped across line break | `correction_proposed` | `insufficient_evidence` | **FAIL** | Retrieval (line-by-line scanning gap) |
-| `challenge-04-distracting-measurements` | Thickness alongside concatenated length and width | `no_change` | `correction_proposed` | **FAIL** | Retrieval (adjacent dimension misattribution) |
-| `challenge-05-incorrect-revision` | Correct component ID but incorrect Revision B | `insufficient_evidence` | `insufficient_evidence` | **PASS** | — (Revision guardrail confirmed) |
-| `challenge-06-conflicting-statements` | Two conflicting thickness values in document | `ambiguous_evidence` | `ambiguous_evidence` | **PASS** | — (Ambiguity guardrail confirmed) |
+| Challenge Case ID | Description / Layout Variation | Expected Outcome | Actual Outcome | Retrieval | Cit. Valid | Result | Failure Stage |
+|---|---|---|---|---|---|---|---|
+| `challenge-01-complete-sentence` | Thickness stated in complete sentence | `correction_proposed` | `needs_review` | ✓ (section) | ✓ | **FAIL** | Measurement extraction (false token pairing `01 is`) |
+| `challenge-02-table-value-unit-columns` | Separate parameter, value, and unit table columns | `correction_proposed` | `correction_proposed` | ✓ (section) | ✓ | **PASS** | — (Parsed 15.0 mm -> proposed 1.5 cm) |
+| `challenge-03-split-lines-label-measurement` | Label and measurement wrapped across line break | `correction_proposed` | `correction_proposed` | ✓ (section) | ✓ | **PASS** | — (Parsed 2.4 mm -> proposed 0.24 cm) |
+| `challenge-04-distracting-measurements` | Thickness alongside concatenated length and width | `no_change` | `correction_proposed` | ✓ (section) | ✓ | **FAIL** | Measurement extraction (captured adjacent length 60.0 mm) |
+| `challenge-05-incorrect-revision` | Correct component ID but incorrect Revision B | `insufficient_evidence` | `insufficient_evidence` | ✓ (abstained) | ✓ | **PASS** | — (Revision guardrail confirmed) |
+| `challenge-06-conflicting-statements` | Two conflicting thickness values in document | `ambiguous_evidence` | `ambiguous_evidence` | ✓ (abstained) | ✓ | **PASS** | — (Ambiguity guardrail confirmed) |
 
-- **Deterministic Challenge Pass Rate**: **2 / 6 (33.3%)**
-- **Root Cause**: All 4 failures occurred at the **retrieval** stage because the deterministic regex scanner assumes attribute labels and numeric measurements appear contiguously on a single line without interstitial prose or multi-cell table structures.
+- **Retrieval Success Rate**: **6 / 6 (100.0%)** (all 4 layout challenge cases now retrieve valid verbatim section context with provenance).
+- **End-to-End Pass Rate**: **4 / 6 (66.7%)** (up from 2 / 6 in Step 11).
+- **Failure Stage Transition**: Zero cases failed at `retrieval`. The remaining 2 failures (`challenge-01` and `challenge-04`) are accurately attributed to `measurement extraction`, where deterministic regexes fail on interstitial prose and concatenated multi-dimension lists.
 
 ### Evaluation Reports
-- [evaluation/reports/challenge_report.md](evaluation/reports/challenge_report.md): Detailed Step 11 challenge suite report and limitation analysis.
+- [evaluation/reports/challenge_report.md](evaluation/reports/challenge_report.md): Detailed Step 12 challenge suite report and limitation analysis.
 - [evaluation/reports/challenge_report.json](evaluation/reports/challenge_report.json): Machine-readable challenge evaluation JSON.
 - [evaluation/reports/comparison_report.md](evaluation/reports/comparison_report.md): Markdown comparison report with side-by-side per-case results (Step 10).
 - [evaluation/reports/comparison_report.json](evaluation/reports/comparison_report.json): Machine-readable comparative benchmark JSON (Step 10).

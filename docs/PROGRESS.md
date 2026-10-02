@@ -155,5 +155,25 @@
       * `challenge-04-distracting-measurements`: Regex captured the adjacent length token (`60.0 mm`) after `thickness):`, proposing an incorrect correction (`6.0 cm`) instead of `no_change`.
     - **Guardrail Robustness**: Revision isolation (Case 5) and ambiguity detection (Case 6) passed reliably (100.0%), confirming that retrieval safety checks remain sound.
   - **Execution Constraint**: Zero Gemini API calls made in Step 11; suite kept fixed for subsequent provider comparison.
+- [x] **Step 12: Evidence Retrieval Improvements for Varied Datasheets** — Completed.
+  - **Artifacts Created & Updated**:
+    - Retrieval Implementation: `scripts/retrieve_evidence.py` (Decoupled evidence discovery from measurement parsing; preserved precise-passage retrieval when unambiguous direct specification lines exist; implemented contiguous verbatim section/page fallback with `context_type` provenance [`passage`, `section`, `page`]; maintained strict component ID, revision eligibility, and conflict detection guardrails; kept generic to any requested attribute).
+    - Pipeline Integration: `scripts/investigate_record.py` (Propagates `retrieval_status` and `context_type` through investigation response metadata).
+    - Evaluation Framework: `scripts/evaluate.py` (Evaluates retrieval success separately from end-to-end correctness; supports section containment for citation verification; dynamically attributes failure stages to `measurement extraction`; updates challenge reporting).
+    - Verification Suite: `scripts/verify_sample.py` (Added Step 12 checks verifying section retrieval across all 4 challenge cases, guardrail abstentions, and challenge evaluation metrics).
+    - Evaluation Reports: `evaluation/reports/challenge_report.json` and `evaluation/reports/challenge_report.md` (Updated with Step 12 retrieval and evaluation metrics).
+    - Project Documentation: `README.md` and `docs/PROGRESS.md`.
+  - **Verification & Evaluation Results**:
+    - **Retrieval Success Rate**: **6 / 6 (100.0%)** across all challenge cases (all 4 previously failing retrieval cases now successfully extract verbatim evidence sections containing the requested label, value, unit, and table headers).
+    - **End-to-End Pass Rate**: **4 / 6 (66.7%)** (up from 2 / 6 in Step 11).
+      * `challenge-01-complete-sentence`: **FAIL** (`needs_review`). Retrieval: SUCCESS (verbatim Section 2 retrieved). Failure stage: `measurement extraction` (deterministic regex falsely captured component ID digits `01` with word `is` as a unit, triggering unit guardrail).
+      * `challenge-02-table-value-unit-columns`: **PASS** (`correction_proposed`, 1.5 cm). Retrieval: SUCCESS (parameter table section with headers retrieved). Deterministic extraction: SUCCESS (parsed `15.0 mm` across table lines).
+      * `challenge-03-split-lines-label-measurement`: **PASS** (`correction_proposed`, 0.24 cm). Retrieval: SUCCESS (wrapped label/measurement section retrieved). Deterministic extraction: SUCCESS (parsed `2.4 mm` across line break).
+      * `challenge-04-distracting-measurements`: **FAIL** (`correction_proposed` with 6.0 cm vs. expected `no_change`). Retrieval: SUCCESS (package dimensions section retrieved). Failure stage: `measurement extraction` (deterministic regex greedily captured adjacent length dimension `60.0 mm` instead of thickness `6.0 mm`).
+      * `challenge-05-incorrect-revision`: **PASS** (`insufficient_evidence`). Retrieval: SUCCESS (revision isolation guardrail correctly abstained).
+      * `challenge-06-conflicting-statements`: **PASS** (`ambiguous_evidence`). Retrieval: SUCCESS (ambiguity resolution guardrail correctly abstained).
+    - **Failure Stage Transition**: Zero cases failed at `retrieval` (down from 4 in Step 11). Remaining failures cleanly shifted to `measurement extraction`.
+    - **Regression Safety**: All Step 3–8 and Step 11–12 verification checks passed (100%). Zero Gemini API calls made.
+
 
 

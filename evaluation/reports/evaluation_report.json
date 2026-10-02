@@ -1,35 +1,484 @@
 {
-  "total_cases": 10,
-  "passed_cases": 10,
-  "failed_cases": 0,
-  "api_error_cases": 0,
-  "unrun_cases": 0,
-  "overall_pass_rate": "10/10 (100.0%)",
-  "overall_pass_rate_pct": 100.0,
-  "correction_pass_rate": "2/2 (100.0%)",
-  "correction_pass_rate_pct": 100.0,
-  "agreement_pass_rate": "2/2 (100.0%)",
-  "agreement_pass_rate_pct": 100.0,
-  "abstention_pass_rate": "6/6 (100.0%)",
-  "abstention_pass_rate_pct": 100.0,
-  "citation_validity": {
-    "valid": 5,
-    "total_checked": 5,
-    "ratio": "5/5",
-    "percentage": 100.0
+  "evaluation_scope": "Synthetic Evaluation Suite (Step 10: Deterministic Baseline Suite)",
+  "evaluation_notice": "Notice: This benchmark tests pipeline behavior across a synthetic dataset. It does not demonstrate production accuracy.",
+  "suite": "baseline",
+  "timestamp": "2026-10-02T06:55:24.758256+00:00",
+  "extractor": "deterministic",
+  "model": null,
+  "summary": {
+    "total_cases": 10,
+    "passed_cases": 10,
+    "failed_cases": 0,
+    "api_error_cases": 0,
+    "unrun_cases": 0,
+    "retrieval_success_rate": "10/10 (100.0%)",
+    "retrieval_success_rate_pct": 100.0,
+    "overall_pass_rate": "10/10 (100.0%)",
+    "overall_pass_rate_pct": 100.0,
+    "correction_pass_rate": "2/2 (100.0%)",
+    "correction_pass_rate_pct": 100.0,
+    "agreement_pass_rate": "2/2 (100.0%)",
+    "agreement_pass_rate_pct": 100.0,
+    "abstention_pass_rate": "6/6 (100.0%)",
+    "abstention_pass_rate_pct": 100.0,
+    "citation_validity": {
+      "valid": 5,
+      "total_checked": 5,
+      "ratio": "5/5",
+      "percentage": 100.0
+    },
+    "performance": {
+      "all_cases_median_duration_ms": 0.68,
+      "all_cases_mean_duration_ms": 0.7,
+      "model_called_cases_median_duration_ms": null,
+      "model_called_cases_mean_duration_ms": null,
+      "non_model_cases_median_duration_ms": 0.69,
+      "non_model_cases_mean_duration_ms": 0.7,
+      "median_investigation_duration_ms": 0.68,
+      "mean_investigation_duration_ms": 0.7
+    },
+    "model_metrics": {
+      "model_requests_attempted": "0/10",
+      "model_requests_succeeded": "0/0",
+      "cases_without_model_call": "10/10",
+      "token_usage": null,
+      "estimated_cost_usd": null,
+      "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+    }
   },
-  "performance": {
-    "all_cases_median_duration_ms": 0.63,
-    "all_cases_mean_duration_ms": 0.74,
-    "median_investigation_duration_ms": 0.63,
-    "mean_investigation_duration_ms": 0.74
-  },
-  "model_metrics": {
-    "model_requests_attempted": "0/10",
-    "model_requests_succeeded": "0/0",
-    "cases_without_model_call": "10/10",
-    "token_usage": null,
-    "estimated_cost_usd": null,
-    "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
-  }
+  "cases": [
+    {
+      "case_id": "case-01-correction-cm-to-mm",
+      "category": "correction",
+      "description": "Recorded thickness = 0.8 mm vs datasheet thickness = 0.8 cm -> propose 8.0 mm.",
+      "duration_ms": 1.11,
+      "passed": true,
+      "status": "passed",
+      "outcome": "correction_proposed",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "evidence_found",
+      "context_type": "passage",
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": true,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm.",
+      "expected": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 8.0,
+          "unit": "mm"
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-001.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component thickness: 0.8 cm."
+        }
+      },
+      "actual": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 8.0,
+          "unit": "mm",
+          "conversion": {
+            "supplier_extracted_value": 0.8,
+            "supplier_extracted_unit": "cm",
+            "target_unit": "mm",
+            "multiplier": 10.0,
+            "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+            "method": "deterministic_arithmetic"
+          }
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-001.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component thickness: 0.8 cm.",
+          "context_type": "passage"
+        }
+      }
+    },
+    {
+      "case_id": "case-02-correction-mm-to-cm",
+      "category": "correction",
+      "description": "Recorded width = 25.0 cm vs datasheet width = 25.0 mm -> propose 2.5 cm.",
+      "duration_ms": 1.03,
+      "passed": true,
+      "status": "passed",
+      "outcome": "correction_proposed",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "evidence_found",
+      "context_type": "passage",
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": true,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Supplier document specifies 25.0 mm, which converts via deterministic arithmetic to 2.50 cm (25.0 mm * 0.1 cm/mm = 2.50 cm). Recorded value is 25.0 cm. Proposing correction to 2.5 cm.",
+      "expected": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 2.5,
+          "unit": "cm"
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-002.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component width: 25.0 mm."
+        }
+      },
+      "actual": {
+        "outcome": "correction_proposed",
+        "correction": {
+          "value": 2.5,
+          "unit": "cm",
+          "conversion": {
+            "supplier_extracted_value": 25.0,
+            "supplier_extracted_unit": "mm",
+            "target_unit": "cm",
+            "multiplier": 0.1,
+            "calculation": "25.0 mm * 0.1 cm/mm = 2.50 cm",
+            "method": "deterministic_arithmetic"
+          }
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-002.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component width: 25.0 mm.",
+          "context_type": "passage"
+        }
+      }
+    },
+    {
+      "case_id": "case-03-agreement-mm",
+      "category": "abstention",
+      "description": "Recorded thickness = 8.0 mm vs datasheet thickness = 0.8 cm -> values agree, no_change.",
+      "duration_ms": 0.47,
+      "passed": true,
+      "status": "passed",
+      "outcome": "no_change",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "evidence_found",
+      "context_type": "passage",
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": true,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Evidence states 0.8 cm (0.8 cm * 10 mm/cm = 8.0 mm), which agrees with the recorded value 8.0 mm. No change required.",
+      "expected": {
+        "outcome": "no_change",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-003.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component thickness: 0.8 cm."
+        }
+      },
+      "actual": {
+        "outcome": "no_change",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-003.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component thickness: 0.8 cm.",
+          "context_type": "passage"
+        }
+      }
+    },
+    {
+      "case_id": "case-04-agreement-cm",
+      "category": "abstention",
+      "description": "Recorded width = 2.5 cm vs datasheet width = 25.0 mm -> values agree, no_change.",
+      "duration_ms": 0.66,
+      "passed": true,
+      "status": "passed",
+      "outcome": "no_change",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "evidence_found",
+      "context_type": "passage",
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": true,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Evidence states 25.0 mm (25.0 mm * 0.1 cm/mm = 2.50 cm), which agrees with the recorded value 2.5 cm. No change required.",
+      "expected": {
+        "outcome": "no_change",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-004.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component width: 25.0 mm."
+        }
+      },
+      "actual": {
+        "outcome": "no_change",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-004.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component width: 25.0 mm.",
+          "context_type": "passage"
+        }
+      }
+    },
+    {
+      "case_id": "case-05-unknown-component",
+      "category": "abstention",
+      "description": "Record references COMP-999 not present in document corpus -> insufficient_evidence.",
+      "duration_ms": 0.71,
+      "passed": true,
+      "status": "passed",
+      "outcome": "insufficient_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "insufficient_evidence",
+      "context_type": null,
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": false,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Component ID 'COMP-999' not found in extracted document content.",
+      "expected": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      },
+      "actual": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    },
+    {
+      "case_id": "case-06-incorrect-revision",
+      "category": "abstention",
+      "description": "Record asks for Rev B, but document is Rev A -> insufficient_evidence.",
+      "duration_ms": 0.85,
+      "passed": true,
+      "status": "passed",
+      "outcome": "insufficient_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "insufficient_evidence",
+      "context_type": null,
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": false,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Document content matches component 'COMP-006' but revision 'B' was not confirmed.",
+      "expected": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      },
+      "actual": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    },
+    {
+      "case_id": "case-07-missing-measurement",
+      "category": "abstention",
+      "description": "Record investigates 'weight', which is missing from document -> insufficient_evidence.",
+      "duration_ms": 0.98,
+      "passed": true,
+      "status": "passed",
+      "outcome": "insufficient_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "insufficient_evidence",
+      "context_type": null,
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": false,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "No measurement evidence found for attribute 'weight' in matching document(s).",
+      "expected": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      },
+      "actual": {
+        "outcome": "insufficient_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    },
+    {
+      "case_id": "case-08-conflicting-evidence",
+      "category": "abstention",
+      "description": "Document contains conflicting measurements (0.8 cm vs 1.2 cm) -> ambiguous_evidence.",
+      "duration_ms": 0.62,
+      "passed": true,
+      "status": "passed",
+      "outcome": "ambiguous_evidence",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "ambiguous_evidence",
+      "context_type": null,
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": false,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+      "expected": {
+        "outcome": "ambiguous_evidence",
+        "correction": null,
+        "evidence": null
+      },
+      "actual": {
+        "outcome": "ambiguous_evidence",
+        "correction": null,
+        "evidence": null
+      }
+    },
+    {
+      "case_id": "case-09-unsupported-unit",
+      "category": "abstention",
+      "description": "Document specifies thickness in unsupported unit 'in' (0.8 in) -> needs_review.",
+      "duration_ms": 0.52,
+      "passed": true,
+      "status": "passed",
+      "outcome": "needs_review",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": "evidence_found",
+      "context_type": "passage",
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": true,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Evidence unit 'in' is unsupported. Only ['cm', 'mm'] are supported.",
+      "expected": {
+        "outcome": "needs_review",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-009.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component thickness: 0.8 in."
+        }
+      },
+      "actual": {
+        "outcome": "needs_review",
+        "correction": null,
+        "evidence": {
+          "document_filename": "supplier-COMP-009.pdf",
+          "page_number": 1,
+          "supporting_passage": "Component thickness: 0.8 in.",
+          "context_type": "passage"
+        }
+      }
+    },
+    {
+      "case_id": "case-10-malformed-measurement",
+      "category": "abstention",
+      "description": "Record value 'INVALID_NUM' is not numeric -> needs_review.",
+      "duration_ms": 0.08,
+      "passed": true,
+      "status": "passed",
+      "outcome": "needs_review",
+      "api_error": false,
+      "unrun": false,
+      "model_call_attempted": false,
+      "model_call_made": false,
+      "no_call_reason": null,
+      "token_usage": null,
+      "retrieval_success": true,
+      "retrieval_status": null,
+      "context_type": null,
+      "outcome_match": true,
+      "proposal_match": true,
+      "citation_checked": false,
+      "citation_valid": true,
+      "quote_in_pdf": true,
+      "failure_stage": null,
+      "limitation_note": null,
+      "explanation": "Engineering record contains invalid numeric value: INVALID_NUM.",
+      "expected": {
+        "outcome": "needs_review",
+        "correction": null,
+        "evidence": null
+      },
+      "actual": {
+        "outcome": "needs_review",
+        "correction": null,
+        "evidence": null
+      }
+    }
+  ]
 }

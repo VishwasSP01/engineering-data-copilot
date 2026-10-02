@@ -239,6 +239,10 @@ def investigate_record(
     # Run Step 5 evidence retrieval directly as a Python function
     retrieval_res = retrieve_evidence(record_path, extracted_dir=extracted_dir)
     retrieval_status = retrieval_res.get("status") or retrieval_res.get("retrieval_status")
+    context_type = retrieval_res.get("context_type")
+
+    base_response["retrieval_status"] = retrieval_status
+    base_response["context_type"] = context_type
 
     # Handle retrieval abstentions
     if retrieval_status in ("insufficient_evidence", "ambiguous_evidence"):

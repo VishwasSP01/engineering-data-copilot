@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 """
-Deterministic evidence retrieval baseline for Engineering Data Investigation Copilot.
+Evidence retrieval for Engineering Data Investigation Copilot.
 
-Step 5 implementation:
+Step 12 implementation:
 - Reads a supplied engineering record JSON and extracted documents in data/extracted/ only.
 - Identifies component ID, revision, and attribute name from record.
-- Matches component ID and revision explicitly in document content (no partial ID matches).
-- Finds matching measurement passages for the requested attribute.
-- Resolves conflicts: returns 'ambiguous_evidence' if conflicting measurements exist.
-- Returns 'insufficient_evidence' if no matching component, revision, or measurement is found.
-- Returns 'evidence_found' with source PDF filename, 1-indexed page number, and exact passage.
-- Guarantees returned passage is copied verbatim from the extracted page text.
-- Never reads evaluation/expected/ or project documentation.
+- Matches component ID and revision explicitly in document content (strict word boundaries, no partial ID matches).
+- Decouples finding relevant evidence from parsing a complete measurement.
+- Preserves precise-passage retrieval when an unambiguous direct specification line exists.
+- Provides fallback for eligible documents containing the requested measurement label:
+  * Returns a contiguous verbatim section containing the label, value, unit, and table headers.
+  * If a reliable section boundary cannot be determined, returns the eligible page's verbatim text.
+  * Explicitly identifies whether the context is a 'passage', 'section', or 'page'.
+- Preserves filename and 1-based page provenance.
+- Never rewrites text, never joins disconnected excerpts into a fabricated quote, and never discards competing measurements.
+- Resolves conflicts: returns 'ambiguous_evidence' if conflicting measurements exist for the attribute.
+- Returns 'insufficient_evidence' if no matching component, revision, or measurement evidence is found.
+- Generic to any requested measurement; never reads evaluation/expected/ or project documentation.
 """
 
 import argparse
@@ -47,65 +52,80 @@ def match_revision(text: str, revision: Optional[str]) -> bool:
     return bool(re.search(pattern, text, re.IGNORECASE))
 
 
-def is_direct_specification_line(line: str, attribute_name: str) -> bool:
-    """Check if a line is a direct specification statement for the attribute.
+def parse_direct_specification_line(line: str, attribute_name: str) -> Optional[Tuple[float, str]]:
+    """Check if a line is a direct, standalone specification statement for attribute_name.
     
+    Returns (value, unit) if matched, None otherwise.
     Matches lines such as:
     - 'Component thickness: 0.8 cm.'
     - 'thickness: 0.8 cm'
     - 'thickness = 0.8 cm'
     - 'Overall component thickness: 0.8 cm ± 0.02 cm.'
+    Does not match compound lines (e.g. dimensions lists) or incomplete lines.
     """
+    clean_line = line.strip()
     pattern = (
         rf'^(?:[A-Za-z0-9_-]+\s+)*{re.escape(attribute_name)}\s*(?:[:=]|\bis\b)\s*'
-        rf'\d+(?:\.\d+)?\s*[a-zA-Zµ°Ω%]+(?:\s*[±+/-]\s*\d+(?:\.\d+)?\s*[a-zA-Zµ°Ω%]+)?[.;]?$'
+        rf'(\d+(?:\.\d+)?)\s*([a-zA-Zµ°Ω%]+)(?:\s*[±+/-]\s*\d+(?:\.\d+)?\s*[a-zA-Zµ°Ω%]+)?[.;]?$'
     )
-    return bool(re.match(pattern, line.strip(), re.IGNORECASE))
+    m = re.match(pattern, clean_line, re.IGNORECASE)
+    if m:
+        return float(m.group(1)), m.group(2).lower()
+    return None
 
 
-def extract_candidate_passages(page_text: str, attribute_name: str) -> List[Dict[str, Any]]:
-    """Extract candidate passages from a page's text for the requested attribute.
+def is_direct_specification_line(line: str, attribute_name: str) -> bool:
+    """Check if a line is a direct specification statement for the attribute (legacy helper)."""
+    return parse_direct_specification_line(line, attribute_name) is not None
+
+
+def extract_section_or_page(page_text: str, attribute_name: str) -> Tuple[str, str]:
+    """Extract a contiguous verbatim section containing attribute_name, or fall back to full page.
     
-    Returns candidate dictionaries containing:
-    - passage: verbatim string from text
-    - val: float numeric nominal measurement
-    - unit: lowercase unit string
-    - is_direct: bool indicating whether line is a direct specification statement
+    Returns (context_text, context_type) where context_type is 'section' or 'page'.
     """
-    candidates = []
-    lines = page_text.splitlines()
-
-    for line in lines:
-        cleaned_line = line.strip()
-        if not cleaned_line:
-            continue
-
-        if re.search(rf'\b{re.escape(attribute_name)}\b', cleaned_line, re.IGNORECASE):
-            # Extract nominal measurement: attribute followed by number and unit
-            pattern_fwd = rf'\b{re.escape(attribute_name)}\b[^\n.!?]*?(?:[:=]|\bis\b)?\s*(\d+(?:\.\d+)?)\s*([a-zA-Zµ°Ω%]+)'
-            m = re.search(pattern_fwd, cleaned_line, re.IGNORECASE)
-
-            # Or measurement followed by attribute (e.g., '0.8 cm thickness')
-            if not m:
-                pattern_rev = rf'(\d+(?:\.\d+)?)\s*([a-zA-Zµ°Ω%]+)\s+(?:[A-Za-z0-9_-]+\s+)*{re.escape(attribute_name)}'
-                m = re.search(pattern_rev, cleaned_line, re.IGNORECASE)
-
-            if m:
-                val = float(m.group(1))
-                unit = m.group(2).lower()
-                direct = is_direct_specification_line(cleaned_line, attribute_name)
-
-                # Ensure passage is a verbatim substring of page_text
-                # If cleaned_line exists in page_text, use it; otherwise locate exact slice
-                passage_str = cleaned_line if cleaned_line in page_text else line
-                candidates.append({
-                    "passage": passage_str,
-                    "val": val,
-                    "unit": unit,
-                    "is_direct": direct
-                })
-
-    return candidates
+    # Pattern for section boundaries in technical datasheets:
+    # Numbered headings (e.g. '1. Product Overview', '2. Physical Dimensions & Mechanical Parameters')
+    heading_pattern = r'(?:^|\n)(?=\d+\.\s+[A-Za-z])'
+    matches = list(re.finditer(heading_pattern, page_text))
+    
+    if matches:
+        boundaries = []
+        for m in matches:
+            b = m.start() + 1 if page_text[m.start()] == '\n' else m.start()
+            boundaries.append(b)
+        
+        if boundaries[0] > 0:
+            boundaries.insert(0, 0)
+        boundaries.append(len(page_text))
+        
+        candidate_sections = []
+        for i in range(len(boundaries) - 1):
+            start = boundaries[i]
+            end = boundaries[i + 1]
+            chunk = page_text[start:end].strip()
+            if chunk and re.search(rf'\b{re.escape(attribute_name)}\b', chunk, re.IGNORECASE):
+                # Preserve exact verbatim slice from page_text
+                idx = page_text.find(chunk, start)
+                if idx != -1:
+                    verbatim_slice = page_text[idx:idx + len(chunk)]
+                else:
+                    verbatim_slice = chunk
+                candidate_sections.append(verbatim_slice)
+        
+        if candidate_sections:
+            # Prioritize dimensional / parameter specification sections over metadata/notice sections
+            for sec in candidate_sections:
+                first_line = sec.splitlines()[0].lower()
+                if any(kw in first_line for kw in ("dimension", "parameter", "specification", "mechanical", "physical")):
+                    return sec, "section"
+            return candidate_sections[0], "section"
+    
+    # If no reliable section boundary can be determined, return full page verbatim text
+    page_stripped = page_text.strip()
+    idx = page_text.find(page_stripped)
+    verbatim_page = page_text[idx:idx + len(page_stripped)] if idx != -1 else page_text
+    return verbatim_page, "page"
 
 
 def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -> Dict[str, Any]:
@@ -140,6 +160,7 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
             "document_filename": None,
             "page_number": None,
             "evidence_passage": None,
+            "context_type": None,
             "evidence": None,
             "reason": "Record does not specify a valid component_id or part_number."
         }
@@ -152,6 +173,7 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
             "document_filename": None,
             "page_number": None,
             "evidence_passage": None,
+            "context_type": None,
             "evidence": None,
             "reason": "Record does not specify an attribute_name to investigate."
         }
@@ -164,12 +186,12 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
             "document_filename": None,
             "page_number": None,
             "evidence_passage": None,
+            "context_type": None,
             "evidence": None,
             "reason": f"Extracted documents directory '{extracted_dir}' does not exist."
         }
 
     # Locate candidate documents in data/extracted/
-    # If record references a specific document filename, prioritize it
     doc_ref = record.get("document_reference")
     ref_filename = None
     if isinstance(doc_ref, dict):
@@ -184,7 +206,6 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
         for p in all_json_files:
             if p.stem == stem or p.name == f"{ref_filename}.json":
                 candidate_files.append(p)
-    # If no specific candidate found from reference, scan all extracted documents in sorted order
     if not candidate_files:
         candidate_files = all_json_files
 
@@ -196,6 +217,7 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
             "document_filename": None,
             "page_number": None,
             "evidence_passage": None,
+            "context_type": None,
             "evidence": None,
             "reason": f"No extracted JSON documents found in '{extracted_dir}'."
         }
@@ -207,13 +229,13 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
         try:
             with open(json_file, "r", encoding="utf-8") as f:
                 doc_data = json.load(f)
-        except Exception as exc:
+        except Exception:
             continue
 
         pages = doc_data.get("pages", [])
         full_text = "\n".join(p.get("text", "") for p in pages)
 
-        # Requirement 3: Match component ID and revision explicitly in document content
+        # Requirement 4: Match component ID and revision explicitly in document content
         has_comp = match_component_id(full_text, component_id)
         if has_comp:
             component_found_anywhere = True
@@ -229,6 +251,7 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
             "document_filename": None,
             "page_number": None,
             "evidence_passage": None,
+            "context_type": None,
             "evidence": None,
             "reason": f"Component ID '{component_id}' not found in extracted document content."
         }
@@ -241,27 +264,87 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
             "document_filename": None,
             "page_number": None,
             "evidence_passage": None,
+            "context_type": None,
             "evidence": None,
             "reason": f"Document content matches component '{component_id}' but revision '{revision}' was not confirmed."
         }
 
-    # Search for measurement passages across matching documents and pages
-    all_candidates = []
+    # Requirement 3 & 4: Preserve precise-passage retrieval when unambiguous direct specification line exists
+    direct_specs = []
     for doc in matching_docs:
         source_file = doc.get("source_file", "unknown.pdf")
         for page in sorted(doc.get("pages", []), key=lambda p: p.get("page_number", 1)):
             p_num = page.get("page_number", 1)
             p_text = page.get("text", "")
-            page_candidates = extract_candidate_passages(p_text, attribute_name)
-            for c in page_candidates:
-                all_candidates.append({
-                    **c,
+            for line in p_text.splitlines():
+                parsed = parse_direct_specification_line(line, attribute_name)
+                if parsed:
+                    clean_line = line.strip()
+                    # Ensure line exists verbatim in page_text
+                    passage_str = clean_line if clean_line in p_text else line
+                    direct_specs.append({
+                        "val": parsed[0],
+                        "unit": parsed[1],
+                        "passage": passage_str,
+                        "source_file": source_file,
+                        "page_number": p_num,
+                        "page_text": p_text
+                    })
+
+    if direct_specs:
+        distinct_measurements = {(c["val"], c["unit"]) for c in direct_specs}
+        if len(distinct_measurements) > 1:
+            conflicts_str = ", ".join(f"{val} {unit}" for val, unit in sorted(distinct_measurements))
+            return {
+                **base_response,
+                "status": "ambiguous_evidence",
+                "retrieval_status": "ambiguous_evidence",
+                "document_filename": None,
+                "page_number": None,
+                "evidence_passage": None,
+                "context_type": None,
+                "evidence": None,
+                "reason": f"Conflicting measurement values found for '{attribute_name}': {conflicts_str}."
+            }
+
+        # Unambiguous direct specification line found
+        selected = direct_specs[0]
+        assert selected["passage"] in selected["page_text"], (
+            f"Internal error: Passage '{selected['passage']}' not found in cited page text"
+        )
+        evidence_dict = {
+            "document_filename": selected["source_file"],
+            "page_number": selected["page_number"],
+            "supporting_passage": selected["passage"],
+            "context_type": "passage"
+        }
+        return {
+            **base_response,
+            "status": "evidence_found",
+            "retrieval_status": "evidence_found",
+            "document_filename": selected["source_file"],
+            "page_number": selected["page_number"],
+            "evidence_passage": selected["passage"],
+            "context_type": "passage",
+            "evidence": evidence_dict,
+            "reason": f"Found unambiguous direct measurement passage on page {selected['page_number']} of {selected['source_file']}."
+        }
+
+    # Requirement 3 Fallback: No direct specification line found -> search for pages mentioning attribute_name
+    matching_pages = []
+    for doc in matching_docs:
+        source_file = doc.get("source_file", "unknown.pdf")
+        for page in sorted(doc.get("pages", []), key=lambda p: p.get("page_number", 1)):
+            p_num = page.get("page_number", 1)
+            p_text = page.get("text", "")
+            if re.search(rf'\b{re.escape(attribute_name)}\b', p_text, re.IGNORECASE):
+                matching_pages.append({
                     "source_file": source_file,
                     "page_number": p_num,
                     "page_text": p_text
                 })
 
-    if not all_candidates:
+    if not matching_pages:
         return {
             **base_response,
             "status": "insufficient_evidence",
@@ -269,53 +352,36 @@ def retrieve_evidence(record_path: Path, extracted_dir: Optional[Path] = None) -
             "document_filename": None,
             "page_number": None,
             "evidence_passage": None,
+            "context_type": None,
             "evidence": None,
-            "reason": f"No measurement passages found for attribute '{attribute_name}' in matching document(s)."
+            "reason": f"No measurement evidence found for attribute '{attribute_name}' in matching document(s)."
         }
 
-    # Evaluate consistency across candidates
-    # Group by measurement value and unit
-    distinct_measurements = {(c["val"], c["unit"]) for c in all_candidates}
+    # Extract verbatim section or full page context from eligible page
+    selected_page = matching_pages[0]
+    context_text, context_type = extract_section_or_page(selected_page["page_text"], attribute_name)
 
-    # Requirement 5: If matching passages conflict, return ambiguous_evidence
-    if len(distinct_measurements) > 1:
-        conflicts_str = ", ".join(f"{val} {unit}" for val, unit in sorted(distinct_measurements))
-        return {
-            **base_response,
-            "status": "ambiguous_evidence",
-            "retrieval_status": "ambiguous_evidence",
-            "document_filename": None,
-            "page_number": None,
-            "evidence_passage": None,
-            "evidence": None,
-            "reason": f"Conflicting measurement values found for '{attribute_name}': {conflicts_str}."
-        }
-
-    # All candidate passages agree on the exact same nominal measurement
-    # Prioritize direct specification lines over indirect prose mentions
-    direct_candidates = [c for c in all_candidates if c["is_direct"]]
-    selected = direct_candidates[0] if direct_candidates else all_candidates[0]
-
-    # Verify that the quote exists on the cited extracted page
-    assert selected["passage"] in selected["page_text"], (
-        f"Internal error: Passage '{selected['passage']}' not found in cited page text"
+    assert context_text in selected_page["page_text"], (
+        f"Internal error: Context '{context_text[:40]}...' not found in cited page text"
     )
 
     evidence_dict = {
-        "document_filename": selected["source_file"],
-        "page_number": selected["page_number"],
-        "supporting_passage": selected["passage"]
+        "document_filename": selected_page["source_file"],
+        "page_number": selected_page["page_number"],
+        "supporting_passage": context_text,
+        "context_type": context_type
     }
 
     return {
         **base_response,
         "status": "evidence_found",
         "retrieval_status": "evidence_found",
-        "document_filename": selected["source_file"],
-        "page_number": selected["page_number"],
-        "evidence_passage": selected["passage"],
+        "document_filename": selected_page["source_file"],
+        "page_number": selected_page["page_number"],
+        "evidence_passage": context_text,
+        "context_type": context_type,
         "evidence": evidence_dict,
-        "reason": f"Found unambiguous measurement passage on page {selected['page_number']} of {selected['source_file']}."
+        "reason": f"Found relevant {context_type} containing '{attribute_name}' on page {selected_page['page_number']} of {selected_page['source_file']}."
     }
 
 

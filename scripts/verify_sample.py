@@ -406,17 +406,62 @@ def main():
     from verify_step8_extractor import run_all_step8_checks
     run_all_step8_checks()
 
-    # 11. Step 11 Verification: Challenge evaluation suite and baseline reports
+    # 11. Step 12 Verification: Improved evidence retrieval on challenge cases
+    challenge_cases_dir = repo_root / "evaluation" / "cases"
+
+    # Verify retrieval on the 4 relevant challenge cases
+    c1_ret = retrieve_evidence(challenge_cases_dir / "challenge-01-complete-sentence" / "record.json", extracted_dir=challenge_cases_dir / "challenge-01-complete-sentence" / "extracted")
+    assert c1_ret["status"] == "evidence_found", f"Expected evidence_found, got {c1_ret['status']}"
+    assert c1_ret["context_type"] == "section", f"Expected section context, got {c1_ret['context_type']}"
+    assert "1.2 cm" in c1_ret["evidence_passage"]
+    assert "thickness" in c1_ret["evidence_passage"].lower()
+    print("✓ Challenge 01 (sentence) retrieved section containing 1.2 cm thickness.")
+
+    c2_ret = retrieve_evidence(challenge_cases_dir / "challenge-02-table-value-unit-columns" / "record.json", extracted_dir=challenge_cases_dir / "challenge-02-table-value-unit-columns" / "extracted")
+    assert c2_ret["status"] == "evidence_found", f"Expected evidence_found, got {c2_ret['status']}"
+    assert c2_ret["context_type"] == "section", f"Expected section context, got {c2_ret['context_type']}"
+    assert "15.0" in c2_ret["evidence_passage"] and "mm" in c2_ret["evidence_passage"]
+    print("✓ Challenge 02 (table columns) retrieved section containing parameter table headers, values, and units.")
+
+    c3_ret = retrieve_evidence(challenge_cases_dir / "challenge-03-split-lines-label-measurement" / "record.json", extracted_dir=challenge_cases_dir / "challenge-03-split-lines-label-measurement" / "extracted")
+    assert c3_ret["status"] == "evidence_found", f"Expected evidence_found, got {c3_ret['status']}"
+    assert c3_ret["context_type"] == "section", f"Expected section context, got {c3_ret['context_type']}"
+    assert "2.4 mm" in c3_ret["evidence_passage"]
+    print("✓ Challenge 03 (split lines) retrieved section containing wrapped label and measurement.")
+
+    c4_ret = retrieve_evidence(challenge_cases_dir / "challenge-04-distracting-measurements" / "record.json", extracted_dir=challenge_cases_dir / "challenge-04-distracting-measurements" / "extracted")
+    assert c4_ret["status"] == "evidence_found", f"Expected evidence_found, got {c4_ret['status']}"
+    assert c4_ret["context_type"] == "section", f"Expected section context, got {c4_ret['context_type']}"
+    assert "6.0 mm" in c4_ret["evidence_passage"]
+    print("✓ Challenge 04 (distracting dimensions) retrieved section containing package dimensions context.")
+
+    c5_ret = retrieve_evidence(challenge_cases_dir / "challenge-05-incorrect-revision" / "record.json", extracted_dir=challenge_cases_dir / "challenge-05-incorrect-revision" / "extracted")
+    assert c5_ret["status"] == "insufficient_evidence", f"Expected insufficient_evidence, got {c5_ret['status']}"
+    print("✓ Challenge 05 (incorrect revision) correctly abstained with 'insufficient_evidence'.")
+
+    c6_ret = retrieve_evidence(challenge_cases_dir / "challenge-06-conflicting-statements" / "record.json", extracted_dir=challenge_cases_dir / "challenge-06-conflicting-statements" / "extracted")
+    assert c6_ret["status"] == "ambiguous_evidence", f"Expected ambiguous_evidence, got {c6_ret['status']}"
+    print("✓ Challenge 06 (conflicting statements) correctly abstained with 'ambiguous_evidence'.")
+
+    # Run evaluation benchmark on challenge suite
     challenge_report = run_evaluation(repo_root, extractor="deterministic", suite="challenge")
     assert challenge_report["summary"]["total_cases"] == 6
-    assert challenge_report["summary"]["passed_cases"] == 2
-    assert challenge_report["summary"]["failed_cases"] == 4
+    assert challenge_report["summary"]["retrieval_success_rate"] == "6/6 (100.0%)"
+    assert challenge_report["summary"]["passed_cases"] == 4
+    assert challenge_report["summary"]["failed_cases"] == 2
     assert challenge_report["summary"]["abstention_pass_rate"] == "2/2 (100.0%)"
+    assert challenge_report["summary"]["citation_validity"]["valid"] == 4
     assert (repo_root / "evaluation" / "reports" / "challenge_report.json").exists()
     assert (repo_root / "evaluation" / "reports" / "challenge_report.md").exists()
-    print("✓ Step 11 challenge suite verified: 6 cases evaluated (2 passed, 4 failed baseline limitations), reports generated.\n")
 
-    print("ALL STEP 3, STEP 4, STEP 5, STEP 6, STEP 7, STEP 8 & STEP 11 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
+    # Confirm remaining failures are honestly attributed to measurement extraction
+    failed_challenge_cases = [c for c in challenge_report["cases"] if not c["passed"]]
+    assert len(failed_challenge_cases) == 2
+    for fc in failed_challenge_cases:
+        assert fc["failure_stage"] == "measurement extraction", f"Expected measurement extraction failure, got {fc['failure_stage']}"
+    print("✓ Step 12 challenge suite verified: 6/6 retrieval success, 4/6 passed end-to-end, 2 failed at measurement extraction.\n")
+
+    print("ALL STEP 3, STEP 4, STEP 5, STEP 6, STEP 7, STEP 8, STEP 11 & STEP 12 VERIFICATION CHECKS PASSED SUCCESSFULLY.")
 
 
 if __name__ == "__main__":
