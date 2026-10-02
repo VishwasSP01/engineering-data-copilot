@@ -32,26 +32,25 @@ flowchart TD
     subgraph Orchestration ["Execution Modes (Pluggable Orchestration)"]
         DIR_EXEC["Direct Execution<br/>(Fast, zero-dependency procedural execution)"]
         LC_EXEC["LangChain Runnable Sequence<br/>(Named composable stages with local telemetry)"]
+        LG_EXEC["LangGraph StateGraph<br/>(Explicit nodes, guarded transitions, typed tools)"]
     end
 
-    subgraph Pipeline ["7 Named Investigation Stages"]
-        S1["1. validate_record<br/>(Value presence, Decimal parseability, supported units)"]
+    subgraph Pipeline ["StateGraph Nodes & Transitions"]
+        N1["1. validate_record<br/>(Value presence, Decimal parseability, supported units)"]
         
-        subgraph S2 ["2. retrieve_eligible_evidence (Pluggable)"]
+        subgraph N2 ["2. retrieve_evidence (evidence_retrieval_tool)"]
             BASE_RET["Baseline Document Matching<br/>(Deterministic regex scan over extracted text)"]
             PG_RET["PgVector Semantic Retrieval<br/>(Exact cosine ranking, metadata-filtered)"]
         end
         
-        S3["3. branch_on_retrieval_outcome<br/>(Early abstention on insufficient/ambiguous evidence)"]
-        
-        subgraph S4 ["4. extract_measurement (Pluggable)"]
+        subgraph N3 ["3. extract_measurement (measurement_extraction_tool)"]
             DET["Deterministic Regex Extractor<br/>(Pattern matching & labelled tuple parsing)"]
             GEM["Live Gemini Extractor<br/>(gemini-3.5-flash-lite, strict JSON schema)"]
         end
         
-        S5["5. validate_and_align_source_quote<br/>(Whitespace alignment, attribute & unit grounding)"]
-        S6["6. perform_decimal_conversion_and_comparison<br/>(Deterministic Python Decimal conversion & arithmetic)"]
-        S7["7. produce_investigation_response<br/>(Structured output: correction_proposed, no_change, abstention)"]
+        N4["4. validate_evidence<br/>(Whitespace alignment, attribute & unit grounding)"]
+        N5["5. convert_and_compare (measurement_conversion_tool)<br/>(Deterministic Python Decimal conversion & arithmetic)"]
+        N6["6. finalize<br/>(Structured output: correction_proposed, no_change, abstention)"]
     end
 
     subgraph Evaluation ["Offline Evaluation & CI"]
@@ -61,23 +60,28 @@ flowchart TD
 
     REC --> DIR_EXEC
     REC --> LC_EXEC
-    DIR_EXEC --> S1
-    LC_EXEC --> S1
+    REC --> LG_EXEC
+    DIR_EXEC --> N1
+    LC_EXEC --> N1
+    LG_EXEC --> N1
     
-    S1 --> S2
+    N1 -->|Valid Record| N2
+    N1 -->|Invalid Record| N6
+    
     CORPUS --> BASE_RET
     VECDB --> PG_RET
     
-    S2 --> S3
-    S3 -->|Missing or Conflicting Evidence| S7
-    S3 -->|Eligible Evidence (Doc / Passage)| S4
+    N2 -->|Missing or Conflicting Evidence| N6
+    N2 -->|Eligible Evidence Found| N3
     
-    S4 --> S5
-    S5 -->|Guardrail Pass| S6
-    S5 -->|Guardrail Fail (Ungrounded/Unsupported)| S7
+    N3 -->|Extractor Error / Abstention| N6
+    N3 -->|Measurement Extracted| N4
     
-    S6 --> S7
-    S7 --> CMP
+    N4 -->|Guardrail Pass| N5
+    N4 -->|Guardrail Fail (Ungrounded/Unsupported)| N6
+    
+    N5 --> N6
+    N6 --> CMP
     EA -.->|Ground Truth (Evaluator Only)| CMP
 ```
 
@@ -86,7 +90,7 @@ flowchart TD
 ## 3. Technology Stack
 
 - **Runtime & Language**: Python (tested environments documented below).
-- **Workflow Orchestration**: [`langchain-core==0.3.86`](https://pypi.org/project/langchain-core/) — Optional Runnable orchestration composing the investigation workflow into 7 named stages with local stage-level telemetry and Document representations.
+- **Workflow Orchestration**: [`langchain-core==0.3.86`](https://pypi.org/project/langchain-core/) & [`langgraph==0.6.11`](https://pypi.org/project/langgraph/) — Optional Runnable and StateGraph orchestration engines with explicit guarded conditional branching, typed tool execution, and local telemetry.
 - **PDF Extraction**: [`pypdf>=6.19.0`](https://pypi.org/project/pypdf/) — Page-by-page selectable text extraction preserving source filenames and 1-based page numbers.
 - **Document Generation**: [`reportlab>=5.0.1`](https://pypi.org/project/reportlab/) — Programmatic generation of reproducible synthetic PDF datasheets with vector typography.
 - **Data Validation & Schemas**: [`pydantic>=2.13.5`](https://pypi.org/project/pydantic/) — Strict type validation and JSON schema enforcement for model extraction contracts.
@@ -488,7 +492,85 @@ python3 scripts/evaluate.py --extractor deterministic --suite baseline --orchest
 
 ---
 
-## 12. Offline vs. Live Workflows
+## 12. Controlled LangGraph Orchestration (Step 24)
+
+In Step 24, an optional **LangGraph StateGraph** orchestration pipeline was implemented (`scripts/investigate_graph.py`), representing the discrepancy investigation as an explicit state machine with guarded conditional transitions and typed tool execution.
+
+### Explicit StateGraph Architecture
+
+The investigation workflow is modeled as a compiled `StateGraph` over a strictly typed `InvestigationGraphState`:
+
+```
+validate_record ──[valid]──> retrieve_evidence ──[eligible]──> extract_measurement ──[found]──> validate_evidence ──[pass]──> convert_and_compare ──> finalize
+      │                              │                               │                              │                                       ▲
+      └──[invalid]───────────────────┴──[insufficient/ambiguous]─────┴──[error/abstain]─────────────┴──[fail]──────────────────────────────────────┘
+```
+
+1. **`validate_record`**: Validates input record value presence, Decimal parseability, and supported units (`mm`, `cm`).
+   - **Guarded Edge**: If invalid, routes directly to `finalize` (status: `needs_review`).
+2. **`retrieve_evidence`**: Executes the typed LangChain tool `evidence_retrieval_tool` (`baseline` or `pgvector`), converting retrieved evidence into standard `Document` objects while tracking `retrieval_status` distinctly.
+   - **Guarded Edge**: If retrieval status is `insufficient_evidence`, `ambiguous_evidence`, or `error`, routes directly to `finalize`. The extractor is **never invoked**.
+3. **`extract_measurement`**: Executes the typed LangChain tool `measurement_extraction_tool` (`deterministic` or `gemini`) exactly once on eligible passages.
+   - **Guarded Edge**: If extraction fails or abstains, routes directly to `finalize`.
+4. **`validate_evidence`**: Applies post-extraction guardrails: whitespace-aware quote alignment, attribute name matching, value/unit grounding in cited quote, and supported unit verification.
+   - **Guarded Edge**: If guardrails fail (e.g. ungrounded quote, mismatched attribute, or unsupported unit), routes directly to `finalize` (status: `needs_review`).
+5. **`convert_and_compare`**: Invoked **strictly after** evidence validation passes. Executes the typed LangChain tool `measurement_conversion_tool` using validated state variables (`validated_ev_val_dec`, `validated_ev_unit_clean`, `record_val_dec`, `record_unit_clean`) to perform exact Python `Decimal` conversion and comparison.
+6. **`finalize`**: Assembles the structured final response dictionary satisfying the exact schema contract.
+
+> **Deterministic Control Guarantee**: Tool execution and routing in this graph are **strictly state-guarded and deterministic**, not autonomous LLM tool selection. The graph enforces a finite execution limit (`recursion_limit=10`, max 6 transitions) with zero retry cycles.
+
+### State Isolation, Immutability & Security
+
+- **Strict State Isolation**: Every investigation constructs a completely fresh `InvestigationGraphState` dictionary. No shared mutable state or global counters exist between requests.
+- **Credential & Ground Truth Exclusion**: Sensitive credentials (`GEMINI_API_KEY`) and benchmark ground truth answers (`expected_outcome`, `expected_correction`) are strictly excluded from graph state.
+- **Isolated Telemetry**: Local node transitions, execution timings (`node_timings`), and tool invocation counts (`tool_invocations`) are captured per run. External LangSmith/LangChain tracing is strictly disabled by default (`LANGCHAIN_TRACING_V2=false`).
+
+### Node Transitions & Execution Traces
+
+| Execution Scenario | Case Example | Visited Node Transitions (Max 6) | Tool Invocations | Extractor Calls | Outcome |
+|---|---|---|---|:---:|---|
+| **Eligible Discrepancy** | `case-01-correction-cm-to-mm` | `validate_record` → `retrieve_evidence` → `extract_measurement` → `validate_evidence` → `convert_and_compare` → `finalize` (6 nodes) | `evidence_retrieval_tool: 1`<br/>`measurement_extraction_tool: 1`<br/>`measurement_conversion_tool: 1` | 1 | `correction_proposed` (8.0 mm) |
+| **Missing Evidence Abstention** | `case-05-unknown-component` | `validate_record` → `retrieve_evidence` → `finalize` (3 nodes) | `evidence_retrieval_tool: 1`<br/>`measurement_extraction_tool: 0`<br/>`measurement_conversion_tool: 0` | 0 | `insufficient_evidence` |
+| **Conflicting Evidence Abstention** | `case-08-conflicting-evidence` | `validate_record` → `retrieve_evidence` → `finalize` (3 nodes) | `evidence_retrieval_tool: 1`<br/>`measurement_extraction_tool: 0`<br/>`measurement_conversion_tool: 0` | 0 | `ambiguous_evidence` |
+| **Guardrail Rejection (Unsupported Unit)** | `case-09-unsupported-unit` | `validate_record` → `retrieve_evidence` → `extract_measurement` → `validate_evidence` → `finalize` (5 nodes) | `evidence_retrieval_tool: 1`<br/>`measurement_extraction_tool: 1`<br/>`measurement_conversion_tool: 0` | 1 | `needs_review` |
+| **Invalid Record Short-Circuit** | `case-10-malformed-measurement` | `validate_record` → `finalize` (2 nodes) | `evidence_retrieval_tool: 0`<br/>`measurement_extraction_tool: 0`<br/>`measurement_conversion_tool: 0` | 0 | `needs_review` |
+
+### 100% 3-Way Parity Across All 16 Benchmark Cases
+
+Evaluation across the complete 16-case benchmark confirms **100.0% concordance** across all three execution engines (`direct`, `langchain`, and `langgraph`) for both `baseline` and `pgvector` retrievers:
+
+| Suite | Total Cases | Direct Execution | LangChain Runnable | LangGraph StateGraph | 3-Way Concordance |
+|---|:---:|:---:|:---:|:---:|:---:|
+| **Baseline Suite (10 cases)** | 10 | 10 / 10 (100.0%) | 10 / 10 (100.0%) | 10 / 10 (100.0%) | **10 / 10 (100.0%)** |
+| **Challenge Suite (6 cases)** | 6 | 5 / 6 (83.3%)* | 5 / 6 (83.3%)* | 5 / 6 (83.3%)* | **6 / 6 (100.0%)** |
+| **Complete Suite (Baseline Retriever)** | 16 | 15 / 16 (93.8%) | 15 / 16 (93.8%) | 15 / 16 (93.8%) | **16 / 16 (100.0%)** |
+| **Complete Suite (PgVector Retriever)** | 16 | 15 / 16 (93.8%) | 15 / 16 (93.8%) | 15 / 16 (93.8%) | **16 / 16 (100.0%)** |
+
+*\*`challenge-01` represents a documented regex boundary limitation on sentence prose where deterministic extraction abstains safely to `needs_review`.*
+
+### Setup & Commands
+
+```bash
+# 1. Install optional orchestration dependencies
+pip install -r requirements-orchestration.txt
+
+# 2. Run investigation with LangGraph StateGraph orchestration
+python3 scripts/investigate_record.py data/records/unit-mismatch-001.json --orchestration langgraph
+
+# 3. Run Step 24 automated verification suite (9 verification points)
+python3 scripts/verify_step24_langgraph.py
+
+# 4. Run baseline evaluation with LangGraph
+python3 scripts/evaluate.py --extractor deterministic --suite baseline --orchestration langgraph
+
+# 5. Optional: Configure FastAPI service to use LangGraph orchestration
+export INVESTIGATION_ORCHESTRATION=langgraph
+uvicorn api.main:app --port 8000
+```
+
+---
+
+## 13. Offline vs. Live Workflows
 
 The repository strictly separates offline verification from live model evaluations:
 
@@ -505,6 +587,7 @@ The repository strictly separates offline verification from live model evaluatio
 | **Database & Vector Storage Verification** | `python3 scripts/verify_step21_database.py` | None | None (local Docker/Postgres) | Yes |
 | **Retriever Verification (Step 22)** | `python3 scripts/verify_step22_retrieval.py` | None | None (local Docker/Postgres) | Yes |
 | **LangChain Orchestration Verification (Step 23)** | `python3 scripts/verify_step23_langchain.py` | None | None | Yes |
+| **LangGraph Orchestration Verification (Step 24)** | `python3 scripts/verify_step24_langgraph.py` | None | None | Yes |
 | **Retriever Comparative Benchmark (16 cases)** | `python3 scripts/evaluate.py --retriever both --suite all` | None | None (zero Gemini calls) | Yes |
 | **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None | Yes |
 | **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None | Yes |
@@ -515,7 +598,7 @@ The repository strictly separates offline verification from live model evaluatio
 
 ---
 
-## 12. Evaluation Results & Benchmark Suite
+## 14. Evaluation Results & Benchmark Suite
 
 The repository contains two evaluation suites testing length unit mismatches (`cm` ↔ `mm`), agreements, unknown components, incorrect revisions, missing measurements, conflicting evidence, unsupported units, and complex layouts.
 
@@ -574,7 +657,7 @@ The repository contains two evaluation suites testing length unit mismatches (`c
 
 ---
 
-## 13. Continuous Integration (CI)
+## 15. Continuous Integration (CI)
 
 An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on all pushes and pull requests targeting the `main` branch.
 
@@ -592,7 +675,7 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 
 ---
 
-## 14. Limitations & Scope Boundaries
+## 16. Limitations & Scope Boundaries
 
 To maintain reliability, security, and auditability, the project's scope is strictly bounded:
 
@@ -611,7 +694,7 @@ To maintain reliability, security, and auditability, the project's scope is stri
 
 ---
 
-## 15. Project Documentation
+## 17. Project Documentation
 
 - [docs/DEMO.md](docs/DEMO.md): Interactive CLI walkthrough and interview demonstration guide.
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.

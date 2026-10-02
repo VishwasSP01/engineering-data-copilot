@@ -1440,9 +1440,9 @@ def main():
     )
     parser.add_argument(
         "--orchestration",
-        choices=["direct", "langchain"],
+        choices=["direct", "langchain", "langgraph"],
         default="direct",
-        help="Workflow orchestration execution path: 'direct' (default) or 'langchain'",
+        help="Workflow orchestration execution path: 'direct' (default), 'langchain', or 'langgraph'",
     )
     parser.add_argument(
         "--model",

@@ -607,12 +607,26 @@ def investigate_record(
         gemini_api_key: Optional Gemini API key override (otherwise uses GEMINI_API_KEY env var).
         gemini_model: Optional Gemini model name override (otherwise uses GEMINI_MODEL env var).
         retriever_kwargs: Optional kwargs forwarded to retriever instance.
-        orchestration: Execution engine ('direct' for zero-dependency baseline, 'langchain' for Runnable pipeline).
+        orchestration: Execution engine ('direct' for zero-dependency baseline, 'langchain' for Runnable pipeline, 'langgraph' for StateGraph).
     """
     if str(orchestration).strip().lower() == "langchain":
         # Lazy import of LangChain orchestration engine
         from scripts.investigate_chain import investigate_record_langchain
         return investigate_record_langchain(
+            record_path=record_path,
+            extracted_dir=extracted_dir,
+            extractor=extractor,
+            retriever=retriever,
+            corpus_id=corpus_id,
+            gemini_api_key=gemini_api_key,
+            gemini_model=gemini_model,
+            retriever_kwargs=retriever_kwargs,
+        )
+
+    if str(orchestration).strip().lower() == "langgraph":
+        # Lazy import of LangGraph orchestration engine
+        from scripts.investigate_graph import investigate_record_langgraph
+        return investigate_record_langgraph(
             record_path=record_path,
             extracted_dir=extracted_dir,
             extractor=extractor,
@@ -746,9 +760,9 @@ def main():
     )
     parser.add_argument(
         "--orchestration",
-        choices=["direct", "langchain"],
+        choices=["direct", "langchain", "langgraph"],
         default="direct",
-        help="Workflow orchestration execution path: 'direct' (default) or 'langchain'",
+        help="Workflow orchestration execution path: 'direct' (default), 'langchain', or 'langgraph'",
     )
     parser.add_argument(
         "--output",

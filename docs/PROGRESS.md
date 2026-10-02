@@ -544,4 +544,41 @@
     * `scripts/verify_step23_langchain.py`: Comprehensive 8-point verification script passing 100%.
     * `tests/test_chain.py`: 13 offline unit and integration tests covering pipeline composition, Document metadata, early abstention skips, fake Gemini grounding, dependency isolation, and live pgvector parity.
     * CI workflow updated to install optional orchestration dependencies and verify LangChain pipeline parity on Python 3.13. All 48 tests pass.
+- [x] **Step 24: Implement Controlled LangGraph Orchestration** — Completed.
+  - **Goal & Scope**: Represent the investigation workflow as an explicit state graph with guarded transitions, observable tool execution, and typed per-investigation state. Keep direct execution as default. Enforce a finite execution limit with no retry loops.
+  - **Reproducible Dependencies (`requirements-orchestration.txt`)**:
+    * Pinned `langgraph==0.6.11`, `langgraph-checkpoint==2.1.2`, `langgraph-prebuilt==0.6.5`, `langgraph-sdk==0.2.9`, `ormsgpack==1.11.0`, `xxhash==4.0.1` alongside existing `langchain-core==0.3.86`.
+    * Kept imports strictly lazy; direct execution and FastAPI health checks remain fully operational with zero dependencies on LangGraph.
+  - **Typed Per-Investigation State (`InvestigationGraphState`)**:
+    * Defined typed dictionary state carrying `record`, `retriever_name`, `extractor_name`, `corpus_id`, `base_response`, `retrieval_status`, `evidence_documents`, `evidence_passage`, `evidence_dict`, `extractor_meta`, `validated_ev_val_dec`, `validated_ev_unit_clean`, `record_val_dec`, `record_unit_clean`, `node_transitions`, `node_timings`, `tool_invocations`, `extractor_invoked`, `final_response`.
+    * State Isolation & Security: Every run constructs a fresh initial state. Credentials (`GEMINI_API_KEY`) and ground truth expected answers (`expected_outcome`, `expected_correction`) are strictly excluded from graph state.
+  - **Explicit 6 Nodes & Guarded Conditional Edges (`scripts/investigate_graph.py`)**:
+    * Nodes: `validate_record`, `retrieve_evidence`, `extract_measurement`, `validate_evidence`, `convert_and_compare`, `finalize`.
+    * Guarded routing:
+      - `route_after_validate`: Invalid records route directly to `finalize` (status: `needs_review`, 2 nodes).
+      - `route_after_retrieve`: Missing (`case-05`) or conflicting (`case-08`) evidence routes directly to `finalize` (status: `insufficient_evidence` / `ambiguous_evidence`, 3 nodes). Extractor is called 0 times.
+      - `route_after_extract`: Extractor errors or abstentions route directly to `finalize` (4 nodes).
+      - `route_after_validate_evidence`: Failed guardrails (ungrounded quote, mismatched attribute, unsupported unit in `case-09`) route directly to `finalize` (status: `needs_review`, 5 nodes). Conversion is called 0 times.
+      - Conversion: Invoked only when evidence validation passes.
+  - **Typed LangChain Tools**:
+    * Implemented `evidence_retrieval_tool` (`RetrievalToolInput`), `measurement_extraction_tool` (`ExtractionToolInput`), and `measurement_conversion_tool` (`ConversionComparisonToolInput`).
+    * Conversion tool inputs are strictly read from validated state variables (`validated_ev_val_dec`, `validated_ev_unit_clean`, `record_val_dec`, `record_unit_clean`).
+  - **Finite Execution Invariant**:
+    * Enforced `config={"recursion_limit": 10}`. No retry loops or cyclic transitions.
+    * Eligible cases take max 6 node transitions (`validate_record` → `retrieve_evidence` → `extract_measurement` → `validate_evidence` → `convert_and_compare` → `finalize`).
+    * Extractor invocations: 0 times for abstentions / invalid records; exactly 1 time for eligible cases.
+  - **Opt-In CLI and API Support**:
+    * CLI flag `--orchestration {direct,langchain,langgraph}` in `scripts/investigate_record.py` and `scripts/evaluate.py`.
+    * FastAPI service opt-in via `INVESTIGATION_ORCHESTRATION=langgraph`.
+  - **Offline Parity Across All 16 Benchmark Cases**:
+    * 100.0% 3-way concordance across direct, LangChain, and LangGraph execution on both `baseline` and `pgvector` retrievers (10/10 baseline pass rate, 5/6 challenge pass rate).
+  - **Local Telemetry & Observability**:
+    * Recorded node transition sequence (`node_transitions`), per-node latency (`node_timings`), and tool invocation counts (`tool_invocations`).
+    * External tracing strictly disabled by default (`LANGCHAIN_TRACING_V2=false`, `LANGSMITH_TRACING=false`).
+  - **Comprehensive Automated Verification & Tests**:
+    * `scripts/verify_step24_langgraph.py`: Automated 9-point verification script passing 100%.
+    * `tests/test_graph.py`: 15 unit and integration tests covering node structure, guarded routing, tool invariants, fake Gemini grounding, state isolation, dependency isolation, and live pgvector parity.
+    * All 63 tests in `tests/` pass.
+    * CI workflow updated with Step 24 verification and LangGraph baseline evaluation.
+
 

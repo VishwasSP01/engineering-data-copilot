@@ -53,6 +53,10 @@ jobs:
         run: |
           python scripts/verify_step23_langchain.py
 
+      - name: Run Step 24 LangGraph orchestration verification
+        run: |
+          python scripts/verify_step24_langgraph.py
+
       - name: Run deterministic evaluation on baseline suite (10 cases, direct)
         run: |
           python scripts/evaluate.py --extractor deterministic --suite baseline --orchestration direct
@@ -60,6 +64,10 @@ jobs:
       - name: Run deterministic evaluation on baseline suite (10 cases, LangChain)
         run: |
           python scripts/evaluate.py --extractor deterministic --suite baseline --orchestration langchain
+
+      - name: Run deterministic evaluation on baseline suite (10 cases, LangGraph)
+        run: |
+          python scripts/evaluate.py --extractor deterministic --suite baseline --orchestration langgraph
 
       - name: Run deterministic evaluation on challenge suite (6 cases)
         run: |
