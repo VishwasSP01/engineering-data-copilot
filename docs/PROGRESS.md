@@ -351,3 +351,21 @@
   - **Interactive CLI Demo Guide (`docs/DEMO.md`)**:
     * Created interview-ready walkthrough covering 4 core scenarios: supported discrepancy correction (`unit-mismatch-001`), safety abstentions on conflicting evidence (`case-08`) and revision mismatches (`challenge-05`), demonstrated Gemini value-add on unstructured sentence prose (`challenge-01`), and automated offline CI verification.
     * All demo CLI commands tested and verified 100% offline; saved live model outputs clearly labeled as historical artifacts.
+- [x] **Step 18: Final Review of the CLI Portfolio MVP** — Completed.
+  - **Goal & Scope**: Complete independent verification of the CLI Portfolio MVP in an isolated fresh checkout, audit documentation against actual behavior, verify architecture diagrams, confirm security decoupling, and produce the final milestone review report.
+  - **Fresh Checkout & Quickstart Verification**:
+    * Verified quickstart commands in a clean scratch checkout without `.env`, `.venv`, or `data/extracted/`.
+    * Locked dependencies installed cleanly via `pip install -r requirements-lock.txt`.
+    * Verified `generate_sample.py` and `extract_documents.py`.
+    * Passed all offline verification suites (`verify_sample.py`, `verify_step8_extractor.py`).
+    * Confirmed baseline evaluation pass rate at 10/10 (100.0%) and challenge evaluation pass rate at 5/6 (83.3%) with `challenge-01` sentence regex limitation preserved.
+    * Executed all offline demo commands from `docs/DEMO.md` with zero Gemini API calls.
+  - **Security & Decoupling Audit**:
+    * Confirmed runtime investigation code never reads `evaluation/expected/`.
+    * Confirmed credentials (`.env`) and virtual environments (`.venv/`) remain untracked and excluded.
+    * Confirmed no Gemini API calls occurred during offline verification or demo execution.
+    * Bounded network statements accurately: package installation and CI setup require network transit; offline verification tests run locally with zero API calls.
+  - **Architecture Diagram Verification**:
+    * Updated Mermaid architecture diagram in `README.md` and `docs/DEMO.md` to explicitly show the document corpus as input to retrieval, accurately label record inputs and evidence passages, illustrate early safety abstention branching directly from retrieval, and connect expected answers solely to the evaluator.
+  - **Generated Review Artifact**:
+    * Produced comprehensive review document [`docs/CLI_MVP_REVIEW.md`](docs/CLI_MVP_REVIEW.md).

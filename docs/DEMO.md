@@ -10,23 +10,49 @@ All demo commands run **100% offline** without requiring API credentials or exte
 
 Engineering Data Copilot resolves discrepancies between engineering database records (e.g. PLM/ERP attributes) and authoritative supplier PDF datasheets:
 
-```
-[ Engineering Record ]
-         │
-         ▼
-[ Eligible Document Retrieval ]  ──(Missing/Conflict?)──► [ Safety Abstention ]
-         │
-         ▼
-[ Measurement Extraction ]       ──► Deterministic Regex OR Live Gemini
-         │
-         ▼
-[ Source-Quote Grounding ]       ──► Strict verbatim / whitespace-aware alignment
-         │
-         ▼
-[ Deterministic Arithmetic ]     ──► Python Decimal (never trusts model math)
-         │
-         ▼
-[ Proposed Correction / Match ]  ──► Propose correction or confirm agreement
+```mermaid
+flowchart TD
+    subgraph Inputs ["Inputs"]
+        REC["Engineering Record Input<br/>(Part ID, Rev, Attribute, Recorded Value & Unit)"]
+        CORPUS["Supplier Document Corpus<br/>(PDF Datasheets & Extracted Page Text)"]
+    end
+
+    subgraph Pipeline ["Investigation Pipeline"]
+        EDR["Eligible Document Retrieval<br/>(Filters by Part ID & Rev; passage/section fallback)"]
+        
+        ABSTAIN["Early Safety Abstention<br/>(insufficient_evidence / ambiguous_evidence)"]
+        
+        subgraph Extraction ["Measurement Extraction (Pluggable Alternatives)"]
+            DET["Deterministic Regex Extractor<br/>(Pattern matching & labelled tuple parsing)"]
+            GEM["Live Gemini Extractor<br/>(gemini-3.5-flash-lite, strict JSON schema)"]
+        end
+        
+        SQV["Source-Quote Validation<br/>(Verbatim substring match & whitespace alignment)"]
+        DC["Deterministic Arithmetic<br/>(Python Decimal conversion; no model math)"]
+        DEC["Decision Outcome<br/>(correction_proposed or no_change)"]
+    end
+
+    subgraph Evaluation ["Offline Evaluation & CI"]
+        EA["Expected Answer Fixtures<br/>(evaluation/expected/*.json)"]
+        CMP["Benchmark Evaluator & Comparator<br/>(Verifies outcomes, proposals & citations)"]
+    end
+
+    REC --> EDR
+    CORPUS --> EDR
+    
+    EDR -->|Missing or Conflicting Evidence| ABSTAIN
+    EDR -->|Retrieved Evidence Passage/Section| DET
+    EDR -->|Retrieved Evidence Passage/Section| GEM
+    
+    DET -->|Extracted Measurement & Quote| SQV
+    GEM -->|Extracted Measurement & Quote| SQV
+    
+    SQV -->|Validated Grounded Measurement| DC
+    DC --> DEC
+    
+    DEC --> CMP
+    ABSTAIN --> CMP
+    EA -.->|Ground Truth (Evaluator Only)| CMP
 ```
 
 ---

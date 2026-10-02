@@ -23,36 +23,46 @@ Engineering and manufacturing organizations rely on databases (PLM/ERP) containi
 
 ```mermaid
 flowchart TD
-    subgraph Input ["Input Record"]
-        R["Engineering Record<br/>(Part ID, Rev, Attribute, Recorded Value & Unit)"]
+    subgraph Inputs ["Inputs"]
+        REC["Engineering Record Input<br/>(Part ID, Rev, Attribute, Recorded Value & Unit)"]
+        CORPUS["Supplier Document Corpus<br/>(PDF Datasheets & Extracted Page Text)"]
     end
 
-    subgraph Investigation ["Investigation Pipeline"]
+    subgraph Pipeline ["Investigation Pipeline"]
         EDR["Eligible Document Retrieval<br/>(Filters by Part ID & Rev; passage/section fallback)"]
         
-        subgraph Extraction ["Measurement Extraction (Pluggable)"]
-            DET["Deterministic Regex Extractor<br/>(Pattern & tuple parsing)"]
-            GEM["Live Gemini Extractor<br/>(gemini-3.5-flash-lite, strict JSON)"]
+        ABSTAIN["Early Safety Abstention<br/>(insufficient_evidence / ambiguous_evidence)"]
+        
+        subgraph Extraction ["Measurement Extraction (Pluggable Alternatives)"]
+            DET["Deterministic Regex Extractor<br/>(Pattern matching & labelled tuple parsing)"]
+            GEM["Live Gemini Extractor<br/>(gemini-3.5-flash-lite, strict JSON schema)"]
         end
         
-        SQV["Source-Quote Validation<br/>(Verbatim match & whitespace-aware alignment)"]
-        DC["Decimal Conversion<br/>(Deterministic Python Decimal arithmetic)"]
-        DEC["Decision Outcome<br/>(correction_proposed, no_change, or abstention)"]
+        SQV["Source-Quote Validation<br/>(Verbatim substring match & whitespace alignment)"]
+        DC["Deterministic Arithmetic<br/>(Python Decimal conversion; no model math)"]
+        DEC["Decision Outcome<br/>(correction_proposed or no_change)"]
     end
 
-    subgraph Evaluation ["Offline Evaluator"]
+    subgraph Evaluation ["Offline Evaluation & CI"]
         EA["Expected Answer Fixtures<br/>(evaluation/expected/*.json)"]
-        CMP["Outcome, Proposal & Citation Comparison<br/>(Diagnostic pass/fail vs. regression checks)"]
+        CMP["Benchmark Evaluator & Comparator<br/>(Verifies outcomes, proposals & citations)"]
     end
 
-    R --> EDR
-    EDR -->|Retrieved Evidence Passage| DET
-    EDR -->|Retrieved Evidence Passage| GEM
-    DET --> SQV
-    GEM --> SQV
-    SQV --> DC
+    REC --> EDR
+    CORPUS --> EDR
+    
+    EDR -->|Missing or Conflicting Evidence| ABSTAIN
+    EDR -->|Retrieved Evidence Passage/Section| DET
+    EDR -->|Retrieved Evidence Passage/Section| GEM
+    
+    DET -->|Extracted Measurement & Quote| SQV
+    GEM -->|Extracted Measurement & Quote| SQV
+    
+    SQV -->|Validated Grounded Measurement| DC
     DC --> DEC
+    
     DEC --> CMP
+    ABSTAIN --> CMP
     EA -.->|Ground Truth (Evaluator Only)| CMP
 ```
 
@@ -192,18 +202,22 @@ To run investigations with live Gemini model extraction:
 
 ## 8. Offline vs. Live Workflows
 
-The repository strictly separates offline verification from live model runs:
+The repository strictly separates offline verification from live model evaluations:
 
-| Workflow | Command | Credentials Required? | Network Calls? |
-|---|---|:---:|:---:|
-| **Comprehensive Offline Verification** | `python3 scripts/verify_sample.py` | None | None |
-| **Mock Extractor & Guardrail Checks** | `python3 scripts/verify_step8_extractor.py` | None | None |
-| **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None |
-| **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None |
-| **Deterministic Single Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor deterministic` | None | None |
-| **Live Gemini Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor gemini` | `GEMINI_API_KEY` | Yes |
-| **Live Challenge Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite challenge --step 15` | `GEMINI_API_KEY` | Yes |
-| **Live Baseline Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite baseline` | `GEMINI_API_KEY` | Yes |
+- **No Gemini API calls during offline verification**: All offline verification suites, mock extractor checks, and deterministic evaluations run locally with no Gemini API calls.
+- **Network Usage Clarification**: While initial environment setup (cloning and `pip install -r requirements-lock.txt`) and GitHub Actions runner setup naturally use network transit to download dependencies from PyPI, the offline verification suite itself makes zero external API requests.
+- **Live Gemini Workflows**: Require `GEMINI_API_KEY` and perform live network generation requests to the Gemini API.
+
+| Workflow | Command | Credentials Required? | Gemini API Calls? | Local Offline Execution? |
+|---|---|:---:|:---:|:---:|
+| **Comprehensive Offline Verification** | `python3 scripts/verify_sample.py` | None | None | Yes |
+| **Mock Extractor & Guardrail Checks** | `python3 scripts/verify_step8_extractor.py` | None | None | Yes |
+| **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None | Yes |
+| **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None | Yes |
+| **Deterministic Single Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor deterministic` | None | None | Yes |
+| **Live Gemini Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor gemini` | `GEMINI_API_KEY` | Yes (1 call) | No (API transit) |
+| **Live Challenge Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite challenge --step 15` | `GEMINI_API_KEY` | Yes (max 6 calls) | No (API transit) |
+| **Live Baseline Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite baseline` | `GEMINI_API_KEY` | Yes (max 10 calls) | No (API transit) |
 
 ---
 
