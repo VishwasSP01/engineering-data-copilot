@@ -24,7 +24,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
+# Optional numpy import for vector serialization
+try:
+    import numpy as np
+except ImportError:
+    np = None  # type: ignore
 
 # Model constants
 DEFAULT_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
@@ -298,7 +302,7 @@ def embed_chunks(
     model_revision: str = DEFAULT_MODEL_REVISION,
     device: str = "cpu",
     normalize: bool = True
-) -> np.ndarray:
+) -> Any:
     """Generate normalized pretrained embeddings using SentenceTransformers on CPU.
     
     Guarantees:
@@ -307,6 +311,16 @@ def embed_chunks(
     - Output matrix has shape (len(chunks), EMBEDDING_DIM) with float32 values.
     - All vector norms are approximately 1.0 (unit normalized).
     """
+    global np
+    if np is None:
+        try:
+            import numpy as np
+        except ImportError as exc:
+            raise RuntimeError(
+                "numpy is not installed. Please install optional embedding dependencies: "
+                "pip install -r requirements-embeddings.txt"
+            ) from exc
+
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError as exc:
@@ -347,13 +361,23 @@ def embed_chunks(
 def save_embeddings(
     output_dir: Path,
     chunks: List[Dict[str, Any]],
-    vectors: np.ndarray,
+    vectors: Any,
     corpus_meta: Dict[str, Any],
     model_name: str = DEFAULT_MODEL_NAME,
     model_revision: str = DEFAULT_MODEL_REVISION,
     max_tokens: int = MAX_CHUNK_TOKENS
 ) -> Dict[str, Any]:
     """Save generated chunks, embeddings, and manifest under output_dir."""
+    global np
+    if np is None:
+        try:
+            import numpy as np
+        except ImportError as exc:
+            raise RuntimeError(
+                "numpy is not installed. Please install optional embedding dependencies: "
+                "pip install -r requirements-embeddings.txt"
+            ) from exc
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     chunks_file = output_dir / "chunks.json"
