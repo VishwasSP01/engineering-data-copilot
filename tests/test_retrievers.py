@@ -87,6 +87,39 @@ def make_dummy_vector(dimension: int = EXPECTED_DIMENSION):
 class TestPgVectorMockedLogic(unittest.TestCase):
     """Offline unit tests with mocked database connection and embedding model."""
 
+    def setUp(self):
+        """Mock psycopg and pgvector drivers in sys.modules so offline CI runs without db drivers."""
+        self.mock_psycopg = MagicMock()
+        self.mock_pgvector = MagicMock()
+        self.mock_pgvector_psycopg = MagicMock()
+        self.patcher = patch.dict(
+            "sys.modules",
+            {
+                "psycopg": self.mock_psycopg,
+                "pgvector": self.mock_pgvector,
+                "pgvector.psycopg": self.mock_pgvector_psycopg,
+            },
+        )
+        self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+
+    def test_missing_driver_returns_configuration_error(self):
+        """When psycopg or pgvector is not installed, retriever gracefully returns CONFIGURATION_ERROR."""
+        with patch.dict("sys.modules", {"psycopg": None, "pgvector": None, "pgvector.psycopg": None}):
+            retriever = PgVectorRetriever()
+            record = {
+                "record_id": "REC-001",
+                "component_id": "COMP-001",
+                "revision": "A",
+                "attribute_name": "thickness",
+            }
+            res = retriever.retrieve(record)
+            self.assertEqual(res["status"], "error")
+            self.assertEqual(res["retriever"]["error_type"], "CONFIGURATION_ERROR")
+            self.assertIn("not installed", res["retriever"]["error_message"])
+
     def test_conflict_detection_across_full_context_before_ranking(self):
         """PgVectorRetriever detects contradictory specifications across full eligible context."""
         mock_model = MagicMock()
