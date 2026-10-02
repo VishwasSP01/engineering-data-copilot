@@ -41,6 +41,10 @@ class InvestigationRequest(BaseModel):
         None,
         description="Optional extractor selection: 'deterministic' (default) or 'gemini'"
     )
+    retriever: Optional[str] = Field(
+        None,
+        description="Optional retriever selection: 'baseline' (default) or 'pgvector'"
+    )
 
     @model_validator(mode="after")
     def validate_record_fields(self) -> "InvestigationRequest":
@@ -61,7 +65,13 @@ class InvestigationRequest(BaseModel):
             if ext_clean not in ("deterministic", "gemini"):
                 raise ValueError(f"Extractor '{self.extractor}' is invalid. Supported: 'deterministic', 'gemini'.")
 
+        if self.retriever is not None:
+            ret_clean = str(self.retriever).strip().lower()
+            if ret_clean not in ("baseline", "pgvector"):
+                raise ValueError(f"Retriever '{self.retriever}' is invalid. Supported: 'baseline', 'pgvector'.")
+
         return self
+
 
     def to_record_dict(self) -> Dict[str, Any]:
         """Convert validated request into normalized engineering record dictionary."""

@@ -26,6 +26,10 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 
 def match_component_id(text: str, component_id: str) -> bool:
     """Explicitly match component ID in text with strict boundaries.
@@ -128,8 +132,8 @@ def extract_section_or_page(page_text: str, attribute_name: str) -> Tuple[str, s
     return verbatim_page, "page"
 
 
-def retrieve_evidence(record_input: Union[Path, str, Dict[str, Any]], extracted_dir: Optional[Path] = None) -> Dict[str, Any]:
-    """Retrieve evidence for an engineering record from extracted documents."""
+def retrieve_evidence_baseline(record_input: Union[Path, str, Dict[str, Any]], extracted_dir: Optional[Path] = None) -> Dict[str, Any]:
+    """Retrieve evidence for an engineering record from extracted documents using deterministic baseline."""
     repo_root = Path(__file__).resolve().parent.parent
     if extracted_dir is None:
         extracted_dir = repo_root / "data" / "extracted"
@@ -388,25 +392,73 @@ def retrieve_evidence(record_input: Union[Path, str, Dict[str, Any]], extracted_
     }
 
 
+def retrieve_evidence(
+    record_input: Union[Path, str, Dict[str, Any]],
+    extracted_dir: Optional[Path] = None,
+    retriever: Union[str, Any] = "baseline",
+    corpus_id: Optional[str] = None,
+    **kwargs: Any
+) -> Dict[str, Any]:
+    """Retrieve evidence for an engineering record using specified retriever ('baseline' or 'pgvector')."""
+    if isinstance(retriever, str) and retriever.strip().lower() in ("baseline", "deterministic", "regex"):
+        return retrieve_evidence_baseline(record_input, extracted_dir=extracted_dir)
+
+    from scripts.retrievers import BaseRetriever, get_retriever
+
+    if isinstance(retriever, BaseRetriever):
+        retriever_inst = retriever
+    else:
+        retriever_inst = get_retriever(retriever, **kwargs)
+
+    if isinstance(record_input, dict):
+        record = record_input
+    else:
+        record_path = Path(record_input)
+        if not record_path.exists():
+            raise FileNotFoundError(f"Record file not found: {record_path}")
+        with open(record_path, "r", encoding="utf-8") as f:
+            record = json.load(f)
+
+    return retriever_inst.retrieve(record, extracted_dir=extracted_dir, corpus_id=corpus_id)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Deterministic evidence retrieval baseline.")
+    parser = argparse.ArgumentParser(description="Evidence retrieval (baseline or pgvector).")
     parser.add_argument("record_path", type=Path, help="Path to input record JSON")
+    parser.add_argument(
+        "--retriever",
+        type=str,
+        default="baseline",
+        choices=["baseline", "pgvector"],
+        help="Retriever implementation: 'baseline' (default) or 'pgvector'",
+    )
+    parser.add_argument(
+        "--corpus-id",
+        type=str,
+        default=None,
+        help="Optional corpus identifier for vector retrieval (default: supplier-corpus)",
+    )
     parser.add_argument(
         "--extracted-dir",
         type=Path,
         default=None,
-        help="Path to directory containing extracted documents (default: data/extracted)"
+        help="Path to directory containing extracted documents (default: data/extracted)",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=None,
-        help="Optional path to write output JSON result"
+        help="Optional path to write output JSON result",
     )
     args = parser.parse_args()
 
     try:
-        result = retrieve_evidence(args.record_path, extracted_dir=args.extracted_dir)
+        result = retrieve_evidence(
+            args.record_path,
+            extracted_dir=args.extracted_dir,
+            retriever=args.retriever,
+            corpus_id=args.corpus_id,
+        )
         output_str = json.dumps(result, indent=2, ensure_ascii=False)
         print(output_str)
 
@@ -422,3 +474,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

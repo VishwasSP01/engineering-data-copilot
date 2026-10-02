@@ -168,8 +168,11 @@ def investigate_record(
     record_path: Union[Path, str, Dict[str, Any]],
     extracted_dir: Optional[Path] = None,
     extractor: Union[str, BaseMeasurementExtractor] = "deterministic",
+    retriever: Union[str, Any] = "baseline",
+    corpus_id: Optional[str] = None,
     gemini_api_key: Optional[str] = None,
-    gemini_model: Optional[str] = None
+    gemini_model: Optional[str] = None,
+    retriever_kwargs: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Investigate an engineering record for measurement-unit mismatches against supplier evidence.
     
@@ -177,9 +180,13 @@ def investigate_record(
         record_path: Path to the engineering record JSON file or an in-memory record dict.
         extracted_dir: Path to directory of extracted document JSONs (default: data/extracted).
         extractor: Extractor type ('deterministic' or 'gemini') or a BaseMeasurementExtractor instance.
+        retriever: Retriever type ('baseline' or 'pgvector') or a BaseRetriever instance.
+        corpus_id: Optional corpus identifier for vector retrieval (default: supplier-corpus).
         gemini_api_key: Optional Gemini API key override (otherwise uses GEMINI_API_KEY env var).
         gemini_model: Optional Gemini model name override (otherwise uses GEMINI_MODEL env var).
+        retriever_kwargs: Optional kwargs forwarded to retriever instance.
     """
+
     repo_root = Path(__file__).resolve().parent.parent
     if extracted_dir is None:
         extracted_dir = repo_root / "data" / "extracted"
@@ -303,13 +310,35 @@ def investigate_record(
             "explanation": f"Record unit '{raw_rec_unit}' is unsupported. Only {sorted(SUPPORTED_UNITS)} are supported."
         }
 
-    # Run Step 5 evidence retrieval directly as a Python function
-    retrieval_res = retrieve_evidence(record, extracted_dir=extracted_dir)
+    # Run evidence retrieval directly as a Python function (baseline or pgvector)
+    retrieval_res = retrieve_evidence(
+        record,
+        extracted_dir=extracted_dir,
+        retriever=retriever,
+        corpus_id=corpus_id,
+        **(retriever_kwargs or {}),
+    )
     retrieval_status = retrieval_res.get("status") or retrieval_res.get("retrieval_status")
     context_type = retrieval_res.get("context_type")
+    retriever_meta = retrieval_res.get("retriever")
 
     base_response["retrieval_status"] = retrieval_status
     base_response["context_type"] = context_type
+    if retriever_meta:
+        base_response["retriever"] = retriever_meta
+
+    # Handle retrieval service/database errors without silent fallback
+    if retrieval_status == "error":
+        return {
+            **base_response,
+            "status": "needs_review",
+            "outcome": "needs_review",
+            "evidence_measurement": None,
+            "proposed_correction": None,
+            "evidence": None,
+            "extractor": make_extractor_meta(not_invoked_reason=f"Retrieval error: {retrieval_res.get('reason')}"),
+            "explanation": retrieval_res.get("reason", "Evidence retrieval failed."),
+        }
 
     # Handle retrieval abstentions
     if retrieval_status in ("insufficient_evidence", "ambiguous_evidence"):
@@ -323,6 +352,7 @@ def investigate_record(
             "extractor": make_extractor_meta(not_invoked_reason=f"Retrieval yielded {retrieval_status}; extractor not invoked."),
             "explanation": retrieval_res.get("reason", f"Retrieval yielded {retrieval_status}.")
         }
+
 
     evidence_dict = retrieval_res.get("evidence")
     passage = retrieval_res.get("evidence_passage") or (evidence_dict.get("supporting_passage") if evidence_dict else None)
@@ -566,22 +596,34 @@ def main():
         help="Path to directory containing extracted documents (default: data/extracted)"
     )
     parser.add_argument(
+        "--retriever",
+        choices=["baseline", "pgvector"],
+        default="baseline",
+        help="Evidence retriever to use: 'baseline' (default) or 'pgvector'",
+    )
+    parser.add_argument(
+        "--corpus-id",
+        type=str,
+        default=None,
+        help="Optional corpus identifier for vector retrieval (default: supplier-corpus)",
+    )
+    parser.add_argument(
         "--extractor",
         choices=["deterministic", "gemini"],
         default="deterministic",
-        help="Measurement extractor to use: 'deterministic' (default) or 'gemini'"
+        help="Measurement extractor to use: 'deterministic' (default) or 'gemini'",
     )
     parser.add_argument(
         "--model",
         type=str,
         default=None,
-        help="Gemini model name (default: GEMINI_MODEL env var or gemini-2.5-flash)"
+        help="Gemini model name (default: GEMINI_MODEL env var or gemini-2.5-flash)",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=None,
-        help="Optional path to write output JSON result"
+        help="Optional path to write output JSON result",
     )
     args = parser.parse_args()
 
@@ -590,8 +632,11 @@ def main():
             args.record_path,
             extracted_dir=args.extracted_dir,
             extractor=args.extractor,
-            gemini_model=args.model
+            retriever=args.retriever,
+            corpus_id=args.corpus_id,
+            gemini_model=args.model,
         )
+
         output_str = json.dumps(result, indent=2, ensure_ascii=False)
         print(output_str)
 

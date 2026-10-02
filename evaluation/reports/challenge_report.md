@@ -14,8 +14,8 @@
 - **Agreement-Case Pass Rate (`no_change`)**: 1/1 (100.0%)
 - **Abstention-Case Pass Rate**: 2/2 (100.0%)
 - **Citation Validity**: 4/4 (100.0%)
-- **Median Investigation Latency**: 0.88 ms
-- **Mean Investigation Latency**: 1.03 ms
+- **Median Investigation Latency**: 0.52 ms
+- **Mean Investigation Latency**: 0.61 ms
 
 ## Detailed Per-Case Results
 

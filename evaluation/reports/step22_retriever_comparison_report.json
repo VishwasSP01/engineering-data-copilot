@@ -1,0 +1,2562 @@
+{
+  "report_type": "step_22_retriever_comparison",
+  "step": 22,
+  "timestamp": "2026-10-02T12:35:54.248462+00:00",
+  "suite": "all",
+  "git_commit": "39f9d9c62c9771de90098fba09f0f6f9b0157058",
+  "frozen_versions": {
+    "git_commit": "39f9d9c62c9771de90098fba09f0f6f9b0157058",
+    "fixtures": "evaluation/cases/ (16 synthetic cases across baseline and challenge)",
+    "expected_answers": "evaluation/expected/ (frozen expected JSONs)",
+    "extractor": "scripts/extractors.py:DeterministicMeasurementExtractor (held fixed; 0 Gemini calls)",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2 (revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41, 384 dimensions, normalized)",
+    "vector_database": "PostgreSQL 16 + pgvector (exact cosine ranking, deterministic tie-breaking)"
+  },
+  "evaluation_notice": "Notice: This benchmark compares evidence retrievers across a 16-case synthetic dataset. All conclusions are strictly limited to these synthetic fixtures.",
+  "summary": {
+    "total_cases": 16,
+    "baseline_summary": {
+      "total_cases": 16,
+      "passed_cases": 15,
+      "failed_cases": 1,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "evidence_retrieval_success_rate": "8/8 (100.0%)",
+      "evidence_retrieval_success_rate_pct": 100.0,
+      "retrieval_abstention_success_rate": "6/6 (100.0%)",
+      "retrieval_abstention_success_rate_pct": 100.0,
+      "retrieval_success_rate": "16/16 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "15/16 (93.8%)",
+      "overall_pass_rate_pct": 93.8,
+      "correction_pass_rate": "4/5 (80.0%)",
+      "correction_pass_rate_pct": 80.0,
+      "agreement_pass_rate": "3/3 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "8/8 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 9,
+        "total_checked": 9,
+        "ratio": "9/9",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 0.71,
+        "all_cases_mean_duration_ms": 0.95,
+        "all_cases_min_duration_ms": 0.14,
+        "all_cases_max_duration_ms": 2.8,
+        "model_called_cases_median_duration_ms": null,
+        "model_called_cases_mean_duration_ms": null,
+        "non_model_cases_median_duration_ms": 0.7,
+        "non_model_cases_mean_duration_ms": 0.95,
+        "median_investigation_duration_ms": 0.71,
+        "mean_investigation_duration_ms": 0.95
+      },
+      "model_metrics": {
+        "model_requests_attempted": "0/16",
+        "model_requests_succeeded": "0/0",
+        "cases_without_model_call": "16/16",
+        "requests_attempted": "0/16",
+        "requests_completed": "0/0",
+        "requests_skipped": "16/16",
+        "token_usage": null,
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "pgvector_summary": {
+      "total_cases": 16,
+      "passed_cases": 15,
+      "failed_cases": 1,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "evidence_retrieval_success_rate": "8/8 (100.0%)",
+      "evidence_retrieval_success_rate_pct": 100.0,
+      "retrieval_abstention_success_rate": "6/6 (100.0%)",
+      "retrieval_abstention_success_rate_pct": 100.0,
+      "retrieval_success_rate": "16/16 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "15/16 (93.8%)",
+      "overall_pass_rate_pct": 93.8,
+      "correction_pass_rate": "4/5 (80.0%)",
+      "correction_pass_rate_pct": 80.0,
+      "agreement_pass_rate": "3/3 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "8/8 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 9,
+        "total_checked": 9,
+        "ratio": "9/9",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 43.48,
+        "all_cases_mean_duration_ms": 242.57,
+        "all_cases_min_duration_ms": 0.07,
+        "all_cases_max_duration_ms": 3181.25,
+        "model_called_cases_median_duration_ms": null,
+        "model_called_cases_mean_duration_ms": null,
+        "non_model_cases_median_duration_ms": 43.47,
+        "non_model_cases_mean_duration_ms": 242.57,
+        "median_investigation_duration_ms": 43.48,
+        "mean_investigation_duration_ms": 242.57
+      },
+      "model_metrics": {
+        "model_requests_attempted": "0/16",
+        "model_requests_succeeded": "0/0",
+        "cases_without_model_call": "16/16",
+        "requests_attempted": "0/16",
+        "requests_completed": "0/0",
+        "requests_skipped": "16/16",
+        "token_usage": null,
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "concordance": {
+      "matching_outcomes": 16,
+      "total": 16,
+      "concordance_rate": "16/16 (100.0%)"
+    },
+    "information_retrieval_metrics": {
+      "total_gold_cases": 9,
+      "relevance_definition": "A candidate chunk is relevant iff it originates from the authoritative supplier document and expected page, and contains the ground-truth supporting passage verbatim (allowing whitespace normalization).",
+      "metrics": {
+        "recall_at_1": "9/9 (100.0%)",
+        "recall_at_1_pct": 100.0,
+        "recall_at_2": "9/9 (100.0%)",
+        "recall_at_2_pct": 100.0,
+        "recall_at_3": "9/9 (100.0%)",
+        "recall_at_3_pct": 100.0,
+        "mrr": 1.0
+      },
+      "per_case_ranks": {
+        "case-01-correction-cm-to-mm": {
+          "rank": 1,
+          "top_similarity": 0.8259,
+          "top_chunk_id": "supplier-COMP-001_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "case-02-correction-mm-to-cm": {
+          "rank": 1,
+          "top_similarity": 0.7498,
+          "top_chunk_id": "supplier-COMP-002_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "case-03-agreement-mm": {
+          "rank": 1,
+          "top_similarity": 0.7997,
+          "top_chunk_id": "supplier-COMP-003_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "case-04-agreement-cm": {
+          "rank": 1,
+          "top_similarity": 0.7504,
+          "top_chunk_id": "supplier-COMP-004_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "case-09-unsupported-unit": {
+          "rank": 1,
+          "top_similarity": 0.7835,
+          "top_chunk_id": "supplier-COMP-009_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "challenge-01-complete-sentence": {
+          "rank": 1,
+          "top_similarity": 0.8041,
+          "top_chunk_id": "supplier-COMP-C01_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "challenge-02-table-value-unit-columns": {
+          "rank": 1,
+          "top_similarity": 0.8292,
+          "top_chunk_id": "supplier-COMP-C02_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "challenge-03-split-lines-label-measurement": {
+          "rank": 1,
+          "top_similarity": 0.7663,
+          "top_chunk_id": "supplier-COMP-C03_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        },
+        "challenge-04-distracting-measurements": {
+          "rank": 1,
+          "top_similarity": 0.7554,
+          "top_chunk_id": "supplier-COMP-C04_p1_c003",
+          "hit_at_1": true,
+          "hit_at_2": true,
+          "hit_at_3": true
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "case_id": "case-01-correction-cm-to-mm",
+      "category": "correction",
+      "description": "Recorded thickness = 0.8 mm vs datasheet thickness = 0.8 cm -> propose 8.0 mm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 8.0,
+        "unit": "mm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-001.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component thickness: 0.8 cm."
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "passage",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "correction_proposed",
+      "pgvector_outcome": "correction_proposed",
+      "baseline_proposal": {
+        "value": 8.0,
+        "unit": "mm",
+        "conversion": {
+          "supplier_extracted_value": 0.8,
+          "supplier_extracted_unit": "cm",
+          "target_unit": "mm",
+          "multiplier": 10.0,
+          "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "pgvector_proposal": {
+        "value": 8.0,
+        "unit": "mm",
+        "conversion": {
+          "supplier_extracted_value": 0.8,
+          "supplier_extracted_unit": "cm",
+          "target_unit": "mm",
+          "multiplier": 10.0,
+          "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-001.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component thickness: 0.8 cm.",
+        "context_type": "passage",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-001.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-001 under standard test conditions (25°C, 50% RH):\nComponent thickness: 0.8 cm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n25.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n15.0 mm\n±0.1 mm\nTransverse axis\nThickness\n0.8 cm\n±0.02 cm\nSubstrate thickness",
+        "context_type": "chunk",
+        "similarity_score": 0.8259,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 1.3,
+      "pgvector_duration_ms": 3181.25,
+      "pgvector_similarity_score": 0.8259,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm.",
+      "pgvector_explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm."
+    },
+    {
+      "case_id": "case-02-correction-mm-to-cm",
+      "category": "correction",
+      "description": "Recorded width = 25.0 cm vs datasheet width = 25.0 mm -> propose 2.5 cm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 2.5,
+        "unit": "cm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-002.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component width: 25.0 mm."
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "passage",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "correction_proposed",
+      "pgvector_outcome": "correction_proposed",
+      "baseline_proposal": {
+        "value": 2.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 25.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "25.0 mm * 0.1 cm/mm = 2.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "pgvector_proposal": {
+        "value": 2.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 25.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "25.0 mm * 0.1 cm/mm = 2.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-002.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component width: 25.0 mm.",
+        "context_type": "passage",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-002.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-002 under standard test conditions (25°C, 50% RH):\nComponent width: 25.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n50.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n25.0 mm\n±0.1 mm\nTransverse axis\nThickness\n5.0 mm\n±0.1 mm\nSubstrate thickness",
+        "context_type": "chunk",
+        "similarity_score": 0.7498,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 2.8,
+      "pgvector_duration_ms": 64.43,
+      "pgvector_similarity_score": 0.7498,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Supplier document specifies 25.0 mm, which converts via deterministic arithmetic to 2.50 cm (25.0 mm * 0.1 cm/mm = 2.50 cm). Recorded value is 25.0 cm. Proposing correction to 2.5 cm.",
+      "pgvector_explanation": "Supplier document specifies 25.0 mm, which converts via deterministic arithmetic to 2.50 cm (25.0 mm * 0.1 cm/mm = 2.50 cm). Recorded value is 25.0 cm. Proposing correction to 2.5 cm."
+    },
+    {
+      "case_id": "case-03-agreement-mm",
+      "category": "abstention",
+      "description": "Recorded thickness = 8.0 mm vs datasheet thickness = 0.8 cm -> values agree, no_change.",
+      "expected_outcome": "no_change",
+      "expected_correction": null,
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-003.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component thickness: 0.8 cm."
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "passage",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "no_change",
+      "pgvector_outcome": "no_change",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-003.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component thickness: 0.8 cm.",
+        "context_type": "passage",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-003.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-003 under standard test conditions (25°C, 50% RH):\nComponent thickness: 0.8 cm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n25.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n15.0 mm\n±0.1 mm\nTransverse axis\nThickness\n0.8 cm\n±0.02 cm\nSubstrate thickness",
+        "context_type": "chunk",
+        "similarity_score": 0.7997,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.87,
+      "pgvector_duration_ms": 53.43,
+      "pgvector_similarity_score": 0.7997,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Evidence states 0.8 cm (0.8 cm * 10 mm/cm = 8.0 mm), which agrees with the recorded value 8.0 mm. No change required.",
+      "pgvector_explanation": "Evidence states 0.8 cm (0.8 cm * 10 mm/cm = 8.0 mm), which agrees with the recorded value 8.0 mm. No change required."
+    },
+    {
+      "case_id": "case-04-agreement-cm",
+      "category": "abstention",
+      "description": "Recorded width = 2.5 cm vs datasheet width = 25.0 mm -> values agree, no_change.",
+      "expected_outcome": "no_change",
+      "expected_correction": null,
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-004.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component width: 25.0 mm."
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "passage",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "no_change",
+      "pgvector_outcome": "no_change",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-004.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component width: 25.0 mm.",
+        "context_type": "passage",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-004.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-004 under standard test conditions (25°C, 50% RH):\nComponent width: 25.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n50.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n25.0 mm\n±0.1 mm\nTransverse axis\nThickness\n5.0 mm\n±0.1 mm\nSubstrate thickness",
+        "context_type": "chunk",
+        "similarity_score": 0.7504,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.96,
+      "pgvector_duration_ms": 45.79,
+      "pgvector_similarity_score": 0.7504,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Evidence states 25.0 mm (25.0 mm * 0.1 cm/mm = 2.50 cm), which agrees with the recorded value 2.5 cm. No change required.",
+      "pgvector_explanation": "Evidence states 25.0 mm (25.0 mm * 0.1 cm/mm = 2.50 cm), which agrees with the recorded value 2.5 cm. No change required."
+    },
+    {
+      "case_id": "case-05-unknown-component",
+      "category": "abstention",
+      "description": "Record references COMP-999 not present in document corpus -> insufficient_evidence.",
+      "expected_outcome": "insufficient_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "is_gold_evidence_case": false,
+      "baseline_retrieval_status": "insufficient_evidence",
+      "pgvector_retrieval_status": "insufficient_evidence",
+      "baseline_context_type": null,
+      "pgvector_context_type": null,
+      "baseline_outcome": "insufficient_evidence",
+      "pgvector_outcome": "insufficient_evidence",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": null,
+      "pgvector_evidence": null,
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.67,
+      "pgvector_duration_ms": 44.41,
+      "pgvector_similarity_score": null,
+      "pgvector_ir_rank": null,
+      "baseline_explanation": "Component ID 'COMP-999' not found in extracted document content.",
+      "pgvector_explanation": "Component ID 'COMP-999' not found in extracted document content."
+    },
+    {
+      "case_id": "case-06-incorrect-revision",
+      "category": "abstention",
+      "description": "Record asks for Rev B, but document is Rev A -> insufficient_evidence.",
+      "expected_outcome": "insufficient_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "is_gold_evidence_case": false,
+      "baseline_retrieval_status": "insufficient_evidence",
+      "pgvector_retrieval_status": "insufficient_evidence",
+      "baseline_context_type": null,
+      "pgvector_context_type": null,
+      "baseline_outcome": "insufficient_evidence",
+      "pgvector_outcome": "insufficient_evidence",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": null,
+      "pgvector_evidence": null,
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.69,
+      "pgvector_duration_ms": 50.51,
+      "pgvector_similarity_score": null,
+      "pgvector_ir_rank": null,
+      "baseline_explanation": "Document content matches component 'COMP-006' but revision 'B' was not confirmed.",
+      "pgvector_explanation": "Document content matches component 'COMP-006' but revision 'B' was not confirmed."
+    },
+    {
+      "case_id": "case-07-missing-measurement",
+      "category": "abstention",
+      "description": "Record investigates 'weight', which is missing from document -> insufficient_evidence.",
+      "expected_outcome": "insufficient_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "is_gold_evidence_case": false,
+      "baseline_retrieval_status": "insufficient_evidence",
+      "pgvector_retrieval_status": "insufficient_evidence",
+      "baseline_context_type": null,
+      "pgvector_context_type": null,
+      "baseline_outcome": "insufficient_evidence",
+      "pgvector_outcome": "insufficient_evidence",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": null,
+      "pgvector_evidence": null,
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.9,
+      "pgvector_duration_ms": 50.33,
+      "pgvector_similarity_score": null,
+      "pgvector_ir_rank": null,
+      "baseline_explanation": "No measurement evidence found for attribute 'weight' in matching document(s).",
+      "pgvector_explanation": "No measurement evidence found for attribute 'weight' in matching document(s)."
+    },
+    {
+      "case_id": "case-08-conflicting-evidence",
+      "category": "abstention",
+      "description": "Document contains conflicting measurements (0.8 cm vs 1.2 cm) -> ambiguous_evidence.",
+      "expected_outcome": "ambiguous_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "is_gold_evidence_case": false,
+      "baseline_retrieval_status": "ambiguous_evidence",
+      "pgvector_retrieval_status": "ambiguous_evidence",
+      "baseline_context_type": null,
+      "pgvector_context_type": null,
+      "baseline_outcome": "ambiguous_evidence",
+      "pgvector_outcome": "ambiguous_evidence",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": null,
+      "pgvector_evidence": null,
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.55,
+      "pgvector_duration_ms": 40.56,
+      "pgvector_similarity_score": null,
+      "pgvector_ir_rank": null,
+      "baseline_explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+      "pgvector_explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm."
+    },
+    {
+      "case_id": "case-09-unsupported-unit",
+      "category": "abstention",
+      "description": "Document specifies thickness in unsupported unit 'in' (0.8 in) -> needs_review.",
+      "expected_outcome": "needs_review",
+      "expected_correction": null,
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-009.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component thickness: 0.8 in."
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "passage",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "needs_review",
+      "pgvector_outcome": "needs_review",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-009.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component thickness: 0.8 in.",
+        "context_type": "passage",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-009.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-009 under standard test conditions (25°C, 50% RH):\nComponent thickness: 0.8 in.\nParameter\nNominal Value\nTolerance\nNotes\nThickness\n0.8 in\n±0.02 in\nSubstrate thickness",
+        "context_type": "chunk",
+        "similarity_score": 0.7835,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.56,
+      "pgvector_duration_ms": 40.3,
+      "pgvector_similarity_score": 0.7835,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Evidence unit 'in' is unsupported. Only ['cm', 'mm'] are supported.",
+      "pgvector_explanation": "Evidence unit 'in' is unsupported. Only ['cm', 'mm'] are supported."
+    },
+    {
+      "case_id": "case-10-malformed-measurement",
+      "category": "abstention",
+      "description": "Record value 'INVALID_NUM' is not numeric -> needs_review.",
+      "expected_outcome": "needs_review",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "is_gold_evidence_case": false,
+      "baseline_retrieval_status": null,
+      "pgvector_retrieval_status": null,
+      "baseline_context_type": null,
+      "pgvector_context_type": null,
+      "baseline_outcome": "needs_review",
+      "pgvector_outcome": "needs_review",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": null,
+      "pgvector_evidence": null,
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.14,
+      "pgvector_duration_ms": 0.07,
+      "pgvector_similarity_score": null,
+      "pgvector_ir_rank": null,
+      "baseline_explanation": "Engineering record contains invalid numeric value: INVALID_NUM.",
+      "pgvector_explanation": "Engineering record contains invalid numeric value: INVALID_NUM."
+    },
+    {
+      "case_id": "challenge-01-complete-sentence",
+      "category": "challenge_sentence",
+      "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 12.0,
+        "unit": "mm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C01.pdf",
+        "page_number": 1,
+        "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "section",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "needs_review",
+      "pgvector_outcome": "needs_review",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-C01.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\nUnder standard ambient conditions, the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots.\nParameter\nNominal Value\nTolerance\nNotes\nOperating Temp\n-40°C to +85°C\n±2°C\nStandard commercial range\nMounting Style\nSurface Mount\nN/A\nSolder reflow compliant",
+        "context_type": "section",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-C01.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\nUnder standard ambient conditions, the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots.\nParameter\nNominal Value\nTolerance\nNotes\nOperating Temp\n-40°C to +85°C\n±2°C\nStandard commercial range\nMounting Style\nSurface Mount\nN/A\nSolder reflow compliant",
+        "context_type": "chunk",
+        "similarity_score": 0.8041,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": false,
+      "pgvector_passed": false,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": "measurement extraction",
+      "pgvector_failure_stage": "measurement extraction",
+      "agreement": true,
+      "baseline_duration_ms": 0.71,
+      "pgvector_duration_ms": 41.78,
+      "pgvector_similarity_score": 0.8041,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Evidence unit 'is' is unsupported. Only ['cm', 'mm'] are supported.",
+      "pgvector_explanation": "Evidence unit 'is' is unsupported. Only ['cm', 'mm'] are supported."
+    },
+    {
+      "case_id": "challenge-02-table-value-unit-columns",
+      "category": "challenge_table",
+      "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 1.5,
+        "unit": "cm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C02.pdf",
+        "page_number": 1,
+        "supporting_passage": "Thickness\n15.0\nmm"
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "section",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "correction_proposed",
+      "pgvector_outcome": "correction_proposed",
+      "baseline_proposal": {
+        "value": 1.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 15.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "pgvector_proposal": {
+        "value": 1.5,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 15.0,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-C02.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C02 (25°C, 50% RH):\nAuthoritative dimensional values are detailed in the parameter table below:\nParameter\nNominal Value\nUnit\nTolerance\nThickness\n15.0\nmm\n±0.1 mm\nWidth\n25.0\nmm\n±0.2 mm\nLength\n50.0\nmm\n±0.2 mm",
+        "context_type": "section",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-C02.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C02 (25°C, 50% RH):\nAuthoritative dimensional values are detailed in the parameter table below:\nParameter\nNominal Value\nUnit\nTolerance\nThickness\n15.0\nmm\n±0.1 mm\nWidth\n25.0\nmm\n±0.2 mm\nLength\n50.0\nmm\n±0.2 mm",
+        "context_type": "chunk",
+        "similarity_score": 0.8292,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.7,
+      "pgvector_duration_ms": 42.54,
+      "pgvector_similarity_score": 0.8292,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm.",
+      "pgvector_explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm."
+    },
+    {
+      "case_id": "challenge-03-split-lines-label-measurement",
+      "category": "challenge_split_lines",
+      "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+      "expected_outcome": "correction_proposed",
+      "expected_correction": {
+        "value": 0.24,
+        "unit": "cm"
+      },
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C03.pdf",
+        "page_number": 1,
+        "supporting_passage": "Component Thickness:\n2.4 mm"
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "section",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "correction_proposed",
+      "pgvector_outcome": "correction_proposed",
+      "baseline_proposal": {
+        "value": 0.24,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 2.4,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "pgvector_proposal": {
+        "value": 0.24,
+        "unit": "cm",
+        "conversion": {
+          "supplier_extracted_value": 2.4,
+          "supplier_extracted_unit": "mm",
+          "target_unit": "cm",
+          "multiplier": 0.1,
+          "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+          "method": "deterministic_arithmetic"
+        }
+      },
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-C03.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C03 (25°C, 50% RH):\nComponent Thickness:\n2.4 mm\nParameter\nNominal Value\nTolerance\nNotes\nLead Count\n8\nN/A\nGold plated leads\nPackage Material\nCeramic\nN/A\nHermetic seal",
+        "context_type": "section",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-C03.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C03 (25°C, 50% RH):\nComponent Thickness:\n2.4 mm\nParameter\nNominal Value\nTolerance\nNotes\nLead Count\n8\nN/A\nGold plated leads\nPackage Material\nCeramic\nN/A\nHermetic seal",
+        "context_type": "chunk",
+        "similarity_score": 0.7663,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 2.33,
+      "pgvector_duration_ms": 39.3,
+      "pgvector_similarity_score": 0.7663,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm.",
+      "pgvector_explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm."
+    },
+    {
+      "case_id": "challenge-04-distracting-measurements",
+      "category": "challenge_distracting",
+      "description": "Thickness listed alongside length and width: thickness is 6.0 mm vs recorded 0.6 cm -> values agree, no_change.",
+      "expected_outcome": "no_change",
+      "expected_correction": null,
+      "expected_evidence": {
+        "document_filename": "supplier-COMP-C04.pdf",
+        "page_number": 1,
+        "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+      },
+      "is_gold_evidence_case": true,
+      "baseline_retrieval_status": "evidence_found",
+      "pgvector_retrieval_status": "evidence_found",
+      "baseline_context_type": "section",
+      "pgvector_context_type": "chunk",
+      "baseline_outcome": "no_change",
+      "pgvector_outcome": "no_change",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": {
+        "document_filename": "supplier-COMP-C04.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C04 (25°C, 50% RH):\nPackage dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nMass\n1.8 g\n±0.05 g\nDry component mass\nThermal Resistance\n12.5 °C/W\n±1 °C/W\nJunction to ambient",
+        "context_type": "section",
+        "quote_alignment": "literal"
+      },
+      "pgvector_evidence": {
+        "document_filename": "supplier-COMP-C04.pdf",
+        "page_number": 1,
+        "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C04 (25°C, 50% RH):\nPackage dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nMass\n1.8 g\n±0.05 g\nDry component mass\nThermal Resistance\n12.5 °C/W\n±1 °C/W\nJunction to ambient",
+        "context_type": "chunk",
+        "similarity_score": 0.7554,
+        "quote_alignment": "literal"
+      },
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.83,
+      "pgvector_duration_ms": 42.18,
+      "pgvector_similarity_score": 0.7554,
+      "pgvector_ir_rank": 1,
+      "baseline_explanation": "Evidence states 6.0 mm (6.0 mm * 0.1 cm/mm = 0.60 cm), which agrees with the recorded value 0.6 cm. No change required.",
+      "pgvector_explanation": "Evidence states 6.0 mm (6.0 mm * 0.1 cm/mm = 0.60 cm), which agrees with the recorded value 0.6 cm. No change required."
+    },
+    {
+      "case_id": "challenge-05-incorrect-revision",
+      "category": "challenge_revision",
+      "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+      "expected_outcome": "insufficient_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "is_gold_evidence_case": false,
+      "baseline_retrieval_status": "insufficient_evidence",
+      "pgvector_retrieval_status": "insufficient_evidence",
+      "baseline_context_type": null,
+      "pgvector_context_type": null,
+      "baseline_outcome": "insufficient_evidence",
+      "pgvector_outcome": "insufficient_evidence",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": null,
+      "pgvector_evidence": null,
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.65,
+      "pgvector_duration_ms": 40.27,
+      "pgvector_similarity_score": null,
+      "pgvector_ir_rank": null,
+      "baseline_explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+      "pgvector_explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed."
+    },
+    {
+      "case_id": "challenge-06-conflicting-statements",
+      "category": "challenge_conflict",
+      "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+      "expected_outcome": "ambiguous_evidence",
+      "expected_correction": null,
+      "expected_evidence": null,
+      "is_gold_evidence_case": false,
+      "baseline_retrieval_status": "ambiguous_evidence",
+      "pgvector_retrieval_status": "ambiguous_evidence",
+      "baseline_context_type": null,
+      "pgvector_context_type": null,
+      "baseline_outcome": "ambiguous_evidence",
+      "pgvector_outcome": "ambiguous_evidence",
+      "baseline_proposal": null,
+      "pgvector_proposal": null,
+      "baseline_evidence": null,
+      "pgvector_evidence": null,
+      "baseline_passed": true,
+      "pgvector_passed": true,
+      "baseline_citation_valid": true,
+      "pgvector_citation_valid": true,
+      "baseline_failure_stage": null,
+      "pgvector_failure_stage": null,
+      "agreement": true,
+      "baseline_duration_ms": 0.59,
+      "pgvector_duration_ms": 103.91,
+      "pgvector_similarity_score": null,
+      "pgvector_ir_rank": null,
+      "baseline_explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+      "pgvector_explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm."
+    }
+  ],
+  "_base_report": {
+    "evaluation_scope": "Synthetic Evaluation Suite (Complete Evaluation Suite (Baseline + Challenge))",
+    "evaluation_notice": "Notice: This benchmark tests pipeline behavior across a synthetic dataset. It does not demonstrate production accuracy.",
+    "suite": "all",
+    "timestamp": "2026-10-02T12:35:50.254443+00:00",
+    "extractor": "deterministic",
+    "retriever": "baseline",
+    "model": null,
+    "summary": {
+      "total_cases": 16,
+      "passed_cases": 15,
+      "failed_cases": 1,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "evidence_retrieval_success_rate": "8/8 (100.0%)",
+      "evidence_retrieval_success_rate_pct": 100.0,
+      "retrieval_abstention_success_rate": "6/6 (100.0%)",
+      "retrieval_abstention_success_rate_pct": 100.0,
+      "retrieval_success_rate": "16/16 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "15/16 (93.8%)",
+      "overall_pass_rate_pct": 93.8,
+      "correction_pass_rate": "4/5 (80.0%)",
+      "correction_pass_rate_pct": 80.0,
+      "agreement_pass_rate": "3/3 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "8/8 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 9,
+        "total_checked": 9,
+        "ratio": "9/9",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 0.71,
+        "all_cases_mean_duration_ms": 0.95,
+        "all_cases_min_duration_ms": 0.14,
+        "all_cases_max_duration_ms": 2.8,
+        "model_called_cases_median_duration_ms": null,
+        "model_called_cases_mean_duration_ms": null,
+        "non_model_cases_median_duration_ms": 0.7,
+        "non_model_cases_mean_duration_ms": 0.95,
+        "median_investigation_duration_ms": 0.71,
+        "mean_investigation_duration_ms": 0.95
+      },
+      "model_metrics": {
+        "model_requests_attempted": "0/16",
+        "model_requests_succeeded": "0/0",
+        "cases_without_model_call": "16/16",
+        "requests_attempted": "0/16",
+        "requests_completed": "0/0",
+        "requests_skipped": "16/16",
+        "token_usage": null,
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "cases": [
+      {
+        "case_id": "case-01-correction-cm-to-mm",
+        "category": "correction",
+        "description": "Recorded thickness = 0.8 mm vs datasheet thickness = 0.8 cm -> propose 8.0 mm.",
+        "duration_ms": 1.3,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "passage",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 8.0,
+            "unit": "mm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-001.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 cm."
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 8.0,
+            "unit": "mm",
+            "conversion": {
+              "supplier_extracted_value": 0.8,
+              "supplier_extracted_unit": "cm",
+              "target_unit": "mm",
+              "multiplier": 10.0,
+              "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-001.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 cm.",
+            "context_type": "passage",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-02-correction-mm-to-cm",
+        "category": "correction",
+        "description": "Recorded width = 25.0 cm vs datasheet width = 25.0 mm -> propose 2.5 cm.",
+        "duration_ms": 2.8,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "passage",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Supplier document specifies 25.0 mm, which converts via deterministic arithmetic to 2.50 cm (25.0 mm * 0.1 cm/mm = 2.50 cm). Recorded value is 25.0 cm. Proposing correction to 2.5 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 2.5,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-002.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component width: 25.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 2.5,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 25.0,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "25.0 mm * 0.1 cm/mm = 2.50 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-002.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component width: 25.0 mm.",
+            "context_type": "passage",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-03-agreement-mm",
+        "category": "abstention",
+        "description": "Recorded thickness = 8.0 mm vs datasheet thickness = 0.8 cm -> values agree, no_change.",
+        "duration_ms": 0.87,
+        "passed": true,
+        "status": "passed",
+        "outcome": "no_change",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "passage",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Evidence states 0.8 cm (0.8 cm * 10 mm/cm = 8.0 mm), which agrees with the recorded value 8.0 mm. No change required.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-003.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 cm."
+          }
+        },
+        "actual": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-003.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 cm.",
+            "context_type": "passage",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-04-agreement-cm",
+        "category": "abstention",
+        "description": "Recorded width = 2.5 cm vs datasheet width = 25.0 mm -> values agree, no_change.",
+        "duration_ms": 0.96,
+        "passed": true,
+        "status": "passed",
+        "outcome": "no_change",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "passage",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Evidence states 25.0 mm (25.0 mm * 0.1 cm/mm = 2.50 cm), which agrees with the recorded value 2.5 cm. No change required.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-004.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component width: 25.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-004.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component width: 25.0 mm.",
+            "context_type": "passage",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-05-unknown-component",
+        "category": "abstention",
+        "description": "Record references COMP-999 not present in document corpus -> insufficient_evidence.",
+        "duration_ms": 0.67,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Component ID 'COMP-999' not found in extracted document content.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-06-incorrect-revision",
+        "category": "abstention",
+        "description": "Record asks for Rev B, but document is Rev A -> insufficient_evidence.",
+        "duration_ms": 0.69,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Document content matches component 'COMP-006' but revision 'B' was not confirmed.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-07-missing-measurement",
+        "category": "abstention",
+        "description": "Record investigates 'weight', which is missing from document -> insufficient_evidence.",
+        "duration_ms": 0.9,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "No measurement evidence found for attribute 'weight' in matching document(s).",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-08-conflicting-evidence",
+        "category": "abstention",
+        "description": "Document contains conflicting measurements (0.8 cm vs 1.2 cm) -> ambiguous_evidence.",
+        "duration_ms": 0.55,
+        "passed": true,
+        "status": "passed",
+        "outcome": "ambiguous_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "ambiguous_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+        "expected": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-09-unsupported-unit",
+        "category": "abstention",
+        "description": "Document specifies thickness in unsupported unit 'in' (0.8 in) -> needs_review.",
+        "duration_ms": 0.56,
+        "passed": true,
+        "status": "passed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "passage",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Evidence unit 'in' is unsupported. Only ['cm', 'mm'] are supported.",
+        "expected": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-009.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 in."
+          }
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-009.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 in.",
+            "context_type": "passage",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-10-malformed-measurement",
+        "category": "abstention",
+        "description": "Record value 'INVALID_NUM' is not numeric -> needs_review.",
+        "duration_ms": 0.14,
+        "passed": true,
+        "status": "passed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": null,
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Engineering record contains invalid numeric value: INVALID_NUM.",
+        "expected": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "challenge-01-complete-sentence",
+        "category": "challenge_sentence",
+        "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+        "duration_ms": 0.71,
+        "passed": false,
+        "status": "failed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": false,
+        "proposal_match": false,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": "measurement extraction",
+        "limitation_note": "Retrieval succeeded in extracting the verbatim physical dimensions section. The deterministic regex extractor failed because interstitial sentence phrasing ('of component COMP-C01 is') led to extracting unit 'is', triggering unit guardrails.",
+        "explanation": "Evidence unit 'is' is unsupported. Only ['cm', 'mm'] are supported.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 12.0,
+            "unit": "mm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+          }
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\nUnder standard ambient conditions, the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots.\nParameter\nNominal Value\nTolerance\nNotes\nOperating Temp\n-40°C to +85°C\n±2°C\nStandard commercial range\nMounting Style\nSurface Mount\nN/A\nSolder reflow compliant",
+            "context_type": "section",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-02-table-value-unit-columns",
+        "category": "challenge_table",
+        "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+        "duration_ms": 0.7,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines.",
+        "explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "Thickness\n15.0\nmm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 15.0,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C02 (25°C, 50% RH):\nAuthoritative dimensional values are detailed in the parameter table below:\nParameter\nNominal Value\nUnit\nTolerance\nThickness\n15.0\nmm\n±0.1 mm\nWidth\n25.0\nmm\n±0.2 mm\nLength\n50.0\nmm\n±0.2 mm",
+            "context_type": "section",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-03-split-lines-label-measurement",
+        "category": "challenge_split_lines",
+        "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+        "duration_ms": 2.33,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction.",
+        "explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component Thickness:\n2.4 mm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 2.4,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C03 (25°C, 50% RH):\nComponent Thickness:\n2.4 mm\nParameter\nNominal Value\nTolerance\nNotes\nLead Count\n8\nN/A\nGold plated leads\nPackage Material\nCeramic\nN/A\nHermetic seal",
+            "context_type": "section",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-04-distracting-measurements",
+        "category": "challenge_distracting",
+        "description": "Thickness listed alongside length and width: thickness is 6.0 mm vs recorded 0.6 cm -> values agree, no_change.",
+        "duration_ms": 0.83,
+        "passed": true,
+        "status": "passed",
+        "outcome": "no_change",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "section",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Candidate passage regex matches the nearest numeric token following 'thickness' (which matches the adjacent length '60.0 mm' after the closing parenthesis). As a result, the pipeline extracts the wrong dimension (60.0 mm instead of 6.0 mm) and proposes an incorrect correction (6.0 cm) instead of no_change.",
+        "explanation": "Evidence states 6.0 mm (6.0 mm * 0.1 cm/mm = 0.60 cm), which agrees with the recorded value 0.6 cm. No change required.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C04 (25°C, 50% RH):\nPackage dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nMass\n1.8 g\n±0.05 g\nDry component mass\nThermal Resistance\n12.5 °C/W\n±1 °C/W\nJunction to ambient",
+            "context_type": "section",
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-05-incorrect-revision",
+        "category": "challenge_revision",
+        "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+        "duration_ms": 0.65,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence.",
+        "explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "challenge-06-conflicting-statements",
+        "category": "challenge_conflict",
+        "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+        "duration_ms": 0.59,
+        "passed": true,
+        "status": "passed",
+        "outcome": "ambiguous_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "ambiguous_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence.",
+        "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+        "expected": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      }
+    ]
+  },
+  "_pg_report": {
+    "evaluation_scope": "Synthetic Evaluation Suite (Complete Evaluation Suite (Baseline + Challenge))",
+    "evaluation_notice": "Notice: This benchmark tests pipeline behavior across a synthetic dataset. It does not demonstrate production accuracy.",
+    "suite": "all",
+    "timestamp": "2026-10-02T12:35:54.177505+00:00",
+    "extractor": "deterministic",
+    "retriever": "pgvector",
+    "model": null,
+    "summary": {
+      "total_cases": 16,
+      "passed_cases": 15,
+      "failed_cases": 1,
+      "api_error_cases": 0,
+      "unrun_cases": 0,
+      "evidence_retrieval_success_rate": "8/8 (100.0%)",
+      "evidence_retrieval_success_rate_pct": 100.0,
+      "retrieval_abstention_success_rate": "6/6 (100.0%)",
+      "retrieval_abstention_success_rate_pct": 100.0,
+      "retrieval_success_rate": "16/16 (100.0%)",
+      "retrieval_success_rate_pct": 100.0,
+      "overall_pass_rate": "15/16 (93.8%)",
+      "overall_pass_rate_pct": 93.8,
+      "correction_pass_rate": "4/5 (80.0%)",
+      "correction_pass_rate_pct": 80.0,
+      "agreement_pass_rate": "3/3 (100.0%)",
+      "agreement_pass_rate_pct": 100.0,
+      "abstention_pass_rate": "8/8 (100.0%)",
+      "abstention_pass_rate_pct": 100.0,
+      "citation_validity": {
+        "valid": 9,
+        "total_checked": 9,
+        "ratio": "9/9",
+        "percentage": 100.0
+      },
+      "performance": {
+        "all_cases_median_duration_ms": 43.48,
+        "all_cases_mean_duration_ms": 242.57,
+        "all_cases_min_duration_ms": 0.07,
+        "all_cases_max_duration_ms": 3181.25,
+        "model_called_cases_median_duration_ms": null,
+        "model_called_cases_mean_duration_ms": null,
+        "non_model_cases_median_duration_ms": 43.47,
+        "non_model_cases_mean_duration_ms": 242.57,
+        "median_investigation_duration_ms": 43.48,
+        "mean_investigation_duration_ms": 242.57
+      },
+      "model_metrics": {
+        "model_requests_attempted": "0/16",
+        "model_requests_succeeded": "0/0",
+        "cases_without_model_call": "16/16",
+        "requests_attempted": "0/16",
+        "requests_completed": "0/0",
+        "requests_skipped": "16/16",
+        "token_usage": null,
+        "estimated_cost_usd": null,
+        "cost_note": "Cost is left null because pricing rates are not provided in API usage metadata."
+      }
+    },
+    "cases": [
+      {
+        "case_id": "case-01-correction-cm-to-mm",
+        "category": "correction",
+        "description": "Recorded thickness = 0.8 mm vs datasheet thickness = 0.8 cm -> propose 8.0 mm.",
+        "duration_ms": 3181.25,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 8.0,
+            "unit": "mm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-001.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 cm."
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 8.0,
+            "unit": "mm",
+            "conversion": {
+              "supplier_extracted_value": 0.8,
+              "supplier_extracted_unit": "cm",
+              "target_unit": "mm",
+              "multiplier": 10.0,
+              "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-001.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-001 under standard test conditions (25°C, 50% RH):\nComponent thickness: 0.8 cm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n25.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n15.0 mm\n±0.1 mm\nTransverse axis\nThickness\n0.8 cm\n±0.02 cm\nSubstrate thickness",
+            "context_type": "chunk",
+            "similarity_score": 0.8259,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-02-correction-mm-to-cm",
+        "category": "correction",
+        "description": "Recorded width = 25.0 cm vs datasheet width = 25.0 mm -> propose 2.5 cm.",
+        "duration_ms": 64.43,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Supplier document specifies 25.0 mm, which converts via deterministic arithmetic to 2.50 cm (25.0 mm * 0.1 cm/mm = 2.50 cm). Recorded value is 25.0 cm. Proposing correction to 2.5 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 2.5,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-002.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component width: 25.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 2.5,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 25.0,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "25.0 mm * 0.1 cm/mm = 2.50 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-002.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-002 under standard test conditions (25°C, 50% RH):\nComponent width: 25.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n50.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n25.0 mm\n±0.1 mm\nTransverse axis\nThickness\n5.0 mm\n±0.1 mm\nSubstrate thickness",
+            "context_type": "chunk",
+            "similarity_score": 0.7498,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-03-agreement-mm",
+        "category": "abstention",
+        "description": "Recorded thickness = 8.0 mm vs datasheet thickness = 0.8 cm -> values agree, no_change.",
+        "duration_ms": 53.43,
+        "passed": true,
+        "status": "passed",
+        "outcome": "no_change",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Evidence states 0.8 cm (0.8 cm * 10 mm/cm = 8.0 mm), which agrees with the recorded value 8.0 mm. No change required.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-003.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 cm."
+          }
+        },
+        "actual": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-003.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-003 under standard test conditions (25°C, 50% RH):\nComponent thickness: 0.8 cm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n25.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n15.0 mm\n±0.1 mm\nTransverse axis\nThickness\n0.8 cm\n±0.02 cm\nSubstrate thickness",
+            "context_type": "chunk",
+            "similarity_score": 0.7997,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-04-agreement-cm",
+        "category": "abstention",
+        "description": "Recorded width = 2.5 cm vs datasheet width = 25.0 mm -> values agree, no_change.",
+        "duration_ms": 45.79,
+        "passed": true,
+        "status": "passed",
+        "outcome": "no_change",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Evidence states 25.0 mm (25.0 mm * 0.1 cm/mm = 2.50 cm), which agrees with the recorded value 2.5 cm. No change required.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-004.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component width: 25.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-004.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-004 under standard test conditions (25°C, 50% RH):\nComponent width: 25.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n50.0 mm\n±0.1 mm\nLongitudinal axis\nWidth\n25.0 mm\n±0.1 mm\nTransverse axis\nThickness\n5.0 mm\n±0.1 mm\nSubstrate thickness",
+            "context_type": "chunk",
+            "similarity_score": 0.7504,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-05-unknown-component",
+        "category": "abstention",
+        "description": "Record references COMP-999 not present in document corpus -> insufficient_evidence.",
+        "duration_ms": 44.41,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Component ID 'COMP-999' not found in extracted document content.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-06-incorrect-revision",
+        "category": "abstention",
+        "description": "Record asks for Rev B, but document is Rev A -> insufficient_evidence.",
+        "duration_ms": 50.51,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Document content matches component 'COMP-006' but revision 'B' was not confirmed.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-07-missing-measurement",
+        "category": "abstention",
+        "description": "Record investigates 'weight', which is missing from document -> insufficient_evidence.",
+        "duration_ms": 50.33,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "No measurement evidence found for attribute 'weight' in matching document(s).",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-08-conflicting-evidence",
+        "category": "abstention",
+        "description": "Document contains conflicting measurements (0.8 cm vs 1.2 cm) -> ambiguous_evidence.",
+        "duration_ms": 40.56,
+        "passed": true,
+        "status": "passed",
+        "outcome": "ambiguous_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "ambiguous_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+        "expected": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "case-09-unsupported-unit",
+        "category": "abstention",
+        "description": "Document specifies thickness in unsupported unit 'in' (0.8 in) -> needs_review.",
+        "duration_ms": 40.3,
+        "passed": true,
+        "status": "passed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Evidence unit 'in' is unsupported. Only ['cm', 'mm'] are supported.",
+        "expected": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-009.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component thickness: 0.8 in."
+          }
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-009.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-009 under standard test conditions (25°C, 50% RH):\nComponent thickness: 0.8 in.\nParameter\nNominal Value\nTolerance\nNotes\nThickness\n0.8 in\n±0.02 in\nSubstrate thickness",
+            "context_type": "chunk",
+            "similarity_score": 0.7835,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "case-10-malformed-measurement",
+        "category": "abstention",
+        "description": "Record value 'INVALID_NUM' is not numeric -> needs_review.",
+        "duration_ms": 0.07,
+        "passed": true,
+        "status": "passed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": null,
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": null,
+        "explanation": "Engineering record contains invalid numeric value: INVALID_NUM.",
+        "expected": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "challenge-01-complete-sentence",
+        "category": "challenge_sentence",
+        "description": "Thickness stated in a complete sentence: 1.2 cm vs recorded 1.2 mm -> propose 12.0 mm.",
+        "duration_ms": 41.78,
+        "passed": false,
+        "status": "failed",
+        "outcome": "needs_review",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": false,
+        "proposal_match": false,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": "measurement extraction",
+        "limitation_note": "Retrieval succeeded in extracting the verbatim physical dimensions section. The deterministic regex extractor failed because interstitial sentence phrasing ('of component COMP-C01 is') led to extracting unit 'is', triggering unit guardrails.",
+        "explanation": "Evidence unit 'is' is unsupported. Only ['cm', 'mm'] are supported.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 12.0,
+            "unit": "mm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "Under standard ambient conditions, the nominal thickness of component COMP-C01 is manufactured to 1.2 cm across all production lots."
+          }
+        },
+        "actual": {
+          "outcome": "needs_review",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C01.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C01 (25°C, 50% RH):\nUnder standard ambient conditions, the nominal thickness of component COMP-C01 is\nmanufactured to 1.2 cm across all production lots.\nParameter\nNominal Value\nTolerance\nNotes\nOperating Temp\n-40°C to +85°C\n±2°C\nStandard commercial range\nMounting Style\nSurface Mount\nN/A\nSolder reflow compliant",
+            "context_type": "chunk",
+            "similarity_score": 0.8041,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-02-table-value-unit-columns",
+        "category": "challenge_table",
+        "description": "Thickness represented in table with separate parameter, value, and unit columns: 15.0 mm vs recorded 15.0 cm -> propose 1.5 cm.",
+        "duration_ms": 42.54,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Multi-column table cells are extracted by pypdf as individual separate lines ('Thickness\\n15.0\\nmm'). Line-by-line scanning cannot correlate the attribute name with values and units located in subsequent table lines.",
+        "explanation": "Supplier document specifies 15.0 mm, which converts via deterministic arithmetic to 1.50 cm (15.0 mm * 0.1 cm/mm = 1.50 cm). Recorded value is 15.0 cm. Proposing correction to 1.5 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "Thickness\n15.0\nmm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 1.5,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 15.0,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "15.0 mm * 0.1 cm/mm = 1.50 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C02.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C02 (25°C, 50% RH):\nAuthoritative dimensional values are detailed in the parameter table below:\nParameter\nNominal Value\nUnit\nTolerance\nThickness\n15.0\nmm\n±0.1 mm\nWidth\n25.0\nmm\n±0.2 mm\nLength\n50.0\nmm\n±0.2 mm",
+            "context_type": "chunk",
+            "similarity_score": 0.8292,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-03-split-lines-label-measurement",
+        "category": "challenge_split_lines",
+        "description": "Thickness label and measurement split across lines: 2.4 mm vs recorded 2.4 cm -> propose 0.24 cm.",
+        "duration_ms": 39.3,
+        "passed": true,
+        "status": "passed",
+        "outcome": "correction_proposed",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Retrieval splits extracted page text strictly on newlines and processes each line in isolation. When an attribute label and its numeric measurement are wrapped across a newline, neither line individually matches candidate extraction.",
+        "explanation": "Supplier document specifies 2.4 mm, which converts via deterministic arithmetic to 0.24 cm (2.4 mm * 0.1 cm/mm = 0.24 cm). Recorded value is 2.4 cm. Proposing correction to 0.24 cm.",
+        "expected": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm"
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "Component Thickness:\n2.4 mm"
+          }
+        },
+        "actual": {
+          "outcome": "correction_proposed",
+          "correction": {
+            "value": 0.24,
+            "unit": "cm",
+            "conversion": {
+              "supplier_extracted_value": 2.4,
+              "supplier_extracted_unit": "mm",
+              "target_unit": "cm",
+              "multiplier": 0.1,
+              "calculation": "2.4 mm * 0.1 cm/mm = 0.24 cm",
+              "method": "deterministic_arithmetic"
+            }
+          },
+          "evidence": {
+            "document_filename": "supplier-COMP-C03.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C03 (25°C, 50% RH):\nComponent Thickness:\n2.4 mm\nParameter\nNominal Value\nTolerance\nNotes\nLead Count\n8\nN/A\nGold plated leads\nPackage Material\nCeramic\nN/A\nHermetic seal",
+            "context_type": "chunk",
+            "similarity_score": 0.7663,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-04-distracting-measurements",
+        "category": "challenge_distracting",
+        "description": "Thickness listed alongside length and width: thickness is 6.0 mm vs recorded 0.6 cm -> values agree, no_change.",
+        "duration_ms": 42.18,
+        "passed": true,
+        "status": "passed",
+        "outcome": "no_change",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": true,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Candidate passage regex matches the nearest numeric token following 'thickness' (which matches the adjacent length '60.0 mm' after the closing parenthesis). As a result, the pipeline extracts the wrong dimension (60.0 mm instead of 6.0 mm) and proposes an incorrect correction (6.0 cm) instead of no_change.",
+        "explanation": "Evidence states 6.0 mm (6.0 mm * 0.1 cm/mm = 0.60 cm), which agrees with the recorded value 0.6 cm. No change required.",
+        "expected": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "Package dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm."
+          }
+        },
+        "actual": {
+          "outcome": "no_change",
+          "correction": null,
+          "evidence": {
+            "document_filename": "supplier-COMP-C04.pdf",
+            "page_number": 1,
+            "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical parameters and specifications for component ID COMP-C04 (25°C, 50% RH):\nPackage dimensions (length, width, thickness): 60.0 mm x 40.0 mm x 6.0 mm.\nParameter\nNominal Value\nTolerance\nNotes\nMass\n1.8 g\n±0.05 g\nDry component mass\nThermal Resistance\n12.5 °C/W\n±1 °C/W\nJunction to ambient",
+            "context_type": "chunk",
+            "similarity_score": 0.7554,
+            "quote_alignment": "literal"
+          }
+        }
+      },
+      {
+        "case_id": "challenge-05-incorrect-revision",
+        "category": "challenge_revision",
+        "description": "Datasheet has revision B while record specifies revision A -> return insufficient_evidence.",
+        "duration_ms": 40.27,
+        "passed": true,
+        "status": "passed",
+        "outcome": "insufficient_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Revision guardrail correctly identifies revision mismatch and safely abstains with insufficient_evidence.",
+        "explanation": "Document content matches component 'COMP-C05' but revision 'A' was not confirmed.",
+        "expected": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "insufficient_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      },
+      {
+        "case_id": "challenge-06-conflicting-statements",
+        "category": "challenge_conflict",
+        "description": "Two conflicting thickness statements (0.8 cm and 1.2 cm) in the same document -> return ambiguous_evidence.",
+        "duration_ms": 103.91,
+        "passed": true,
+        "status": "passed",
+        "outcome": "ambiguous_evidence",
+        "api_error": false,
+        "unrun": false,
+        "model_call_attempted": false,
+        "model_call_made": false,
+        "no_call_reason": null,
+        "token_usage": null,
+        "retrieval_success": true,
+        "retrieval_status": "ambiguous_evidence",
+        "context_type": null,
+        "outcome_match": true,
+        "proposal_match": true,
+        "citation_checked": false,
+        "citation_valid": true,
+        "quote_in_pdf": true,
+        "failure_stage": null,
+        "limitation_note": "Expected behavior: Ambiguity resolution guardrail detects multiple distinct thickness measurements and safely abstains with ambiguous_evidence.",
+        "explanation": "Conflicting measurement values found for 'thickness': 0.8 cm, 1.2 cm.",
+        "expected": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        },
+        "actual": {
+          "outcome": "ambiguous_evidence",
+          "correction": null,
+          "evidence": null
+        }
+      }
+    ]
+  }
+}

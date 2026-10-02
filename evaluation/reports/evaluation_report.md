@@ -11,8 +11,8 @@
 - **Agreement-Case Pass Rate (`no_change`)**: 2/2 (100.0%)
 - **Abstention-Case Pass Rate**: 6/6 (100.0%)
 - **Citation Validity**: 5/5 (100.0%) — all citations verified against source PDF text
-- **Median Investigation Latency**: 0.65 ms
-- **Mean Investigation Latency**: 0.72 ms
+- **Median Investigation Latency**: 0.45 ms
+- **Mean Investigation Latency**: 0.55 ms
 - **Model Usage**: 0 calls (deterministic rule-based baseline)
 - **Model Tokens & Cost**: N/A
 
@@ -20,16 +20,16 @@
 
 | Case ID | Category | Expected Outcome | Actual Outcome | Expected Proposal | Actual Proposal | Cit. Valid | Latency (ms) | Result |
 |---|---|---|---|---|---|---|---|---|
-| `case-01-correction-cm-to-mm` | correction | `correction_proposed` | `correction_proposed` | 8.0 mm | 8.0 mm | ✓ | 1.35 | **PASS** |
-| `case-02-correction-mm-to-cm` | correction | `correction_proposed` | `correction_proposed` | 2.5 cm | 2.5 cm | ✓ | 1.12 | **PASS** |
-| `case-03-agreement-mm` | abstention | `no_change` | `no_change` | — | — | ✓ | 0.65 | **PASS** |
-| `case-04-agreement-cm` | abstention | `no_change` | `no_change` | — | — | ✓ | 0.68 | **PASS** |
-| `case-05-unknown-component` | abstention | `insufficient_evidence` | `insufficient_evidence` | — | — | ✓ | 0.62 | **PASS** |
-| `case-06-incorrect-revision` | abstention | `insufficient_evidence` | `insufficient_evidence` | — | — | ✓ | 0.65 | **PASS** |
-| `case-07-missing-measurement` | abstention | `insufficient_evidence` | `insufficient_evidence` | — | — | ✓ | 0.84 | **PASS** |
-| `case-08-conflicting-evidence` | abstention | `ambiguous_evidence` | `ambiguous_evidence` | — | — | ✓ | 0.58 | **PASS** |
-| `case-09-unsupported-unit` | abstention | `needs_review` | `needs_review` | — | — | ✓ | 0.57 | **PASS** |
-| `case-10-malformed-measurement` | abstention | `needs_review` | `needs_review` | — | — | ✓ | 0.16 | **PASS** |
+| `case-01-correction-cm-to-mm` | correction | `correction_proposed` | `correction_proposed` | 8.0 mm | 8.0 mm | ✓ | 1.13 | **PASS** |
+| `case-02-correction-mm-to-cm` | correction | `correction_proposed` | `correction_proposed` | 2.5 cm | 2.5 cm | ✓ | 0.93 | **PASS** |
+| `case-03-agreement-mm` | abstention | `no_change` | `no_change` | — | — | ✓ | 0.42 | **PASS** |
+| `case-04-agreement-cm` | abstention | `no_change` | `no_change` | — | — | ✓ | 0.46 | **PASS** |
+| `case-05-unknown-component` | abstention | `insufficient_evidence` | `insufficient_evidence` | — | — | ✓ | 0.46 | **PASS** |
+| `case-06-incorrect-revision` | abstention | `insufficient_evidence` | `insufficient_evidence` | — | — | ✓ | 0.45 | **PASS** |
+| `case-07-missing-measurement` | abstention | `insufficient_evidence` | `insufficient_evidence` | — | — | ✓ | 0.75 | **PASS** |
+| `case-08-conflicting-evidence` | abstention | `ambiguous_evidence` | `ambiguous_evidence` | — | — | ✓ | 0.41 | **PASS** |
+| `case-09-unsupported-unit` | abstention | `needs_review` | `needs_review` | — | — | ✓ | 0.39 | **PASS** |
+| `case-10-malformed-measurement` | abstention | `needs_review` | `needs_review` | — | — | ✓ | 0.07 | **PASS** |
 
 ## Failure Analysis & Notes
 - All 10 synthetic test cases passed all verification checks.

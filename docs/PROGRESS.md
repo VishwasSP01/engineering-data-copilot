@@ -467,4 +467,44 @@
   - **Lightweight Offline Tests & CI Integration (`tests/test_database.py`)**:
     * Added 6 unit tests verifying schema SQL definitions, artifact validation, dimension rejection, matrix alignment rejection, non-finite vector rejection, and graceful skipping of live database tests when Docker/PostgreSQL is offline.
     * All 21 unit tests in `tests/` pass in 0.067s.
+- [x] **Step 22: Integrate Metadata-Filtered Vector Evidence Retrieval** — Completed.
+  - **Goal & Scope**: Integrate metadata-filtered vector evidence retrieval from PostgreSQL/pgvector into the investigation workflow without weakening component identity, revision, conflict detection, citation provenance, or deterministic arithmetic checks. Keep baseline document retrieval as the default for CLI and API. Separate retriever selection from extractor selection.
+  - **Pluggable Retriever Architecture (`scripts/retrievers.py`)**:
+    * Defined `BaseRetriever` abstract contract and factory function `get_retriever(name)`.
+    * Implemented `BaselineRetriever`: fast in-memory document matching and section scanning over `data/extracted/`.
+    * Implemented `PgVectorRetriever`: PostgreSQL/pgvector semantic retrieval with metadata filtering.
+    * Separate selection: decoupled retriever selection (`baseline` vs. `pgvector`) from extractor selection (`deterministic` vs. `gemini`).
+  - **Query Formulation & Metadata Filtering**:
+    * Generates query embedding using pinned `sentence-transformers/all-MiniLM-L6-v2` (`1110a243fdf4706b3f48f1d95db1a4f5529b4d41`, 384 dimensions, normalized, CPU inference).
+    * Builds queries strictly from record identity and requested attribute: `Component {component_id} {attribute_name} physical dimension parameter specification`. Never uses expected answers or target values.
+    * Uses parameterized SQL with strict filtering on `(corpus_id, component_id, revision, model_name, model_revision)` before ranking.
+    * Exact cosine ranking (`vector_cosine_ops`) with deterministic tie-breaking (`ORDER BY distance ASC, page_number ASC, start_char ASC, chunk_id ASC`).
+  - **Safety & Conflict Detection Preserved**:
+    * Full-Context Inspection: Inspects all eligible candidate chunks for the component and revision before taking top-k. If competing measurements exist for the attribute, immediately returns `ambiguous_evidence`, preventing false positives.
+    * Early Abstention: Missing component IDs, unknown components, or unconfirmed revisions safely return `insufficient_evidence`.
+  - **Citation Preservation & Provenance**:
+    * Returns citation-preserving chunk spans (`context_type: "chunk"`), retaining verbatim text, document filename, and 1-based page coordinates.
+    * Downstream validation guardrails verify verbatim grounding and apply Python `Decimal` arithmetic for exact unit conversion without LLM math.
+  - **Error Handling & Password Sanitization**:
+    * Catches database connection and query errors, returning structured metadata (`error_type: "DATABASE_ERROR"` or `"CONFIGURATION_ERROR"`).
+    * Password sanitization masks credentials (`password=***`) to prevent secret leakage.
+    * Never silently falls back to baseline when pgvector is explicitly requested.
+  - **Evaluation Corpora Ingestion (`scripts/index_evaluation_corpora.py`)**:
+    * Indexed all 16 evaluation cases (10 baseline + 6 challenge) and default supplier corpus into `copilot_db.document_chunks` under isolated corpus IDs (`eval-<case_name>`).
+    * Ingested 68 total chunks in 0.59s.
+  - **FastAPI API Integration (`api/main.py`)**:
+    * Accepts `retriever` query parameter (`?retriever=baseline` or `?retriever=pgvector`) and request payload field.
+    * Returns HTTP 422 for invalid retriever (`INVALID_RETRIEVER`).
+    * Maps retriever configuration failures to HTTP 503 (`RETRIEVER_NOT_CONFIGURED`) and database service failures to HTTP 502 (`RETRIEVER_SERVICE_ERROR`).
+    * Implemented dependency injection hook `get_retriever_dependency` for offline testing.
+  - **Retriever Comparative Benchmark (`scripts/evaluate.py`)**:
+    * Evaluated both retrievers with deterministic extractor held constant across all 16 cases (zero Gemini calls).
+    * **100% Concordance (16/16 Cases)**: Both retrievers achieved identical decision outcomes and citation validity across all cases (15/16 pass rate, with `challenge-01` failing at measurement extraction due to documented regex phrasing limitation).
+    * **100% Recall@1 on Gold Evidence (9/9 Cases)**: For all 9 cases expecting evidence, pgvector ranked the ground-truth chunk at rank #1 (cosine similarity 0.7498 - 0.8292).
+    * **Recall@2**: 9/9 (100.0%), **Recall@3**: 9/9 (100.0%), **MRR**: 1.000.
+    * Generated `step22_retriever_comparison_report.json` and `step22_retriever_comparison_report.md`.
+  - **Automated Verification & Unit Tests**:
+    * `scripts/verify_step22_retrieval.py`: Automated verification suite testing all 7 Step 22 requirements.
+    * `tests/test_retrievers.py`: 13 unit and integration tests (factory, query formulation, full-context conflict detection, password sanitization, API status code mapping, and live database queries).
+    * All 34 tests in `tests/` pass offline in 0.088s.
 

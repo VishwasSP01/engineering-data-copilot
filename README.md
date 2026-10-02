@@ -26,14 +26,18 @@ flowchart TD
     subgraph Inputs ["Inputs"]
         REC["Engineering Record Input<br/>(Part ID, Rev, Attribute, Recorded Value & Unit)"]
         CORPUS["Supplier Document Corpus<br/>(PDF Datasheets & Extracted Page Text)"]
+        VECDB["PostgreSQL / pgvector<br/>(Normalized 384d Chunks & HNSW Index)"]
     end
 
     subgraph Pipeline ["Investigation Pipeline"]
-        EDR["Eligible Document Retrieval<br/>(Filters by Part ID & Rev; passage/section fallback)"]
+        subgraph Retrieval ["Evidence Retrieval (Pluggable)"]
+            BASE_RET["Baseline Document Matching<br/>(Deterministic regex scan over extracted text)"]
+            PG_RET["PgVector Semantic Retrieval<br/>(Exact cosine ranking, metadata-filtered)"]
+        end
         
         ABSTAIN["Early Safety Abstention<br/>(insufficient_evidence / ambiguous_evidence)"]
         
-        subgraph Extraction ["Measurement Extraction (Pluggable Alternatives)"]
+        subgraph Extraction ["Measurement Extraction (Pluggable)"]
             DET["Deterministic Regex Extractor<br/>(Pattern matching & labelled tuple parsing)"]
             GEM["Live Gemini Extractor<br/>(gemini-3.5-flash-lite, strict JSON schema)"]
         end
@@ -45,15 +49,20 @@ flowchart TD
 
     subgraph Evaluation ["Offline Evaluation & CI"]
         EA["Expected Answer Fixtures<br/>(evaluation/expected/*.json)"]
-        CMP["Benchmark Evaluator & Comparator<br/>(Verifies outcomes, proposals & citations)"]
+        CMP["Benchmark Evaluator & Comparator<br/>(Verifies outcomes, proposals, citations & IR metrics)"]
     end
 
-    REC --> EDR
-    CORPUS --> EDR
+    REC --> BASE_RET
+    REC --> PG_RET
+    CORPUS --> BASE_RET
+    VECDB --> PG_RET
     
-    EDR -->|Missing or Conflicting Evidence| ABSTAIN
-    EDR -->|Retrieved Evidence Passage/Section| DET
-    EDR -->|Retrieved Evidence Passage/Section| GEM
+    BASE_RET -->|Missing or Conflicting Evidence| ABSTAIN
+    PG_RET -->|Missing or Conflicting Evidence| ABSTAIN
+    BASE_RET -->|Retrieved Evidence Passage/Section| DET
+    BASE_RET -->|Retrieved Evidence Passage/Section| GEM
+    PG_RET -->|Citation-Preserving Chunk| DET
+    PG_RET -->|Citation-Preserving Chunk| GEM
     
     DET -->|Extracted Measurement & Quote| SQV
     GEM -->|Extracted Measurement & Quote| SQV
@@ -295,9 +304,9 @@ curl -s -X POST "http://localhost:8000/investigations?extractor=deterministic" \
 
 ### HTTP Status Code Mapping
 - **HTTP 200**: All business outcomes, including corrections proposed (`correction_proposed`), agreements (`no_change`), and safe data abstentions (`insufficient_evidence`, `ambiguous_evidence`, `needs_review`).
-- **HTTP 422**: Malformed request payload (missing required fields, non-numeric values, or unknown extractor).
-- **HTTP 503**: Requested provider not configured (`PROVIDER_NOT_CONFIGURED`, e.g. missing API credentials or dependencies).
-- **HTTP 502**: Upstream AI provider request failure (`PROVIDER_REQUEST_FAILED`).
+- **HTTP 422**: Malformed request payload, invalid extractor name (`INVALID_EXTRACTOR`), or invalid retriever selection (`INVALID_RETRIEVER`).
+- **HTTP 503**: Requested provider not configured (`PROVIDER_NOT_CONFIGURED`, e.g. missing API credentials) or database retriever unconfigured (`RETRIEVER_NOT_CONFIGURED`, e.g. missing driver dependencies).
+- **HTTP 502**: Upstream AI provider request failure (`PROVIDER_REQUEST_FAILED`) or database service connection failure (`RETRIEVER_SERVICE_ERROR`).
 
 ---
 
@@ -393,8 +402,26 @@ docker compose down
 docker compose down -v
 ```
 
-> **Storage & Query Verification Only**:
-> This service and verification suite validate pgvector storage mechanics, schema integrity, HNSW vector indexing, and cosine similarity queries. **It does not evaluate or benchmark end-to-end retrieval accuracy for the engineering investigation pipeline.** Active document retrieval continues to use deterministic metadata filtering (part number, revision) and verbatim passage extraction.
+### Step 22: Metadata-Filtered Vector Retrieval Integration
+
+In Step 22, PostgreSQL/pgvector was integrated as an active, pluggable retrieval engine (`--retriever pgvector`) alongside the deterministic baseline (`--retriever baseline`, the default):
+
+1. **Index Evaluation Corpora**:
+   ```bash
+   python3 scripts/index_evaluation_corpora.py
+   ```
+2. **Run Single Investigation with Vector Retrieval**:
+   ```bash
+   python3 scripts/investigate_record.py data/records/unit-mismatch-001.json --retriever pgvector --extractor deterministic
+   ```
+3. **Verify Retriever Mechanics & Safety**:
+   ```bash
+   python3 scripts/verify_step22_retrieval.py
+   ```
+4. **Run Retriever Comparative Benchmark (All 16 Cases)**:
+   ```bash
+   python3 scripts/evaluate.py --retriever both --suite all
+   ```
 
 ---
 
@@ -413,6 +440,8 @@ The repository strictly separates offline verification from live model evaluatio
 | **FastAPI Offline Integration Tests** | `python3 -m unittest discover -s tests -p "test_*.py"` | None | None | Yes |
 | **Pretrained Embeddings Verification** | `python3 scripts/verify_step20_embeddings.py` | None | None (after initial cache) | Yes |
 | **Database & Vector Storage Verification** | `python3 scripts/verify_step21_database.py` | None | None (local Docker/Postgres) | Yes |
+| **Retriever Verification (Step 22)** | `python3 scripts/verify_step22_retrieval.py` | None | None (local Docker/Postgres) | Yes |
+| **Retriever Comparative Benchmark (16 cases)** | `python3 scripts/evaluate.py --retriever both --suite all` | None | None (zero Gemini calls) | Yes |
 | **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None | Yes |
 | **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None | Yes |
 | **Deterministic Single Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor deterministic` | None | None | Yes |
@@ -432,8 +461,21 @@ The repository contains two evaluation suites testing length unit mismatches (`c
 |---|:---:|:---:|:---:|---|
 | **Step 10 Baseline Suite** | 10 cases | **10 / 10 (100.0%)** | **10 / 10 (100.0%)** | Providers showed 100% concordance. In 5 cases, retrieval checks safely abstained prior to model call. |
 | **Step 15 Challenge Suite** | 6 cases | 5 / 6 (83.3%) | **6 / 6 (100.0%)** | **Gemini demonstrated value (+16.7 pp)** on unstructured sentence prose (`challenge-01`) where regex rules fail. |
+| **Step 22 Retriever Benchmark** | 16 cases | 15 / 16 (93.8%) | N/A (zero Gemini calls) | **100% Concordance between Baseline and PgVector**; 100% Recall@1 (9/9) on gold evidence cases; full safety abstention preservation. |
 
 > **Evaluation Scope & Limitations Notice**: These results are derived from controlled synthetic test suites designed to expose parser boundaries and test pipeline integration. **They do not constitute a benchmark of generalized accuracy across unconstrained, real-world supplier engineering drawings, CAD files, or scanned documents.**
+
+### Key Comparison: Step 22 Retriever Comparative Benchmark (16 Cases)
+
+| Metric | Baseline Retriever | PgVector Retriever | Comparison / Target |
+|---|---|---|---|
+| **Overall Pass Rate (End-to-End)** | 15 / 16 (93.8%) | 15 / 16 (93.8%) | **100% Concordance (16/16 matches)** |
+| **Information Retrieval Recall@1** | 9 / 9 (100.0%) | 9 / 9 (100.0%) | All relevant chunks ranked #1 |
+| **Information Retrieval Recall@2** | 9 / 9 (100.0%) | 9 / 9 (100.0%) | All relevant chunks in top 2 |
+| **Information Retrieval Recall@3** | 9 / 9 (100.0%) | 9 / 9 (100.0%) | All relevant chunks in top 3 |
+| **Mean Reciprocal Rank (MRR)** | 1.000 | 1.000 | Perfect reciprocal ranking |
+| **Safety Abstentions Preserved** | 6 / 6 (100.0%) | 6 / 6 (100.0%) | Conflicting & missing evidence safely flagged |
+| **Median Investigation Latency** | 0.71 ms | 43.48 ms | Local regex scan vs. CPU embedding + Postgres |
 
 ### Key Comparison: Step 15 Challenge Suite (6 Cases)
 
@@ -453,6 +495,8 @@ The repository contains two evaluation suites testing length unit mismatches (`c
 | **Token Usage** | 0 tokens | 1,395 tokens (1,142 prompt, 253 candidate) | Across 4 live calls |
 
 ### Evaluation Reports
+- [evaluation/reports/step22_retriever_comparison_report.md](evaluation/reports/step22_retriever_comparison_report.md): Step 22 side-by-side comparative report (Baseline vs. PgVector retrieval on 16 cases).
+- [evaluation/reports/step22_retriever_comparison_report.json](evaluation/reports/step22_retriever_comparison_report.json): Machine-readable Step 22 retriever comparison JSON.
 - [evaluation/reports/step15_challenge_comparison_report.md](evaluation/reports/step15_challenge_comparison_report.md): Step 15 side-by-side comparative report (Deterministic vs. Live Gemini after validation improvements).
 - [evaluation/reports/step15_challenge_comparison_report.json](evaluation/reports/step15_challenge_comparison_report.json): Machine-readable Step 15 comparison JSON.
 - [evaluation/reports/challenge_comparison_report.md](evaluation/reports/challenge_comparison_report.md): Step 13 side-by-side comparative report (Deterministic vs. Gemini on challenge suite).
@@ -475,7 +519,7 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 2. **Data & Text Extraction**: Generates synthetic investigation records and extracts document text page-by-page into `data/extracted/`.
 3. **Mock & Schema Validation**: Runs [`scripts/verify_step8_extractor.py`](scripts/verify_step8_extractor.py) verifying Pydantic schema validation, prompt boundaries, and 7 mock scenarios.
 4. **Comprehensive Regression Suite**: Runs [`scripts/verify_sample.py`](scripts/verify_sample.py) verifying sample validity, text extraction, retrieval, conversion arithmetic, whitespace quote alignment, labelled tuple binding, immutability, and offline replay.
-5. **Offline API & Chunking Tests**: Runs `python -m unittest discover -s tests -p "test_*.py"` verifying API endpoints, verbatim citation-preserving chunking boundaries, and document identity safety rejection rules.
+5. **Offline API & Retriever Tests**: Runs `python -m unittest discover -s tests -p "test_*.py"` verifying API endpoints, verbatim citation-preserving chunking boundaries, document identity safety rejection rules, and retriever factory/mock mechanics.
 6. **Deterministic Benchmark Evaluations**:
    - Baseline Suite: Asserts 10/10 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite baseline`).
    - Challenge Suite: Verifies 5/6 expected pass rate (`scripts/evaluate.py --extractor deterministic --suite challenge`), preserving the known `challenge-01` sentence regex limitation while failing if any unexpected regression occurs.
@@ -484,12 +528,18 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 
 ---
 
-## 14. Limitations & Deferred Features
+## 14. Limitations & Scope Boundaries
 
 To maintain reliability, security, and auditability, the project's scope is strictly bounded:
 
+### Implemented in Step 22: Metadata-Filtered Vector Retrieval
+- Pluggable evidence retrieval (`--retriever baseline` vs. `--retriever pgvector`) keeping `baseline` as the CLI and API default.
+- Pinned query embedding using `sentence-transformers/all-MiniLM-L6-v2` on CPU.
+- Parameterized metadata filtering (`corpus_id`, `component_id`, `revision`, `model_name`, `model_revision`) combined with exact cosine ranking and deterministic tie-breaking.
+- Full-context conflict detection across eligible candidate chunks before top-k ranking.
+- Citation-preserving chunk spans (`context_type: "chunk"`) grounded in source page text.
+
 ### What Is Not Implemented
-- **Vector Search in Investigation Pipeline**: While document chunks and 384-dimensional embeddings are persisted and queryable in PostgreSQL/pgvector (with HNSW index and metadata filtering), vector similarity search is not yet connected as an active retrieval engine in the investigation pipeline. Active document retrieval currently operates via deterministic metadata filtering (part number, revision) and verbatim text matching.
 - **No OCR for Raster Scans**: Documents must contain selectable digital text (`pypdf` extraction); scanned raster PDFs or image-only drawings are not supported.
 - **No Multi-Turn Chat or Autonomous Agents**: The investigation workflow is a deterministic, single-turn audit pipeline, not an interactive conversational agent.
 - **No Direct Database Mutation**: The tool generates proposed correction payloads; it does not write directly to production ERP or PLM systems.
