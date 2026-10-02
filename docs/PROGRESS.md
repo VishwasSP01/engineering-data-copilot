@@ -580,5 +580,50 @@
     * `tests/test_graph.py`: 15 unit and integration tests covering node structure, guarded routing, tool invariants, fake Gemini grounding, state isolation, dependency isolation, and live pgvector parity.
     * All 63 tests in `tests/` pass.
     * CI workflow updated with Step 24 verification and LangGraph baseline evaluation.
+- [x] **Step 25: Final Integrated Verification and Portfolio Completion** — Completed.
+  - **Goal & Scope**: Verify the complete integrated system end-to-end through HTTP (`POST /investigations`) using LangGraph orchestration (`INVESTIGATION_ORCHESTRATION=langgraph`), PostgreSQL/pgvector semantic retrieval (`retriever=pgvector`), and live Gemini model extraction (`extractor=gemini`). Finalize portfolio MVP documentation and offline regressions without adding features.
+  - **System Inventory & Configuration**:
+    * Tested Commit: `350c28050aeb17b721a6bca5d6c3f5982c4e4fc6` (and parent main commits)
+    * Python Runtime: Local Python 3.9.6 (Darwin arm64); CI Python 3.13 (Ubuntu 24.04 x86_64).
+    * Embedding Model: Pinned `sentence-transformers/all-MiniLM-L6-v2` (`1110a243fdf4706b3f48f1d95db1a4f5529b4d41`, 384 dimensions, normalized, CPU inference).
+    * LLM Extractor: `gemini-3.5-flash-lite` via official `google-genai` SDK with automatic retries disabled (`attempts=1`).
+    * Database Service: Pinned `pgvector/pgvector:0.8.0-pg16` on `127.0.0.1:5432`.
+    * Corpus Integrity: Verified `copilot_db.document_chunks` contains 68 chunks (4 in authoritative `supplier-corpus`, 64 across isolated evaluation suites), matching source files exactly.
+    * Secret Protection: Credentials (`GEMINI_API_KEY`, database passwords) never logged or committed.
+    * Live Model Call Budget: **Strictly 1 live Gemini API call** executed in the entire step.
+  - **Automated Verification Harness (`scripts/verify_step25_integration.py`)**:
+    * Booted FastAPI service on `127.0.0.1:8008` with `INVESTIGATION_ORCHESTRATION=langgraph`.
+    * Captured pre-run SHA-256 digests for `data/records/unit-mismatch-001.json`, `data/documents/supplier-COMP-001.pdf`, and `data/extracted/supplier-COMP-001.json`.
+  - **Request 1: Positive Integration Sample (`unit-mismatch-001`, pgvector + gemini)**:
+    * HTTP Status: `200 OK`.
+    * Business Outcome: `correction_proposed` with proposed value `8.0 mm`.
+    * Semantic Evidence Retrieval: Grounded in real chunk `supplier-COMP-001_p1_c003` from `copilot_db` (cosine similarity 0.7325).
+    * Live Gemini Extraction: Extracted `0.8 cm` for `thickness` with supporting quote `"Component thickness: 0.8 cm."`.
+    * Citation Verification: Verbatim quote grounded in `supplier-COMP-001.pdf` page 1.
+    * Deterministic Arithmetic: Python `Decimal` converted `0.8 cm` to `8.0 mm` (`0.8 cm * 10 mm/cm = 8.0 mm`). The model performed zero math.
+    * LangGraph Node Transitions: 6-node sequence visited (`validate_record` → `retrieve_evidence` → `extract_measurement` → `validate_evidence` → `convert_and_compare` → `finalize`).
+    * Tool Invocation Counts: `retrieval: 1`, `extraction: 1`, `conversion: 1`.
+    * Model Usage: Exactly 1 call, 981.65 ms latency, 377 tokens (323 prompt, 54 candidate).
+  - **Request 2: Negative Abstention Test (`COMP-NONEXISTENT-999`, pgvector + gemini)**:
+    * HTTP Status: `200 OK`.
+    * Business Outcome: `insufficient_evidence`, `proposed_correction: null`.
+    * Semantic Evidence Retrieval: Zero matching chunks found in `copilot_db` for unknown component.
+    * LangGraph Node Transitions: 3-node early termination sequence (`validate_record` → `retrieve_evidence` → `finalize`).
+    * Tool Invocation Counts: `retrieval: 1`, `extraction: 0`, `conversion: 0`.
+    * Model Usage: **Zero calls** (zero network transit, 38.64 ms total latency). Extractor was never invoked.
+  - **Source File Immutability Audit**:
+    * Post-run SHA-256 digests verified identical byte-for-byte to pre-run digests across records, PDFs, and extracted JSONs (`source_record_modified: false`).
+  - **API Contract & Telemetry Enhancement**:
+    * Updated `api/schemas.py` and `scripts/investigate_graph.py` to include `orchestration` (`node_transitions`, `tool_invocations`, `timings`) and `retriever` metadata in `InvestigationResponse`.
+  - **Saved Integration Reports**:
+    * JSON Report: `evaluation/reports/step25_integration_report.json`
+    * Markdown Report: `evaluation/reports/step25_integration_report.md`
+  - **Scope & Limitations Distinction**:
+    * Step 25 is documented as a single live positive sample plus one abstention check, not an accuracy benchmark.
+    * Reasserted that tool execution in LangGraph is strictly state-guarded code logic, not autonomous LLM tool calling.
+  - **Portfolio MVP Sign-Off**:
+    * All 25 implementation steps are complete, tested, and documented.
+    * Full system capabilities verified across CLI, HTTP API, vector persistence, LangChain Runnables, and LangGraph StateGraph orchestration.
+
 
 

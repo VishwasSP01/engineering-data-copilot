@@ -595,6 +595,7 @@ The repository strictly separates offline verification from live model evaluatio
 | **Live Gemini Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor gemini` | `GEMINI_API_KEY` | Yes (1 API call) | No (API transit) |
 | **Live Challenge Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite challenge --step 15` | `GEMINI_API_KEY` | Yes (max 6 calls) | No (API transit) |
 | **Live Baseline Comparative Benchmark** | `python3 scripts/evaluate.py --extractor both --suite baseline` | `GEMINI_API_KEY` | Yes (max 10 calls) | No (API transit) |
+| **Step 25 Final Integrated Verification** | `python3 scripts/verify_step25_integration.py` | `GEMINI_API_KEY` | Yes (exactly 1 API call) | No (Live API integration) |
 
 ---
 
@@ -641,7 +642,40 @@ The repository contains two evaluation suites testing length unit mismatches (`c
 | **Median Latency (Non-Model Cases)** | 0.48 ms | 0.23 ms | Local early abstention |
 | **Token Usage** | 0 tokens | 1,395 tokens (1,142 prompt, 253 candidate) | Across 4 live calls |
 
+### Step 25: Final Integrated End-to-End Verification (LangGraph + PgVector + Live Gemini)
+
+In Step 25, the complete integrated stack was verified end-to-end through the FastAPI HTTP service (`POST /investigations`) with LangGraph state graph orchestration (`INVESTIGATION_ORCHESTRATION=langgraph`), PostgreSQL/pgvector semantic retrieval (`retriever=pgvector`), and live Gemini model extraction (`extractor=gemini`).
+
+> **Integration Scope Notice**: Step 25 is an end-to-end integration and telemetry verification run consisting of **one live positive sample plus one negative abstention check**. It verifies that all components (FastAPI, LangGraph, pgvector, Gemini API, Python Decimal math, and citation guardrails) function cohesively under real network and database conditions. It is **not** a broad accuracy or generalization benchmark (see historical Step 10, 15, and 22 evaluations above for multi-case benchmarks).
+
+#### Environment & System Configuration
+- **Host & Runtime**: Darwin arm64 (Python 3.9.6) local; Ubuntu 24.04 (Python 3.13) CI
+- **Embedding Model**: `sentence-transformers/all-MiniLM-L6-v2` (revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`, 384d, normalized)
+- **Vector Database**: PostgreSQL 16.10 with pgvector 0.8.0 on localhost:5432
+- **Orchestration**: LangGraph 0.6.11 compiled `StateGraph` with 6 explicit nodes and guarded conditional edges
+- **LLM Extractor**: `gemini-3.5-flash-lite` via official `google-genai` SDK (retries disabled: `attempts=1`)
+- **Live Gemini API Calls**: **Strictly 1 call** across the entire integration step
+
+#### Step 25 HTTP Request Verification Results
+
+| Parameter | Request 1: Positive Sample (`unit-mismatch-001`) | Request 2: Unknown Component (`COMP-NONEXISTENT-999`) |
+|---|---|---|
+| **Endpoint** | `POST /investigations?retriever=pgvector&extractor=gemini` | `POST /investigations?retriever=pgvector&extractor=gemini` |
+| **HTTP Status** | `200 OK` | `200 OK` |
+| **Business Outcome** | `correction_proposed` | `insufficient_evidence` (Safe Abstention) |
+| **Current Record** | `0.8 mm` (`thickness`) | `5.0 mm` (`thickness`) |
+| **Retrieved Evidence** | Chunk `supplier-COMP-001_p1_c003` from `copilot_db` | None (zero matching chunks in `copilot_db`) |
+| **Model Extracted Value** | `0.8 cm` (verbatim quote: `"Component thickness: 0.8 cm."`) | N/A (extractor not invoked) |
+| **Citation Verification** | Grounded in `supplier-COMP-001.pdf` page 1 | N/A |
+| **Proposed Correction** | `8.0 mm` (via Python `Decimal`: `0.8 cm * 10 mm/cm = 8.0 mm`) | `null` (no correction proposed) |
+| **LangGraph Path** | `validate_record` → `retrieve_evidence` → `extract_measurement` → `validate_evidence` → `convert_and_compare` → `finalize` (6 nodes) | `validate_record` → `retrieve_evidence` → `finalize` (3 nodes, early exit) |
+| **Tool Invocations** | `retrieval: 1`, `extraction: 1`, `conversion: 1` | `retrieval: 1`, `extraction: 0`, `conversion: 0` |
+| **Live Gemini Calls** | **1 call** (377 tokens: 323 prompt, 54 candidate, 981.65 ms) | **0 calls** (zero network transit, 38.64 ms total) |
+| **Data Immutability** | Records & PDFs verified byte-for-byte unmodified | Records & PDFs verified byte-for-byte unmodified |
+
 ### Evaluation Reports
+- [evaluation/reports/step25_integration_report.md](evaluation/reports/step25_integration_report.md): Step 25 final integrated RAG verification report (FastAPI + LangGraph + PgVector + Live Gemini).
+- [evaluation/reports/step25_integration_report.json](evaluation/reports/step25_integration_report.json): Machine-readable Step 25 integration verification JSON.
 - [evaluation/reports/step22_retriever_comparison_report.md](evaluation/reports/step22_retriever_comparison_report.md): Step 22 side-by-side comparative report (Baseline vs. PgVector retrieval on 16 cases).
 - [evaluation/reports/step22_retriever_comparison_report.json](evaluation/reports/step22_retriever_comparison_report.json): Machine-readable Step 22 retriever comparison JSON.
 - [evaluation/reports/step15_challenge_comparison_report.md](evaluation/reports/step15_challenge_comparison_report.md): Step 15 side-by-side comparative report (Deterministic vs. Live Gemini after validation improvements).
@@ -679,22 +713,45 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 
 To maintain reliability, security, and auditability, the project's scope is strictly bounded:
 
-### Implemented in Step 22: Metadata-Filtered Vector Retrieval
+### Controlled State Machine vs. Autonomous LLM Agents
+- **Deterministic Tool Invocations**: In both LangChain (`scripts/investigate_chain.py`) and LangGraph (`scripts/investigate_graph.py`), tools are invoked via **state-guarded deterministic code logic**, not autonomous LLM tool selection.
+- **Strict Guarded Routing**: Decisions to retrieve, extract, validate, and convert are governed by programmatic condition functions. The LLM does not choose which tools to call or navigate cycles.
+- **Finite Graph Execution**: The graph enforces a strict `recursion_limit=10` with zero retry loops; eligible paths complete in at most 6 node transitions, and abstentions complete in 2 to 3 node transitions.
+
+### Evaluation Dataset Scope & Real-World Boundaries
+- **Synthetic Test Suites**: All evaluation benchmarks (10 baseline cases, 6 challenge cases, 1 live integration case) are synthetic datasets constructed to test specific edge cases (unit mismatches, revision mismatches, missing values, conflicting statements, multi-column tables).
+- **Not an Unconstrained Benchmark**: These results demonstrate pipeline correctness, state guardrails, and deterministic math; **they do not claim generalized accuracy across unconstrained, real-world supplier engineering drawings, scanned blueprints, or complex multi-page CAD specifications.**
+
+### What Is Implemented
 - Pluggable evidence retrieval (`--retriever baseline` vs. `--retriever pgvector`) keeping `baseline` as the CLI and API default.
 - Pinned query embedding using `sentence-transformers/all-MiniLM-L6-v2` on CPU.
-- Parameterized metadata filtering (`corpus_id`, `component_id`, `revision`, `model_name`, `model_revision`) combined with exact cosine ranking and deterministic tie-breaking.
+- Parameterized metadata filtering (`corpus_id`, `component_id`, `revision`, `model_name`, `model_revision`) combined with exact cosine ranking and deterministic tie-breaking in PostgreSQL/pgvector.
 - Full-context conflict detection across eligible candidate chunks before top-k ranking.
 - Citation-preserving chunk spans (`context_type: "chunk"`) grounded in source page text.
+- Optional LangChain Runnable pipeline and LangGraph StateGraph orchestration.
+- Minimal FastAPI HTTP service (`api/main.py`) exposing `/health` and `/investigations`.
 
 ### What Is Not Implemented
 - **No OCR for Raster Scans**: Documents must contain selectable digital text (`pypdf` extraction); scanned raster PDFs or image-only drawings are not supported.
-- **No Multi-Turn Chat or Autonomous Agents**: The investigation workflow is a deterministic, single-turn audit pipeline, not an interactive conversational agent.
+- **No Autonomous Tool-Calling Agents**: The investigation workflow is a deterministic, single-turn audit pipeline, not an open-ended conversational agent.
 - **No Direct Database Mutation**: The tool generates proposed correction payloads; it does not write directly to production ERP or PLM systems.
 - **No Web Frontend UI**: The project exposes a CLI and a minimal FastAPI investigation service (`api/main.py`), but does not provide an interactive frontend web UI.
 
 ---
 
-## 17. Project Documentation
+## 17. Portfolio MVP Completion Status
+
+With the successful completion of **Step 25**, this repository has achieved full portfolio MVP status:
+- **Verified Offline Core**: Reproducible environment, deterministic baseline extractor, PDF text extraction, citation-preserving chunking, Python `Decimal` arithmetic, and comprehensive automated regression suites.
+- **Semantic Retrieval Layer**: Local containerized PostgreSQL 16 with `pgvector`, B-tree metadata filtering, exact cosine distance ranking, and evaluation corpora indexing.
+- **Production Orchestration**: Modular, zero-dependency direct execution alongside optional LangChain Runnable and LangGraph StateGraph orchestration with 100% parity across all 16 benchmark cases.
+- **Live LLM Integration**: Controlled, schema-enforced `gemini-3.5-flash-lite` extraction with post-extraction quote grounding, zero LLM math, and strict API call budgeting.
+- **Service API**: FastAPI HTTP microservice exposing health and investigation endpoints with comprehensive telemetry.
+- **Continuous Integration**: Automated GitHub Actions CI pipeline running offline checks on Python 3.13.
+
+---
+
+## 18. Project Documentation
 
 - [docs/DEMO.md](docs/DEMO.md): Interactive CLI walkthrough and interview demonstration guide.
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.

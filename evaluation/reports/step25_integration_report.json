@@ -1,0 +1,273 @@
+{
+  "metadata": {
+    "title": "Step 25: Final Integrated RAG Workflow Verification & Portfolio MVP Completion",
+    "timestamp": "2026-10-02T14:29:48Z",
+    "git_commit": "350c28050aeb17b721a6bca5d6c3f5982c4e4fc6",
+    "python_version": "3.9.6",
+    "platform": "darwin",
+    "orchestration_engine": "langgraph",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "vector_dimension": 384,
+    "database_version": "PostgreSQL 16.10 / pgvector 0.8.0",
+    "gemini_model": "gemini-3.5-flash-lite",
+    "requests_summary": {
+      "total_requests": 2,
+      "live_generation_requests_attempted": 1,
+      "live_generation_requests_completed": 1,
+      "live_generation_retries": 0,
+      "early_abstentions": 1
+    },
+    "financial_cost": null,
+    "scope_notice": "This report documents an end-to-end integration test of exactly one live positive sample plus one safe abstention check across the full stack (HTTP API -> LangGraph -> PgVector -> Gemini -> Decimal). It does not constitute a broad statistical accuracy benchmark."
+  },
+  "system_components": {
+    "api_server": "FastAPI 0.115+ / Uvicorn (HTTP port 8008)",
+    "orchestration": "LangGraph StateGraph (6 explicit nodes, guarded transitions, typed tools)",
+    "retriever": "PgVectorRetriever (exact filtered cosine search via materialized CTE)",
+    "extractor": "GeminiMeasurementExtractor (gemini-3.5-flash-lite, official google-genai SDK)",
+    "arithmetic": "Python decimal.Decimal (deterministic arithmetic, LLM math forbidden)"
+  },
+  "file_integrity": {
+    "record_file": "data/records/unit-mismatch-001.json",
+    "record_sha256": "d8c5492ca8065a66b7642a7f19371ae2c53d8d267a338d3f41adad05bac64fb7",
+    "document_file": "data/documents/supplier-COMP-001.pdf",
+    "document_sha256": "5ad384568c1c5966bd157e3d609044efc54ee7544efa184c775ecbdb664ce00e",
+    "extracted_file": "data/extracted/supplier-COMP-001.json",
+    "extracted_sha256": "20892018dea04b411d2847b2185d23ffdf9f1f36be780cbb4303b8efd1a60029",
+    "immutability_verified": true
+  },
+  "cases": [
+    {
+      "case_id": "unit-mismatch-001",
+      "description": "Original thickness mismatch (0.8 mm recorded vs. 0.8 cm supplier evidence)",
+      "http_status": 200,
+      "duration_ms": 4008.65,
+      "payload": {
+        "case_id": "unit-mismatch-001",
+        "record_id": "unit-mismatch-001",
+        "component_id": "COMP-001",
+        "part_number": "COMP-001",
+        "revision": "A",
+        "attribute_name": "thickness",
+        "recorded_value": 0.8,
+        "recorded_unit": "mm",
+        "document_reference": {
+          "document_id": "DOC-SUP-COMP-001",
+          "filename": "supplier-COMP-001.pdf",
+          "filepath": "data/documents/supplier-COMP-001.pdf"
+        },
+        "extractor": "gemini",
+        "retriever": "pgvector"
+      },
+      "response": {
+        "case_id": "unit-mismatch-001",
+        "record_id": "unit-mismatch-001",
+        "component_id": "COMP-001",
+        "revision": "A",
+        "attribute_name": "thickness",
+        "current_record": {
+          "value": 0.8,
+          "unit": "mm"
+        },
+        "source_record_modified": false,
+        "retrieval_status": "evidence_found",
+        "context_type": "chunk",
+        "retriever": {
+          "name": "pgvector",
+          "mode": "vector_filtered",
+          "corpus_id": "supplier-corpus",
+          "similarity_score": 0.7325,
+          "duration_ms": 2914.088,
+          "status": "success",
+          "error_type": null
+        },
+        "status": "correction_proposed",
+        "outcome": "correction_proposed",
+        "evidence_measurement": {
+          "value": 0.8,
+          "unit": "cm"
+        },
+        "proposed_correction": {
+          "value": 8.0,
+          "unit": "mm",
+          "conversion": {
+            "supplier_extracted_value": 0.8,
+            "supplier_extracted_unit": "cm",
+            "target_unit": "mm",
+            "multiplier": 10.0,
+            "calculation": "0.8 cm * 10 mm/cm = 8.0 mm",
+            "method": "deterministic_arithmetic"
+          }
+        },
+        "evidence": {
+          "document_filename": "supplier-COMP-001.pdf",
+          "page_number": 1,
+          "supporting_passage": "2. Physical Dimensions & Mechanical Parameters\nMechanical measurements for component ID COMP-001 under standard test conditions (25°C, 50% RH). Note\nthe primary dimensional measurements recorded below:\nComponent thickness: 0.8 cm.\nParameter\nNominal Value\nTolerance\nNotes\nLength\n25.0 mm\n±0.1 mm\nLongitudinal body axis\nWidth\n15.0 mm\n±0.1 mm\nTransverse body axis\nThickness\n0.8 cm\n±0.02 cm\nOverall substrate height\nSubstrate Material\n96% Al2O3\n—\nHigh-purity alumina",
+          "model_quote": null,
+          "alignment": null,
+          "context_type": "chunk",
+          "similarity_score": 0.7325,
+          "quote_alignment": "literal"
+        },
+        "extractor": {
+          "provider": "google-genai",
+          "model": "gemini-3.5-flash-lite",
+          "mode": "model",
+          "is_fallback": false,
+          "call_duration_ms": 948.91,
+          "token_usage": {
+            "prompt_tokens": 323,
+            "candidates_tokens": 54,
+            "total_tokens": 377
+          },
+          "token_usage_reason": null,
+          "status": "found",
+          "error_type": null
+        },
+        "explanation": "Supplier document specifies 0.8 cm, which converts via deterministic arithmetic to 8.0 mm (0.8 cm * 10 mm/cm = 8.0 mm). Recorded value is 0.8 mm. Proposing correction to 8.0 mm.",
+        "orchestration": {
+          "mode": "langgraph",
+          "node_transitions": [
+            "validate_record",
+            "retrieve_evidence",
+            "extract_measurement",
+            "validate_evidence",
+            "convert_and_compare",
+            "finalize"
+          ],
+          "node_timings": {
+            "validate_record": 0.008,
+            "retrieve_evidence": 2915.375,
+            "extract_measurement": 949.534,
+            "validate_evidence": 0.027,
+            "convert_and_compare": 0.545,
+            "finalize": 0.002
+          },
+          "tool_invocations": {
+            "evidence_retrieval_tool": 1,
+            "measurement_extraction_tool": 1,
+            "measurement_conversion_tool": 1
+          },
+          "extractor_invocations": 1,
+          "terminal_reason": "comparison_completed"
+        }
+      },
+      "verifications": {
+        "http_200": true,
+        "outcome_correction_proposed": true,
+        "pgvector_retrieval_confirmed": true,
+        "gemini_extracted_value": 0.8,
+        "gemini_extracted_unit": "cm",
+        "decimal_proposed_correction": 8.0,
+        "decimal_proposed_unit": "mm",
+        "source_citation": "supplier-COMP-001.pdf",
+        "source_page": 1,
+        "node_transitions": [
+          "validate_record",
+          "retrieve_evidence",
+          "extract_measurement",
+          "validate_evidence",
+          "convert_and_compare",
+          "finalize"
+        ],
+        "tool_invocations": {
+          "evidence_retrieval_tool": 1,
+          "measurement_extraction_tool": 1,
+          "measurement_conversion_tool": 1
+        },
+        "extractor_invocations": 1
+      }
+    },
+    {
+      "case_id": "test-unknown-component-001",
+      "description": "Genuinely unknown component ID (COMP-NONEXISTENT-999)",
+      "http_status": 200,
+      "duration_ms": 71.03,
+      "payload": {
+        "case_id": "test-unknown-component-001",
+        "record_id": "test-unknown-001",
+        "component_id": "COMP-NONEXISTENT-999",
+        "part_number": "COMP-NONEXISTENT-999",
+        "revision": "A",
+        "attribute_name": "thickness",
+        "recorded_value": 1.5,
+        "recorded_unit": "mm",
+        "extractor": "gemini",
+        "retriever": "pgvector"
+      },
+      "response": {
+        "case_id": "test-unknown-component-001",
+        "record_id": "test-unknown-001",
+        "component_id": "COMP-NONEXISTENT-999",
+        "revision": "A",
+        "attribute_name": "thickness",
+        "current_record": {
+          "value": 1.5,
+          "unit": "mm"
+        },
+        "source_record_modified": false,
+        "retrieval_status": "insufficient_evidence",
+        "context_type": null,
+        "retriever": {
+          "name": "pgvector",
+          "mode": "vector_filtered",
+          "corpus_id": "supplier-corpus",
+          "duration_ms": 58.249,
+          "status": "success",
+          "error_type": null
+        },
+        "status": "insufficient_evidence",
+        "outcome": "insufficient_evidence",
+        "evidence_measurement": null,
+        "proposed_correction": null,
+        "evidence": null,
+        "extractor": {
+          "provider": "deterministic",
+          "model": null,
+          "mode": "deterministic",
+          "is_fallback": false,
+          "call_duration_ms": 0.0,
+          "token_usage": null,
+          "token_usage_reason": "Retrieval yielded insufficient_evidence; extractor not invoked.",
+          "status": "not_invoked",
+          "error_type": null
+        },
+        "explanation": "Component ID 'COMP-NONEXISTENT-999' not found in extracted document content.",
+        "orchestration": {
+          "mode": "langgraph",
+          "node_transitions": [
+            "validate_record",
+            "retrieve_evidence",
+            "finalize"
+          ],
+          "node_timings": {
+            "validate_record": 0.007,
+            "retrieve_evidence": 58.886,
+            "finalize": 0.001
+          },
+          "tool_invocations": {
+            "evidence_retrieval_tool": 1
+          },
+          "extractor_invocations": 0,
+          "terminal_reason": "retrieval_insufficient_evidence"
+        }
+      },
+      "verifications": {
+        "http_200": true,
+        "outcome_insufficient_evidence": true,
+        "no_correction_proposed": true,
+        "node_transitions": [
+          "validate_record",
+          "retrieve_evidence",
+          "finalize"
+        ],
+        "tool_invocations": {
+          "evidence_retrieval_tool": 1
+        },
+        "extractor_invocations": 0,
+        "zero_gemini_calls": true
+      }
+    }
+  ]
+}

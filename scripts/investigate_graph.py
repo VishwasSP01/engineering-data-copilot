@@ -727,15 +727,18 @@ def investigate_record_langgraph(
     graph = get_compiled_graph()
     output_state = graph.invoke(initial_state, config={"recursion_limit": 10})
 
-    final_resp = output_state["final_response"]
+    final_resp = dict(output_state["final_response"])
+    telemetry = {
+        "mode": "langgraph",
+        "node_transitions": output_state.get("node_transitions", []),
+        "node_timings": output_state.get("node_timings", {}),
+        "tool_invocations": output_state.get("tool_invocations", {}),
+        "extractor_invocations": 1 if output_state.get("extractor_invoked") else 0,
+        "terminal_reason": output_state.get("terminal_reason"),
+    }
+    final_resp["orchestration"] = telemetry
+
     if return_telemetry:
-        telemetry = {
-            "node_transitions": output_state.get("node_transitions", []),
-            "node_timings": output_state.get("node_timings", {}),
-            "tool_invocations": output_state.get("tool_invocations", {}),
-            "extractor_invocations": 1 if output_state.get("extractor_invoked") else 0,
-            "terminal_reason": output_state.get("terminal_reason"),
-        }
         return final_resp, telemetry
 
     return final_resp

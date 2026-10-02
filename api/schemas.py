@@ -172,6 +172,7 @@ class InvestigationResponse(BaseModel):
     source_record_modified: bool = False
     retrieval_status: Optional[str] = None
     context_type: Optional[str] = None
+    retriever: Optional[Dict[str, Any]] = None
     status: str
     outcome: str
     evidence_measurement: Optional[EvidenceMeasurement] = None
@@ -179,6 +180,7 @@ class InvestigationResponse(BaseModel):
     evidence: Optional[EvidenceDetails] = None
     extractor: ExtractorMetadata
     explanation: str
+    orchestration: Optional[Dict[str, Any]] = None
 
 
 class ErrorResponse(BaseModel):
