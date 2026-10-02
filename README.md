@@ -75,6 +75,8 @@ flowchart TD
 - **Document Generation**: [`reportlab>=5.0.1`](https://pypi.org/project/reportlab/) — Programmatic generation of reproducible synthetic PDF datasheets with vector typography.
 - **Data Validation & Schemas**: [`pydantic>=2.13.5`](https://pypi.org/project/pydantic/) — Strict type validation and JSON schema enforcement for model extraction contracts.
 - **Investigation Service API**: [`fastapi>=0.115.0`](https://pypi.org/project/fastapi/) & [`uvicorn>=0.30.0`](https://pypi.org/project/uvicorn/) — Minimal asynchronous HTTP service exposing health and investigation endpoints.
+- **Vector Database & Persistence**: [`pgvector/pgvector:0.8.0-pg16`](https://github.com/pgvector/pgvector) — PostgreSQL 16 container with the `vector` extension, HNSW cosine index, and Python drivers (`psycopg[binary]>=3.2.0`, `pgvector>=0.4.0`).
+- **Embedding Model**: [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — 384-dimensional normalized vector representations for document chunks.
 - **Deterministic Arithmetic**: Python standard library `decimal.Decimal` — Precise floating-point-free unit conversions (`cm` ↔ `mm`).
 - **Foundation Model SDK**: [`google-genai>=1.47.0`](https://pypi.org/project/google-genai/) — Official Google GenAI SDK using structured JSON schema extraction (`gemini-3.5-flash-lite`).
 - **Reproducible Dependencies**: Fully pinned dependency lock via [`requirements-lock.txt`](requirements-lock.txt).
@@ -338,7 +340,65 @@ python3 scripts/verify_step20_embeddings.py
 
 ---
 
-## 10. Offline vs. Live Workflows
+## 10. Document Vector Persistence with PostgreSQL & pgvector
+
+Step 21 introduces containerized vector persistence for document chunks, metadata, and 384-dimensional embeddings using PostgreSQL and the `pgvector` extension.
+
+### Architecture & Service Setup
+- **Image**: Pinned to [`pgvector/pgvector:0.8.0-pg16`](https://hub.docker.com/r/pgvector/pgvector) (PostgreSQL 16 with pgvector 0.8.0).
+- **Persistent Storage**: Named Docker volume `copilot_pgvector_data` mounted at `/var/lib/postgresql/data`.
+- **Port & Host**: Bound to `127.0.0.1:${POSTGRES_PORT:-5432}`.
+- **Configuration**: Credentials read from `.env` (defaults in `.env.example`). Credentials and passwords are never logged or committed.
+- **Health Check**: Configured via `pg_isready -U ${POSTGRES_USER:-copilot_user} -d ${POSTGRES_DB:-copilot_db}` with 3s intervals and 5 retries.
+
+### Schema & Indexing (`scripts/init_db.sql`)
+- **Table**: `document_chunks` preserving 17 fields:
+  - **Provenance**: `corpus_id`, `chunk_id`, `document_filename`, `page_number`, `start_char`, `end_char`, `token_count`, `content_sha256`.
+  - **Authoritative Identifiers**: `component_id`, `revision`, `document_id`.
+  - **Content & Configuration**: `text` (verbatim source span), `model_name`, `model_revision`.
+  - **Vector**: `embedding vector(384)` storing normalized float32 vectors.
+- **Constraints & Indexes**:
+  - Unique constraint on `(corpus_id, chunk_id)` guaranteeing idempotent upserts.
+  - Composite B-tree index on `(corpus_id, component_id, revision)` for strict metadata filtering.
+  - HNSW index on `embedding` using `vector_cosine_ops` for efficient nearest-neighbor searches.
+
+### Database Setup & Ingestion Commands
+```bash
+# 1. Start the PostgreSQL/pgvector service via Docker Compose
+docker compose up -d
+
+# 2. Confirm service health
+docker compose ps
+
+# 3. Install optional database driver dependencies
+pip install -r requirements-database.txt
+
+# 4. Ingest document chunks and pretrained embeddings
+python3 scripts/ingest_embeddings.py
+
+# 5. Run the comprehensive Step 21 verification suite
+# (Verifies schema, counts, verbatim fidelity, idempotency, restart persistence, cosine query, and metadata filtering)
+python3 scripts/verify_step21_database.py
+```
+
+### Stopping and Tearing Down the Database Service
+```bash
+# Stop containers without removing persistent data:
+docker compose stop
+
+# Stop and remove containers and network (preserves named volume copilot_pgvector_data):
+docker compose down
+
+# To completely wipe the volume and reset the database:
+docker compose down -v
+```
+
+> **Storage & Query Verification Only**:
+> This service and verification suite validate pgvector storage mechanics, schema integrity, HNSW vector indexing, and cosine similarity queries. **It does not evaluate or benchmark end-to-end retrieval accuracy for the engineering investigation pipeline.** Active document retrieval continues to use deterministic metadata filtering (part number, revision) and verbatim passage extraction.
+
+---
+
+## 11. Offline vs. Live Workflows
 
 The repository strictly separates offline verification from live model evaluations:
 
@@ -352,6 +412,7 @@ The repository strictly separates offline verification from live model evaluatio
 | **Mock Extractor & Guardrail Checks** | `python3 scripts/verify_step8_extractor.py` | None | None | Yes |
 | **FastAPI Offline Integration Tests** | `python3 -m unittest discover -s tests -p "test_*.py"` | None | None | Yes |
 | **Pretrained Embeddings Verification** | `python3 scripts/verify_step20_embeddings.py` | None | None (after initial cache) | Yes |
+| **Database & Vector Storage Verification** | `python3 scripts/verify_step21_database.py` | None | None (local Docker/Postgres) | Yes |
 | **Deterministic Baseline Evaluation (10 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite baseline` | None | None | Yes |
 | **Deterministic Challenge Evaluation (6 cases)** | `python3 scripts/evaluate.py --extractor deterministic --suite challenge` | None | None | Yes |
 | **Deterministic Single Investigation** | `python3 scripts/investigate_record.py <record.json> --extractor deterministic` | None | None | Yes |
@@ -361,7 +422,7 @@ The repository strictly separates offline verification from live model evaluatio
 
 ---
 
-## 11. Evaluation Results & Benchmark Suite
+## 12. Evaluation Results & Benchmark Suite
 
 The repository contains two evaluation suites testing length unit mismatches (`cm` ↔ `mm`), agreements, unknown components, incorrect revisions, missing measurements, conflicting evidence, unsupported units, and complex layouts.
 
@@ -405,7 +466,7 @@ The repository contains two evaluation suites testing length unit mismatches (`c
 
 ---
 
-## 12. Continuous Integration (CI)
+## 13. Continuous Integration (CI)
 
 An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on all pushes and pull requests targeting the `main` branch.
 
@@ -423,12 +484,12 @@ An automated GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workf
 
 ---
 
-## 13. Limitations & Deferred Features
+## 14. Limitations & Deferred Features
 
 To maintain reliability, security, and auditability, the project's scope is strictly bounded:
 
 ### What Is Not Implemented
-- **No Vector Database or Vector Retrieval**: Pretrained document embeddings (`sentence-transformers/all-MiniLM-L6-v2`) generate dense vector representations and citation chunks offline, but are not yet connected to a vector database or active retrieval pipeline. Active retrieval currently operates via deterministic metadata filtering (part number, revision) and verbatim text matching.
+- **Vector Search in Investigation Pipeline**: While document chunks and 384-dimensional embeddings are persisted and queryable in PostgreSQL/pgvector (with HNSW index and metadata filtering), vector similarity search is not yet connected as an active retrieval engine in the investigation pipeline. Active document retrieval currently operates via deterministic metadata filtering (part number, revision) and verbatim text matching.
 - **No OCR for Raster Scans**: Documents must contain selectable digital text (`pypdf` extraction); scanned raster PDFs or image-only drawings are not supported.
 - **No Multi-Turn Chat or Autonomous Agents**: The investigation workflow is a deterministic, single-turn audit pipeline, not an interactive conversational agent.
 - **No Direct Database Mutation**: The tool generates proposed correction payloads; it does not write directly to production ERP or PLM systems.
@@ -436,7 +497,7 @@ To maintain reliability, security, and auditability, the project's scope is stri
 
 ---
 
-## 14. Project Documentation
+## 15. Project Documentation
 
 - [docs/DEMO.md](docs/DEMO.md): Interactive CLI walkthrough and interview demonstration guide.
 - [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md): Complete project brief, problem definition, scope, JSON schemas, evaluation criteria, and deferred features.

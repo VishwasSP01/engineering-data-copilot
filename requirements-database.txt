@@ -1,0 +1,5 @@
+# Optional database & vector persistence dependencies for Engineering Data Copilot (Step 21)
+# Install when PostgreSQL/pgvector persistence is required: pip install -r requirements-database.txt
+
+pgvector==0.4.2
+psycopg[binary]==3.2.13

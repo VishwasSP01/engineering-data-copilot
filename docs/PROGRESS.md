@@ -436,3 +436,35 @@
   - **Lightweight Offline Tests & CI (`tests/test_chunking.py`)**:
     * Added 7 unit tests verifying verbatim reproduction, offset accuracy, SHA-256 calculation, and identity safety rules offline without requiring model downloads or PyTorch.
     * All 15 unit tests in `tests/` pass in 0.026s.
+- [x] **Step 21: Persist Document Embeddings in PostgreSQL/pgvector** — Completed.
+  - **Goal & Scope**: Deploy a local containerized PostgreSQL service with the `pgvector` extension to persist citation-preserving document chunks, metadata, and 384-dimensional pretrained embeddings. Verify storage integrity, schema idempotency, volume persistence, metadata filtering, and cosine nearest-neighbor query execution without connecting vector retrieval to the production investigation pipeline or adding LangChain/LangGraph.
+  - **Docker Compose Service (`docker-compose.yml`)**:
+    * Pinned Image: `pgvector/pgvector:0.8.0-pg16` running PostgreSQL 16.10 with pgvector 0.8.0 on host architecture (`linux/arm64`).
+    * Persistent Storage: Named volume `copilot_pgvector_data` mounted at `/var/lib/postgresql/data`.
+    * Host Port Binding: Bound to `127.0.0.1:${POSTGRES_PORT:-5432}`.
+    * Environment Configuration: Configured via `.env` (`POSTGRES_DB=copilot_db`, `POSTGRES_USER=copilot_user`, `POSTGRES_PASSWORD=copilot_password`), with defaults provided in `.env.example`. Passwords are never committed or logged.
+    * Health Check: Configured via `pg_isready -U ${POSTGRES_USER:-copilot_user} -d ${POSTGRES_DB:-copilot_db}` with 3s intervals and 5 retries.
+  - **Database Schema Migration (`scripts/init_db.sql`)**:
+    * Active Extension: `CREATE EXTENSION IF NOT EXISTS vector;` (pgvector 0.8.0).
+    * Table `document_chunks`: Stores 17 fields preserving complete document provenance, verbatim text, character offsets, content hash, component ID, revision, document ID, model name, model revision, and the 384-dimensional embedding vector (`embedding vector(384)`).
+    * Unique Constraint: `CONSTRAINT uq_document_chunks_corpus_chunk UNIQUE (corpus_id, chunk_id)` guaranteeing idempotent chunk upserts.
+    * Composite Metadata Index: `idx_document_chunks_identity` on `(corpus_id, component_id, revision)`.
+    * Cosine Vector Index: `idx_document_chunks_embedding_cosine` on `embedding` using `hnsw (embedding vector_cosine_ops)`.
+  - **Optional Dependencies (`requirements-database.txt`)**:
+    * Pinned PostgreSQL v3 driver `psycopg[binary]==3.2.13` and `pgvector==0.4.2` to keep base CLI and CI dependencies lightweight.
+  - **Batch Ingestion CLI (`scripts/ingest_embeddings.py`)**:
+    * Validation: Validates presence of `manifest.json`, `chunks.json`, and `embeddings.npy`; enforces model dimension == 384, verifies vector finiteness and unit normalization ($\|v\|_2 \approx 1.0$), and verifies exact chunk-vector row count alignment.
+    * Parameterized Transactional Upsert: Uses `INSERT ... ON CONFLICT (corpus_id, chunk_id) DO UPDATE SET ...` to guarantee idempotent writes.
+    * Execution: Ingested all 4 document chunks into `copilot_db.document_chunks` in 0.027s. Repeated runs confirmed exact 4-row stability with 0 duplicate rows.
+  - **Comprehensive Verification Suite (`scripts/verify_step21_database.py`)**:
+    * Extension & Schema: Verified active `vector` extension (0.8.0), `document_chunks` table existence, all 17 columns, and unique constraint.
+    * Provenance Fidelity: Verified all 4 ingested rows match `chunks.json` byte-for-byte across verbatim text, character offsets, SHA-256 hashes, component IDs, and revisions.
+    * Restart Persistence: Restarted container via `docker compose restart db`; verified all 4 rows and vector indexes survived restart intact on named volume.
+    * Idempotency: Re-ran batch ingestion; verified database maintained exactly 4 rows with zero duplicates.
+    * Cosine Distance Queries: Queried nearest neighbors using real 384-dim query vectors; correctly matched "Physical Dimensions Query" to Chunk 3 (similarity 0.5112) and "Product Overview Query" to Chunk 2 (similarity 0.6599).
+    * Metadata Filtering: Verified SQL `WHERE` filtering on `corpus_id`, `component_id`, and `revision` correctly returns matching rows (4/4) and strictly excludes non-matching revisions, unknown component IDs, and mismatched corpora (0 rows).
+    * Clear Scope Disclaimer: Labeled all checks as storage and query verification, clarifying that vector retrieval does not yet replace the deterministic investigation pipeline.
+  - **Lightweight Offline Tests & CI Integration (`tests/test_database.py`)**:
+    * Added 6 unit tests verifying schema SQL definitions, artifact validation, dimension rejection, matrix alignment rejection, non-finite vector rejection, and graceful skipping of live database tests when Docker/PostgreSQL is offline.
+    * All 21 unit tests in `tests/` pass in 0.067s.
+
